@@ -63,38 +63,5 @@ def sort_corner_points(points):
     ])
 
 
-def select_points_mpl(data, cmap='hot') -> np.ndarray:
-    """
-    Select points from the data using the mouse
-    :param data: data to select points from
-    :param cmap: colormap to use for the plot
-    :return: points selected by the user
-    """
-    points = deque(maxlen=4)
 
-    def on_click(event):
-        if event.button is MouseButton.LEFT:
-            points.append([event.xdata, event.ydata])
-        lines = plt.gca().lines
-        if len(lines) > 0:
-            lines[-1].remove()
-        x, y = list(zip(*points))
-        x = list(x)
-        y = list(y)
-        x += [x[0]]
-        y += [y[0]]
-        plt.plot(x, y, linestyle='--', marker='x', color='red')
-        plt.draw()
-
-    def on_key_press(event):
-        if event.key == 'q':
-            print('Quitting')
-            plt.close()
-
-    plt.figure()
-    plt.imshow(data, cmap=cmap)
-    plt.connect('button_press_event', on_click)
-    plt.connect('key_press_event', on_key_press)
-    plt.show()
-    return sort_corner_points(points)
 
