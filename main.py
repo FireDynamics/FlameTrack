@@ -1,6 +1,7 @@
 import numpy as np
-
-from IR_analysis import dewarp_data
+from collections import deque
+from matplotlib import pyplot as plt
+from IR_analysis import *
 
 
 def select_points_mpl(data, cmap='hot') -> np.ndarray:
