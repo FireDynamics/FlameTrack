@@ -12,9 +12,7 @@ from collections import deque
 # Parameters
 TARGET_PIXELS_WIDTH = 1000
 TARGET_PIXELS_HEIGHT = 1000
-DATA_FOLDER_PATH ='data'
-
-
+DATA_FOLDER_PATH = 'data'
 
 selected_points = deque(maxlen=4)
 plasma_colors = px.colors.sequential.Plasma
@@ -163,16 +161,17 @@ def update_colorscale(min_temp, max_temp):
 def update_figure(data_index):
     global raw_data_fig
     global dewarped_data_fig  # make sure to use the global fig variable
-    global img,img_min, img_max  # make sure to use the global img_min and img_max variables
+    global img, img_min, img_max  # make sure to use the global img_min and img_max variables
     if data_index not in data_numbers:
         raise PreventUpdate
-    img = read_IR_data('data/Messung_01_0001_{:04d}.csv'.format(data_index))
+    # TODO do not use absolute path
+    img = read_IR_data(f'{DATA_FOLDER_PATH}/Messung_01_0001_{data_numbers:04d}.csv')
     img_min, img_max = np.nanmin(img), np.nanmax(img)
     update_dewarped_figure(img)
     for trace in raw_data_fig.data:
         if trace.name == 'IR_data':
             trace.z = img
-            return raw_data_fig,dewarped_data_fig, img_min, img_max, img_min, img_min, img_max, img_max
+            return raw_data_fig, dewarped_data_fig, img_min, img_max, img_min, img_min, img_max, img_max
 
 
 @app.callback(
