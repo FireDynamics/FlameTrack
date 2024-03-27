@@ -5,6 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import glob
 import numpy as np
+import os
 
 from IR_analysis import read_IR_data as _read_IR_data, sort_corner_points, dewarp_data
 from collections import deque
@@ -12,7 +13,9 @@ from collections import deque
 # Parameters
 TARGET_PIXELS_WIDTH = 1000
 TARGET_PIXELS_HEIGHT = 1000
-DATA_FOLDER_PATH = 'data'
+TARGET_RATIO = 3
+DATA_FOLDER_PATH = r'E:\IR_Daten\2_mal_1_5_mit_Deckel'
+MEASUREMENT_NAME = 'Messung_01_0001'
 
 selected_points = deque(maxlen=4)
 plasma_colors = px.colors.sequential.Plasma
@@ -28,7 +31,8 @@ def read_IR_data(filename: str) -> np.ndarray:
     return _read_IR_data(filename)[::-1]
 
 
-data_files = glob.glob(f'{DATA_FOLDER_PATH}/*.csv')
+data_files = glob.glob(f'{DATA_FOLDER_PATH}/{MEASUREMENT_NAME}_*.csv')
+print(f'{DATA_FOLDER_PATH}/{MEASUREMENT_NAME}_{4:04d}.csv')
 data_files.sort()
 data_numbers = [int(file.rsplit('_')[-1].split('.')[0]) for file in data_files]
 # open image and create plotly figure, locally stored images can be used this way too
@@ -71,7 +75,7 @@ def update_dewarped_figure(img, target_pixels_width=TARGET_PIXELS_WIDTH, target_
     global selected_points
     if len(selected_points) != 4:
         return
-    dewarped_data = dewarp_data(img, sort_corner_points(selected_points), target_pixels_width, target_pixels_width)
+    dewarped_data = dewarp_data(img, sort_corner_points(selected_points), target_pixels_width, target_pixels_height)
     dewarped_data_fig.data = []
     dewarped_data_fig.add_trace({
         'z': dewarped_data,
@@ -112,11 +116,54 @@ app.layout = dbc.Container([
         ],
         ),
         dbc.Col([
-            dcc.Graph(id=dewarped_data_plot_id, figure=dewarped_data_fig, )
-        ],
-        )
+            dcc.Graph(id=dewarped_data_plot_id, figure=dewarped_data_fig),
+            dcc.Loading(
+                id="loading",
+                type="default",  # or "cube", "circle", "dot", "cube"
+
+                children=[
+                    dbc.Button("Save Data", id="save-button", color="primary", className="mr-1"),  # new button
+                ]
+            ),
+        ]),
     ])
 ], fluid=True)
+
+
+# Callback for saving the data
+@app.callback(
+    Output('save-button', 'children'),  # this output is dummy, just to allow the callback
+    Input('save-button', 'n_clicks'),
+    prevent_initial_call=True,
+)
+def save_data(n_clicks):
+    global data_files
+    global selected_points
+    global TARGET_PIXELS_WIDTH, TARGET_PIXELS_HEIGHT
+    if n_clicks is None or len(selected_points) != 4:
+        raise PreventUpdate
+    else:
+        result = None
+        for file in data_files:
+            img = read_IR_data(file)
+            dewarped_data = dewarp_data(img, sort_corner_points(selected_points), TARGET_PIXELS_WIDTH,
+                                        TARGET_PIXELS_HEIGHT)
+            # os.makedirs(f'dewarped_data/{MEASUREMENT_NAME}', exist_ok=True)
+            # np.savetxt(f'dewarped_data/{MEASUREMENT_NAME}/{os.path.basename(file)}', dewarped_data, delimiter=';')
+            if result is None:
+                result = dewarped_data
+            else:
+                result = np.dstack((result, dewarped_data))
+        np.save(f'dewarped_data/{MEASUREMENT_NAME}_dewarped.npy', result)
+        # Show save confirmation
+        dbc.Toast(
+            "Data saved!",
+            header="Save Confirmation",
+            icon="success",
+            dismissable=True,
+            duration=5000,
+        )
+    return "Save Data"
 
 
 @app.callback(
@@ -164,8 +211,8 @@ def update_figure(data_index):
     global img, img_min, img_max  # make sure to use the global img_min and img_max variables
     if data_index not in data_numbers:
         raise PreventUpdate
-    # TODO do not use absolute path
-    img = read_IR_data(f'{DATA_FOLDER_PATH}/Messung_01_0001_{data_numbers:04d}.csv')
+    img = read_IR_data(os.path.join(DATA_FOLDER_PATH,f'{MEASUREMENT_NAME}_{data_index:04d}.csv'))
+    # img = read_IR_data(data_files[data_numbers.index(data_index)])
     img_min, img_max = np.nanmin(img), np.nanmax(img)
     update_dewarped_figure(img)
     for trace in raw_data_fig.data:
