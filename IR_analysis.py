@@ -22,17 +22,26 @@ def read_IR_data(filename: str) -> np.ndarray:
     raise ValueError('No data found in file, check file format!')
 
 
-def dewarp_data(data, corners, target_pixels_width, target_pixels_height) -> np.ndarray:
+def dewarp_data(data, corners, target_pixels_width= None, target_pixels_height= None, target_ratio = None) -> np.ndarray:
     """
     Dewarp the data using the corners and the target pixels width and height
+    :param target_ratio: target ratio of the dewarped data
     :param data: IR image data to be dewarped
     :param corners: selected corners of the data
     :param target_pixels_width: target width of the dewarped data
     :param target_pixels_height: target height of the dewarped data
     :return: dewarped data as numpy array
     """
+    buffer = 1.1
+    if all(x is None for x in [target_pixels_width, target_pixels_height, target_ratio]):
+        raise ValueError('Either target_pixels_width and target_pixels_height or target_ratio must be provided')
 
     source_corners = np.array(corners, dtype=np.float32)
+    if target_pixels_width is None and target_pixels_height is None:
+        max_width = max(source_corners[1][0] - source_corners[0][0], source_corners[2][0] - source_corners[3][0])
+        max_height = max(source_corners[2][1] - source_corners[1][1], source_corners[3][1] - source_corners[0][1])
+        target_pixels_height = int(max(max_height, max_width * target_ratio)*buffer)
+        target_pixels_width = int(target_pixels_height / target_ratio)
     target_corners = np.array(
         [[0, 0], [target_pixels_width, 0], [target_pixels_width, target_pixels_height], [0, target_pixels_height]],
         dtype=np.float32)

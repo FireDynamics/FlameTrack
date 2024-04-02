@@ -11,11 +11,11 @@ from IR_analysis import read_IR_data as _read_IR_data, sort_corner_points, dewar
 from collections import deque
 
 # Parameters
-TARGET_PIXELS_WIDTH = 1000
-TARGET_PIXELS_HEIGHT = 1000
-TARGET_RATIO = 3
-DATA_FOLDER_PATH = r'E:\IR_Daten\2_mal_1_5_mit_Deckel'
+TARGET_RATIO = 1
+# DATA_FOLDER_PATH = r'E:\IR_Daten\2_mal_1_5_mit_Deckel'
+DATA_FOLDER_PATH = r'data'
 MEASUREMENT_NAME = 'Messung_01_0001'
+start_measurement_number = 1
 
 selected_points = deque(maxlen=4)
 plasma_colors = px.colors.sequential.Plasma
@@ -35,6 +35,9 @@ data_files = glob.glob(f'{DATA_FOLDER_PATH}/{MEASUREMENT_NAME}_*.csv')
 print(f'{DATA_FOLDER_PATH}/{MEASUREMENT_NAME}_{4:04d}.csv')
 data_files.sort()
 data_numbers = [int(file.rsplit('_')[-1].split('.')[0]) for file in data_files]
+start_index = data_numbers.index(start_measurement_number)
+data_files = data_files[start_index:]
+data_numbers = data_numbers[start_index:]
 # open image and create plotly figure, locally stored images can be used this way too
 img = read_IR_data(data_files[0])
 img_width, img_height = img.shape[1], img.shape[0]
@@ -70,12 +73,16 @@ raw_data_fig.update_layout({'title': 'Original Data'})
 dewarped_data_fig.update_layout({'title': 'Dewarped Data'})
 
 
-def update_dewarped_figure(img, target_pixels_width=TARGET_PIXELS_WIDTH, target_pixels_height=TARGET_PIXELS_HEIGHT):
+def update_dewarped_figure(img):
+    global TARGET_RATIO
     global dewarped_data_fig
     global selected_points
     if len(selected_points) != 4:
         return
-    dewarped_data = dewarp_data(img, sort_corner_points(selected_points), target_pixels_width, target_pixels_height)
+    dewarped_data = dewarp_data(img, sort_corner_points(selected_points), target_ratio=TARGET_RATIO)
+    dewarped_data_fig.update_layout({'width': img_height/TARGET_RATIO ,
+                                     'height': img_height,
+                                     'title': f'Dewarped Data ({dewarped_data.shape[1]}x{dewarped_data.shape[0]})'})
     dewarped_data_fig.data = []
     dewarped_data_fig.add_trace({
         'z': dewarped_data,
@@ -146,8 +153,7 @@ def save_data(n_clicks):
         result = None
         for file in data_files:
             img = read_IR_data(file)
-            dewarped_data = dewarp_data(img, sort_corner_points(selected_points), TARGET_PIXELS_WIDTH,
-                                        TARGET_PIXELS_HEIGHT)
+            dewarped_data = dewarp_data(img, sort_corner_points(selected_points), target_ratio=TARGET_RATIO)
             # os.makedirs(f'dewarped_data/{MEASUREMENT_NAME}', exist_ok=True)
             # np.savetxt(f'dewarped_data/{MEASUREMENT_NAME}/{os.path.basename(file)}', dewarped_data, delimiter=';')
             if result is None:
@@ -211,7 +217,7 @@ def update_figure(data_index):
     global img, img_min, img_max  # make sure to use the global img_min and img_max variables
     if data_index not in data_numbers:
         raise PreventUpdate
-    img = read_IR_data(os.path.join(DATA_FOLDER_PATH,f'{MEASUREMENT_NAME}_{data_index:04d}.csv'))
+    img = read_IR_data(os.path.join(DATA_FOLDER_PATH, f'{MEASUREMENT_NAME}_{data_index:04d}.csv'))
     # img = read_IR_data(data_files[data_numbers.index(data_index)])
     img_min, img_max = np.nanmin(img), np.nanmax(img)
     update_dewarped_figure(img)

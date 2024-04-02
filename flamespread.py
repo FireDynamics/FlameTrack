@@ -89,14 +89,35 @@ def plot_edge(frame):
         plt.scatter(peak,slice,c='purple')
     plt.show()
 
+def write_out_edge_results(data):
+    result = []
+    for n in range(data.shape[-1]):
+        frame = data[:,:,n]
+        frame_result = []
+        for i in range(frame.shape[0]):
+            y = frame[i,:]
+            peak = find_edge_point(y)
+            frame_result.append(peak)
+        result.append(frame_result)
+    return result
 
 if __name__ == '__main__':
-    data = read_dewarped_data('dewarped_data/Messung_01_0001_dewarped.npy')
-    slice = 90
-    result = []
-    for i in range(data.shape[-1]):
-        y = data[:,slice,i]
-        peak = find_edge_point(y)
-        result.append(peak)
-    plt.plot(result)
-    plt.show()
+    data = read_dewarped_data('dewarped_data/2_mal_1_5_dewarped.npy')
+    framenr = 95
+    slice = 100
+    frame = data[:,:,framenr]
+
+    # plot_1D(frame,slice)
+    plot_imshow(frame)
+    # #
+
+    # result = []
+    # for i in range(data.shape[-1]):
+    #     y = data[slice,:,i]
+    #     peak = find_edge_point(y)
+    #     result.append(peak)
+    # plt.plot(result)
+    # plt.show()
+
+    results = write_out_edge_results(data)
+    np.save('edge_results.npy',np.array(results))
