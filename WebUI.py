@@ -6,8 +6,9 @@ import plotly.graph_objects as go
 import glob
 import numpy as np
 import os
+from DataTypes import VideoData, IrData
 
-from IR_analysis import read_IR_data as _read_IR_data, sort_corner_points, dewarp_data
+from IR_analysis import sort_corner_points, dewarp_data
 from collections import deque
 
 # Parameters
@@ -15,30 +16,19 @@ TARGET_RATIO = 1
 # DATA_FOLDER_PATH = r'E:\IR_Daten\2_mal_1_5_mit_Deckel'
 DATA_FOLDER_PATH = r'data'
 MEASUREMENT_NAME = 'Messung_01_0001'
-start_measurement_number = 1
+data = IrData(DATA_FOLDER_PATH)
+
 
 selected_points = deque(maxlen=4)
 plasma_colors = px.colors.sequential.Plasma
 colorscale = [[i / (len(plasma_colors) - 1), color] for i, color in enumerate(plasma_colors)]
 
 
-def read_IR_data(filename: str) -> np.ndarray:
-    """
-    Read the IR data from the file. The data is expected to be in the [Data] section of the file, separated by ';'
-    :param filename: filepath to the IR data file
-    :return: IR data as numpy array
-    """
-    return _read_IR_data(filename)[::-1]
 
 
-data_files = glob.glob(f'{DATA_FOLDER_PATH}/{MEASUREMENT_NAME}_*.csv')
-data_files.sort()
-data_numbers = [int(file.rsplit('_')[-1].split('.')[0]) for file in data_files]
-start_index = data_numbers.index(start_measurement_number)
-data_files = data_files[start_index:]
-data_numbers = data_numbers[start_index:]
+data_numbers = data.data_numbers
 # open image and create plotly figure, locally stored images can be used this way too
-img = read_IR_data(data_files[0])
+img = data.get_frame(data_numbers[0])
 img_width, img_height = img.shape[1], img.shape[0]
 img_min, img_max = np.nanmin(img), np.nanmax(img)
 raw_data_fig = go.Figure()
@@ -150,8 +140,8 @@ def save_data(n_clicks):
         raise PreventUpdate
     else:
         result = None
-        for file in data_files:
-            img = read_IR_data(file)
+        for idx in data_numbers:
+            img = data.get_frame(idx)
             dewarped_data = dewarp_data(img, sort_corner_points(selected_points), target_ratio=TARGET_RATIO)
             # os.makedirs(f'dewarped_data/{MEASUREMENT_NAME}', exist_ok=True)
             # np.savetxt(f'dewarped_data/{MEASUREMENT_NAME}/{os.path.basename(file)}', dewarped_data, delimiter=';')
@@ -216,8 +206,7 @@ def update_figure(data_index):
     global img, img_min, img_max  # make sure to use the global img_min and img_max variables
     if data_index not in data_numbers:
         raise PreventUpdate
-    img = read_IR_data(os.path.join(DATA_FOLDER_PATH, f'{MEASUREMENT_NAME}_{data_index:04d}.csv'))
-    # img = read_IR_data(data_files[data_numbers.index(data_index)])
+    img = data.get_frame(data_index)
     img_min, img_max = np.nanmin(img), np.nanmax(img)
     update_dewarped_figure(img)
     for trace in raw_data_fig.data:
