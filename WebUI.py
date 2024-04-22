@@ -32,7 +32,6 @@ def read_IR_data(filename: str) -> np.ndarray:
 
 
 data_files = glob.glob(f'{DATA_FOLDER_PATH}/{MEASUREMENT_NAME}_*.csv')
-print(f'{DATA_FOLDER_PATH}/{MEASUREMENT_NAME}_{4:04d}.csv')
 data_files.sort()
 data_numbers = [int(file.rsplit('_')[-1].split('.')[0]) for file in data_files]
 start_index = data_numbers.index(start_measurement_number)
