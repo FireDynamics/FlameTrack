@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import progressbar
 def read_dewarped_data(filename: str) -> np.ndarray:
     """
     Read the dewarped data from the file. The data is expected to be in the [Data] section of the file, separated by ';'
@@ -90,8 +91,10 @@ def plot_edge(frame):
     plt.show()
 
 def write_out_edge_results(data):
+    # data = data[:,::-1]
     result = []
-    for n in range(data.shape[-1]):
+    bar = progressbar.ProgressBar()
+    for n in bar(range(data.shape[-1])):
         frame = data[:,:,n]
         frame_result = []
         for i in range(frame.shape[0]):
@@ -101,23 +104,45 @@ def write_out_edge_results(data):
         result.append(frame_result)
     return result
 
+
+def show_flame_spread(edge_results, y_coord):
+    y_coord =-y_coord-1
+    fig, ax = plt.subplots()
+    ax.plot(edge_results.T[y_coord])
+    ax.legend()
+    ax.set_title('Flame spread at y = {}'.format(y_coord))
+    ax.set_xlabel('Frame')
+    ax.set_ylabel('X coordinate')
+    return fig, ax
+
+
+def show_frame(data, frame):
+    fig, ax = plt.subplots()
+    ax.imshow(data[:, :, frame], cmap='hot')
+    ax.set_title(f'Frame {frame}')
+    # ax.invert_yaxis()
+    return fig, ax
+
+
+def load_data(filename):
+    data = np.load(filename)
+    return data
+def show_flame_contour(data, edge_results, frame):
+    fig, ax = plt.subplots()
+    ax.imshow(data[:, :, frame], cmap='hot')
+
+    ax.plot(edge_results[frame], range(len(edge_results[frame]), 0, -1),)
+    ax.legend()
+    ax.set_title(f'Flame contour at frame {frame}')
+    ax.invert_yaxis()
+    # ax.set_ylim(ax.get_ylim()[::-1])
+    return fig, ax
+
+
+
+
 if __name__ == '__main__':
-    data = read_dewarped_data('dewarped_data/2_mal_1_5_dewarped.npy')
-    framenr = 95
-    slice = 100
-    frame = data[:,:,framenr]
-
-    # plot_1D(frame,slice)
-    plot_imshow(frame)
-    # #
-
-    # result = []
-    # for i in range(data.shape[-1]):
-    #     y = data[slice,:,i]
-    #     peak = find_edge_point(y)
-    #     result.append(peak)
-    # plt.plot(result)
-    # plt.show()
-
+    filename = '2_mal_1_5_dewarped.npy'
+    data = load_data(f'dewarped_data/{filename}')
     results = write_out_edge_results(data)
-    np.save('edge_results.npy',np.array(results))
+    np.save(f'edge_results/{filename.replace("dewarped","edge_results")}',np.array(results))
