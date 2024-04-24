@@ -15,9 +15,10 @@ from collections import deque
 TARGET_RATIO = 1
 # DATA_FOLDER_PATH = r'E:\IR_Daten\2_mal_1_5_mit_Deckel'
 DATA_FOLDER_PATH = r'data'
-MEASUREMENT_NAME = 'Messung_01_0001'
-data = IrData(DATA_FOLDER_PATH)
+MEASUREMENT_NAME = 'test'
+# data = IrData(DATA_FOLDER_PATH)
 
+# data = VideoData(r'D:\videos\230818_exp_3\20230818_09_41_34_9.avi')
 
 selected_points = deque(maxlen=4)
 plasma_colors = px.colors.sequential.Plasma

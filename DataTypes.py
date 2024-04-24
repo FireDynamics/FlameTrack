@@ -20,6 +20,7 @@ class DataClass:
 class VideoData(DataClass):
     def __init__(self, videofile):
         super().__init__()
+        self.data = []
         cap = cv2.VideoCapture(videofile)
         while (cap.isOpened()):
             ret, frame = cap.read()
@@ -29,7 +30,7 @@ class VideoData(DataClass):
                 break
         self.data_numbers = list(range(self.get_frame_count()))
     def get_frame(self, framenr) -> np.ndarray:
-        return self.data[framenr]
+        return cv2.cvtColor(self.data[framenr], cv2.COLOR_BGR2GRAY)
 
     def get_frame_count(self) -> int:
         return len(self.data)
