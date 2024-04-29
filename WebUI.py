@@ -21,8 +21,8 @@ DATA_FOLDER_PATH = r'data'
 MEASUREMENT_NAME = 'test'
 
 #Hier wird entschieden um was für Daten es sich handelt
-# data = IrData(DATA_FOLDER_PATH)
-data = VideoData(r'D:\videos\230818_exp_3\20230818_09_41_34_9.avi')
+data = IrData(DATA_FOLDER_PATH)
+# data = VideoData(r'D:\videos\230818_exp_3\20230818_09_41_34_9.avi')
 
 
 

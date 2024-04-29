@@ -42,12 +42,11 @@ class IrData(DataClass):
         self.files = glob.glob(f'{self.data_folder}/*.csv')
         self.files = sorted(self.files)
         self.data_numbers = list(range(len(self.files)))
+        #Todo: Add check for missing files
 
     def get_frame(self, framenr) -> np.ndarray:
-        file = glob.glob(f'{self.data_folder}/*{framenr:04d}.csv')
-        if len(file) == 0:
-            raise ValueError('File not found')
-        return read_IR_data(file[0])[::-1]
+        file = self.files[framenr]
+        return read_IR_data(file)[::-1]
 
     def get_frame_count(self) -> int:
         return max(self.data_numbers)
