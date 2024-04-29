@@ -40,7 +40,8 @@ class IrData(DataClass):
     def __init__(self, data_folder):
         self.data_folder = data_folder
         self.files = glob.glob(f'{self.data_folder}/*.csv')
-        self.data_numbers = [int(file[-8:-4]) for file in self.files]
+        self.files = sorted(self.files)
+        self.data_numbers = list(range(len(self.files)))
 
     def get_frame(self, framenr) -> np.ndarray:
         file = glob.glob(f'{self.data_folder}/*{framenr:04d}.csv')

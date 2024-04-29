@@ -11,22 +11,27 @@ from DataTypes import VideoData, IrData
 from IR_analysis import sort_corner_points, dewarp_data
 from collections import deque
 
-# Parameters
+# Parameters for the dewarping
 TARGET_RATIO = 1
+
+
+#Data path, Measurment name is used for saving the data
 # DATA_FOLDER_PATH = r'E:\IR_Daten\2_mal_1_5_mit_Deckel'
 DATA_FOLDER_PATH = r'data'
 MEASUREMENT_NAME = 'test'
-# data = IrData(DATA_FOLDER_PATH)
 
-# data = VideoData(r'D:\videos\230818_exp_3\20230818_09_41_34_9.avi')
+#Hier wird entschieden um was für Daten es sich handelt
+# data = IrData(DATA_FOLDER_PATH)
+data = VideoData(r'D:\videos\230818_exp_3\20230818_09_41_34_9.avi')
+
+
+
+
+
 
 selected_points = deque(maxlen=4)
 plasma_colors = px.colors.sequential.Plasma
 colorscale = [[i / (len(plasma_colors) - 1), color] for i, color in enumerate(plasma_colors)]
-
-
-
-
 data_numbers = data.data_numbers
 # open image and create plotly figure, locally stored images can be used this way too
 img = data.get_frame(data_numbers[0])
