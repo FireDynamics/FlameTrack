@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import matplotlib.pyplot as plt
 import progressbar
@@ -131,7 +133,7 @@ def show_flame_contour(data, edge_results, frame):
     fig, ax = plt.subplots()
     ax.imshow(data[:, :, frame], cmap='hot')
 
-    ax.plot(edge_results[frame], range(len(edge_results[frame]), 0, -1),)
+    ax.plot(edge_results[frame][::-1], range(len(edge_results[frame]), 0, -1),)
     ax.legend()
     ax.set_title(f'Flame contour at frame {frame}')
     ax.invert_yaxis()
@@ -142,7 +144,8 @@ def show_flame_contour(data, edge_results, frame):
 
 
 if __name__ == '__main__':
-    filename = '2_mal_1_5_dewarped.npy'
+    filename = 'lfs_pmma_DE_6mm_tc_R2_0001_dewarped.npy'
     data = load_data(f'dewarped_data/{filename}')
     results = write_out_edge_results(data)
+    os.makedirs('edge_results',exist_ok=True)
     np.save(f'edge_results/{filename.replace("dewarped","edge_results")}',np.array(results))

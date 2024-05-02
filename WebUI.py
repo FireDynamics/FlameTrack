@@ -7,18 +7,18 @@ import glob
 import numpy as np
 import os
 from DataTypes import VideoData, IrData
-
+import progressbar
 from IR_analysis import sort_corner_points, dewarp_data
 from collections import deque
 
 # Parameters for the dewarping
-TARGET_RATIO = 1
+TARGET_RATIO = 15.5/80 #ratio of width to height
 
 
 #Data path, Measurment name is used for saving the data
 # DATA_FOLDER_PATH = r'E:\IR_Daten\2_mal_1_5_mit_Deckel'
-DATA_FOLDER_PATH = r'data'
-MEASUREMENT_NAME = 'test'
+DATA_FOLDER_PATH = r'/Volumes/Tam Backup/IR/IR_Daten/lfs_pmma_DE_6mm_tc_R2_0001'
+MEASUREMENT_NAME = 'lfs_pmma_DE_6mm_tc_R2_0001'
 
 #Hier wird entschieden um was für Daten es sich handelt
 data = IrData(DATA_FOLDER_PATH)
@@ -127,6 +127,12 @@ app.layout = dbc.Container([
                     dbc.Button("Save Data", id="save-button", color="primary", className="mr-1"),  # new button
                 ]
             ),
+            dcc.RangeSlider(
+                id='range-slider',
+                min=data_numbers[0],
+                max=data_numbers[-1],
+                step=1,),
+
         ]),
     ])
 ], fluid=True)
@@ -136,17 +142,21 @@ app.layout = dbc.Container([
 @app.callback(
     Output('save-button', 'children'),  # this output is dummy, just to allow the callback
     Input('save-button', 'n_clicks'),
+    Input('range-slider', 'value'),
     prevent_initial_call=True,
 )
-def save_data(n_clicks):
+def save_data(n_clicks,frame_range):
     global data_files
     global selected_points
     global TARGET_PIXELS_WIDTH, TARGET_PIXELS_HEIGHT
+    print(frame_range)
     if n_clicks is None or len(selected_points) != 4:
         raise PreventUpdate
     else:
+        bar = progressbar.ProgressBar()
+        start,end = frame_range
         result = None
-        for idx in data_numbers:
+        for idx in bar(data_numbers [start:end]):
             img = data.get_frame(idx)
             dewarped_data = dewarp_data(img, sort_corner_points(selected_points), target_ratio=TARGET_RATIO)
             # os.makedirs(f'dewarped_data/{MEASUREMENT_NAME}', exist_ok=True)
@@ -155,6 +165,7 @@ def save_data(n_clicks):
                 result = dewarped_data
             else:
                 result = np.dstack((result, dewarped_data))
+        os.makedirs('dewarped_data', exist_ok=True)
         np.save(f'dewarped_data/{MEASUREMENT_NAME}_dewarped.npy', result)
         # Show save confirmation
         dbc.Toast(
