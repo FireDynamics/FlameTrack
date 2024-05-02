@@ -10,19 +10,21 @@ from DataTypes import VideoData, IrData
 import progressbar
 from IR_analysis import sort_corner_points, dewarp_data
 from collections import deque
+import user_config
 
 # Parameters for the dewarping
 TARGET_RATIO = 15.5/80 #ratio of width to height
 
 
-#Data path, Measurment name is used for saving the data
-# DATA_FOLDER_PATH = r'E:\IR_Daten\2_mal_1_5_mit_Deckel'
-DATA_FOLDER_PATH = r'/Volumes/Tam Backup/IR/IR_Daten/lfs_pmma_DE_6mm_tc_R2_0001'
+# Measurment name is used for saving the data
+# Data structure is: {data}/{MEASUREMENT_NAME}/file1.csv, file2.csv, ...
+# Path where the data folder is located in config.ini
+
 MEASUREMENT_NAME = 'lfs_pmma_DE_6mm_tc_R2_0001'
 
 #Hier wird entschieden um was für Daten es sich handelt
-data = IrData(DATA_FOLDER_PATH)
-# data = VideoData(r'D:\videos\230818_exp_3\20230818_09_41_34_9.avi')
+data = IrData(os.path.join(user_config.get_path('data_folder'), MEASUREMENT_NAME))
+
 
 
 
@@ -165,8 +167,9 @@ def save_data(n_clicks,frame_range):
                 result = dewarped_data
             else:
                 result = np.dstack((result, dewarped_data))
-        os.makedirs('dewarped_data', exist_ok=True)
-        np.save(f'dewarped_data/{MEASUREMENT_NAME}_dewarped.npy', result)
+        dewarped_data_path=user_config.get_path('dewarped_data')
+        os.makedirs('dewarped_data_path', exist_ok=True)
+        np.save(f'{dewarped_data_path}/{MEASUREMENT_NAME}_dewarped.npy', result)
         # Show save confirmation
         dbc.Toast(
             "Data saved!",

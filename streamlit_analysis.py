@@ -2,17 +2,19 @@ import os
 import numpy as np
 import scipy
 import streamlit as st
+
+import user_config
 from flamespread import show_flame_spread,show_flame_contour,load_data
 st.set_page_config(layout="wide")
 import streamlit.components.v1 as components
 
 st.title('Framespread Analysis')
 
+dewarped_data_folder = user_config.get_path('dewarped_data_folder')
+edge_results_folder = user_config.get_path('edge_results_folder')
 
-
-
-dewarped_data_files = os.listdir('dewarped_data')
-edge_results_files = os.listdir('edge_results')
+dewarped_data_files = os.listdir(dewarped_data_folder)
+edge_results_files = os.listdir(edge_results_folder)
 
 data_form = st.form(key='data_form')
 with data_form:
@@ -21,8 +23,9 @@ with data_form:
     rolling_window = st.slider('Select rolling window', 1, 51, 1,2)
     data_submitted =st.form_submit_button('Load data')
 if data_submitted:
-    dewarped_data = load_data(f'dewarped_data/{dewarped_data_selected}')
-    edge_results = load_data(f'edge_results/{edge_results_selected}')
+
+    dewarped_data = load_data(f'{dewarped_data_folder}/{dewarped_data_selected}')
+    edge_results = load_data(f'{edge_results_folder}/{edge_results_selected}')
     st.session_state['dewarped_data'] = dewarped_data
     st.session_state['edge_results'] = edge_results
 

@@ -3,6 +3,10 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import progressbar
+
+import user_config
+
+
 def read_dewarped_data(filename: str) -> np.ndarray:
     """
     Read the dewarped data from the file. The data is expected to be in the [Data] section of the file, separated by ';'
@@ -145,7 +149,8 @@ def show_flame_contour(data, edge_results, frame):
 
 if __name__ == '__main__':
     filename = 'lfs_pmma_DE_6mm_tc_R2_0001_dewarped.npy'
-    data = load_data(f'dewarped_data/{filename}')
+    dewarped_data_folder =user_config.get_path('dewarped_data_folder')
+    edge_results_folder = user_config.get_path('edge_results_folder')
+    data = load_data(f'{dewarped_data_folder}/{filename}')
     results = write_out_edge_results(data)
-    os.makedirs('edge_results',exist_ok=True)
-    np.save(f'edge_results/{filename.replace("dewarped","edge_results")}',np.array(results))
+    np.save(f'{edge_results_folder}/{filename.replace("dewarped","edge_results")}',np.array(results))
