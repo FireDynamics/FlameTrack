@@ -73,10 +73,10 @@ def plot_gradient(frame,slice):
     gradient = np.gradient(y)
     plt.plot(x,gradient)
     plt.axhline(0, color='black', lw=0.5)
-    plt.show()
 
 
-def find_edge_point(y, min_distance=10, min_height=2,min_width=5):
+
+def right_most_peak(y,  min_distance=10, min_height=2,min_width=2):
     """
     Find edge point in 1D data
     :param y: y-axis of the data
@@ -88,7 +88,38 @@ def find_edge_point(y, min_distance=10, min_height=2,min_width=5):
     if len(peaks) == 0:
         return 0
     return peaks[-1]
-def plot_edge(frame):
+
+def highest_peak(y,  min_distance=10, min_height=2,min_width=2):
+    """
+    Find edge point in 1D data
+    :param y: y-axis of the data
+    :param minwidth: minimum width of the peaks
+    :param min_height: minimum height of the peaks
+    """
+    gradient = -np.gradient(y)
+    peaks = find_peaks(gradient,min_distance=min_distance,min_height=min_height,min_width=min_width)
+    if len(peaks) == 0:
+        return 0
+    return peaks[np.argmax(gradient[peaks])]
+
+def highest_peak_to_lowest_value(y,  min_distance=10, min_height=2,min_width=2,ambient_weighting=2):
+    """
+    Find edge point in 1D data
+    :param y: y-axis of the data
+    :param minwidth: minimum width of the peaks
+    :param min_height: minimum height of the peaks
+    :param ambient_weighting: weight of the ambient value
+    """
+    gradient = -np.gradient(y)
+    peaks = find_peaks(gradient,min_distance=min_distance,min_height=min_height,min_width=min_width)
+    if len(peaks) == 0:
+        return 0
+    peak_values = gradient[peaks]
+    ambient_values = y[peaks]
+    return peaks[np.argmax(peak_values/ambient_values**ambient_weighting)]
+
+
+def plot_edge(frame,find_edge_point = right_most_peak):
     plt.imshow(frame,cmap='hot')
     for slice in range(frame.shape[0]):
         y = frame[slice,:]
@@ -96,7 +127,7 @@ def plot_edge(frame):
         plt.scatter(peak,slice,c='purple')
     plt.show()
 
-def write_out_edge_results(data):
+def write_out_edge_results(data,find_edge_point):
     # data = data[:,::-1]
     result = []
     bar = progressbar.ProgressBar()
@@ -122,13 +153,26 @@ def show_flame_spread(edge_results, y_coord):
     return fig, ax
 
 
-def show_frame(data, frame):
+def get_frame(data, frame_number):
+    return data[:, :, frame_number]
+
+def show_frame(data, frame_number):
     fig, ax = plt.subplots()
-    ax.imshow(data[:, :, frame], cmap='hot')
-    ax.set_title(f'Frame {frame}')
+    ax.imshow(get_frame(data,frame_number), cmap='hot')
+    ax.set_title(f'Frame {frame_number}')
     # ax.invert_yaxis()
     return fig, ax
 
+
+def get_edge_results(name):
+    edge_results_folder = user_config.get_path('edge_results_folder')
+    edge_results = np.load(f'{edge_results_folder}/{name}_edge_results.npy')
+    return edge_results
+
+def get_dewarped_data(name):
+    dewarped_data_folder = user_config.get_path('dewarped_data_folder')
+    dewarped_data = np.load(f'{dewarped_data_folder}/{name}_dewarped.npy')
+    return dewarped_data
 
 def load_data(filename):
     data = np.load(filename)
@@ -137,8 +181,7 @@ def show_flame_contour(data, edge_results, frame):
     fig, ax = plt.subplots()
     ax.imshow(data[:, :, frame], cmap='hot')
 
-    ax.plot(edge_results[frame][::-1], range(len(edge_results[frame]), 0, -1),)
-    ax.legend()
+    ax.plot(edge_results[frame][::-1], range(len(edge_results[frame])-1, -1, -1),)
     ax.set_title(f'Flame contour at frame {frame}')
     ax.invert_yaxis()
     # ax.set_ylim(ax.get_ylim()[::-1])
@@ -151,6 +194,8 @@ if __name__ == '__main__':
     filename = 'lfs_pmma_DE_6mm_tc_R2_0001_dewarped.npy'
     dewarped_data_folder =user_config.get_path('dewarped_data_folder')
     edge_results_folder = user_config.get_path('edge_results_folder')
+    print(f'Loading {filename}')
     data = load_data(f'{dewarped_data_folder}/{filename}')
-    results = write_out_edge_results(data)
-    np.save(f'{edge_results_folder}/{filename.replace("dewarped","edge_results")}',np.array(results))
+    print('Finding edge')
+    results = write_out_edge_results(data,highest_peak_to_lowest_value)
+    np.save(f'{edge_results_folder}/{filename.replace("dewarped","edge_results_highest")}',np.array(results))

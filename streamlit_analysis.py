@@ -54,6 +54,8 @@ if dewarped_data is not  None and edge_results is not None:
 
     with c1:
         fig, ax = show_flame_contour(dewarped_data, edge_results, frame)
-        ax.axhline(y_coord, color='green', linestyle='--')
+        h= ax.get_ylim()[1]
+        st.write(h)
+        ax.axhline(h-y_coord, color='green', linestyle='--')
         ax.axvline(edge_results[frame,-y_coord-1], color='green', linestyle='--')
         st.pyplot(fig)
