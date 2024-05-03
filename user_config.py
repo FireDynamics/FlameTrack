@@ -13,6 +13,7 @@ def create_missing_config():
         config['DEFAULT']['data_folder'] = 'data/'
         config['DEFAULT']['dewarped_data_folder'] = 'dewarped_data/'
         config['DEFAULT']['edge_results_folder'] = 'edge_results/'
+        config['DEFAULT']['saved_data'] = 'saved_data/'
 
         with open('config.ini', 'w') as configfile:
             config.write(configfile)

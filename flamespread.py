@@ -5,16 +5,10 @@ import matplotlib.pyplot as plt
 import progressbar
 
 import user_config
+import dataset_handler as dst_handler
+from dataset_handler import get_dewarped_data,get_edge_results,save_edge_results
 
 
-def read_dewarped_data(filename: str) -> np.ndarray:
-    """
-    Read the dewarped data from the file. The data is expected to be in the [Data] section of the file, separated by ';'
-    :param filename: filepath to the dewarped data file
-    :return: dewarped data as numpy array
-    """
-    data = np.load(filename)
-    return data[::-1]
 
 def plot_3D(frame):
     """
@@ -71,8 +65,12 @@ def plot_gradient(frame,slice):
     y = frame[slice,:]
     x = np.arange(0,frame.shape[1],1)
     gradient = np.gradient(y)
-    plt.plot(x,gradient)
-    plt.axhline(0, color='black', lw=0.5)
+    fig, ax = plt.subplots()
+    ax.plot(x,gradient)
+    ax.set_title('Gradient of slice {}'.format(slice))
+    ax.set_xlabel('X')
+    ax.set_ylabel('Gradient')
+    return fig, ax
 
 
 
@@ -125,15 +123,16 @@ def plot_edge(frame,find_edge_point = right_most_peak):
         y = frame[slice,:]
         peak = find_edge_point(y)
         plt.scatter(peak,slice,c='purple')
-    plt.show()
 
-def write_out_edge_results(data,find_edge_point):
+def calculate_edge_data(data, find_edge_point,filter=None):
     # data = data[:,::-1]
     result = []
     bar = progressbar.ProgressBar()
     for n in bar(range(data.shape[-1])):
         frame = data[:,:,n]
         frame_result = []
+        if filter is not None:
+            frame = filter(frame)
         for i in range(frame.shape[0]):
             y = frame[i,:]
             peak = find_edge_point(y)
@@ -163,19 +162,15 @@ def show_frame(data, frame_number):
     return fig, ax
 
 
-def get_edge_results(name):
-    edge_results_folder = user_config.get_path('edge_results_folder')
-    edge_results = np.load(f'{edge_results_folder}/{name}_edge_results.npy')
-    return edge_results
+def band_filter(frame,low=None,high=None):
+    if low is None:
+        low = frame.min()
+    if high is None:
+        high = frame.max()
+    frame[frame>high] = high
+    frame[frame<low] = low
+    return frame
 
-def get_dewarped_data(name):
-    dewarped_data_folder = user_config.get_path('dewarped_data_folder')
-    dewarped_data = np.load(f'{dewarped_data_folder}/{name}_dewarped.npy')
-    return dewarped_data
-
-def load_data(filename):
-    data = np.load(filename)
-    return data
 def show_flame_contour(data, edge_results, frame):
     fig, ax = plt.subplots()
     ax.imshow(data[:, :, frame], cmap='hot')
@@ -190,12 +185,14 @@ def show_flame_contour(data, edge_results, frame):
 
 
 if __name__ == '__main__':
-    filename = 'lfs_pmma_DE_6mm_tc_R2_0001_dewarped.npy'
-    dewarped_data_folder =user_config.get_path('dewarped_data_folder')
-    edge_results_folder = user_config.get_path('edge_results_folder')
-    print(f'Loading {filename}')
-    data = load_data(f'{dewarped_data_folder}/{filename}')
+    exp_name = 'lfs_pmma_DE_6mm_tc_R1_0001'
+    print(f'Loading {exp_name}')
+    dewarped_data = get_dewarped_data(exp_name)
     print('Finding edge')
     peak_method = lambda x: highest_peak_to_lowest_value(x,min_distance=10,min_height=2,min_width=2,ambient_weighting=1)
-    results = write_out_edge_results(data,highest_peak_to_lowest_value)
-    np.save(f'{edge_results_folder}/{filename.replace("dewarped","edge_results_highest")}',np.array(results))
+    # peak_method = highest_peak
+    results = calculate_edge_data(dewarped_data, peak_method,filter=lambda x: band_filter(x,low=250,high=450))
+    dst_handler.close_file()
+    save_edge_results(exp_name, np.array(results))
+
+

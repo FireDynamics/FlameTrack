@@ -10,26 +10,20 @@ from DataTypes import VideoData, IrData
 import progressbar
 from IR_analysis import sort_corner_points, dewarp_data, get_dewarp_parameters
 from collections import deque
+from dataset_handler import *
 import user_config
 
 # Parameters for the dewarping
-TARGET_RATIO = 15.5/80 #ratio of width to height
-
+TARGET_RATIO = 15.5 / 80  # ratio of width to height
 
 # Measurment name is used for saving the data
 # Data structure is: {data}/{MEASUREMENT_NAME}/file1.csv, file2.csv, ...
 # Path where the data folder is located in config.ini
 
-MEASUREMENT_NAME = 'lfs_pmma_DE_6mm_tc_R2_0001'
+MEASUREMENT_NAME = 'lfs_pmma_DE_6mm_tc_R1_0001'
 
-#Hier wird entschieden um was für Daten es sich handelt
+# Hier wird entschieden um was für Daten es sich handelt
 data = IrData(os.path.join(user_config.get_path('data_folder'), MEASUREMENT_NAME))
-
-
-
-
-
-
 
 selected_points = deque(maxlen=4)
 plasma_colors = px.colors.sequential.Plasma
@@ -76,8 +70,9 @@ def update_dewarped_figure(img):
     global selected_points
     if len(selected_points) != 4:
         return
-    dewarped_data = dewarp_data(img, sort_corner_points(selected_points), target_ratio=TARGET_RATIO)
-    dewarped_data_fig.update_layout({'width': img_height/TARGET_RATIO ,
+    dewarped_params = get_dewarp_parameters(sort_corner_points(selected_points), target_ratio=TARGET_RATIO)
+    dewarped_data = dewarp_data(img, dewarped_params)
+    dewarped_data_fig.update_layout({'width': img_height / TARGET_RATIO,
                                      'height': img_height,
                                      'title': f'Dewarped Data ({dewarped_data.shape[1]}x{dewarped_data.shape[0]})'})
     dewarped_data_fig.data = []
@@ -124,15 +119,15 @@ app.layout = dbc.Container([
 
             html.P('Select the range of frames to dewarp'),
             dbc.Row([
-                    dbc.Col([
-                        html.P('Start frame'),
-                        dcc.Input(id='range-start', type='number', value=data_numbers[0]),
-                    ]),
-                    dbc.Col([
-                        html.P('End frame'),
-                        dcc.Input(id='range-end', type='number', value=data_numbers[-1]),
-                    ]),
+                dbc.Col([
+                    html.P('Start frame'),
+                    dcc.Input(id='range-start', type='number', value=data_numbers[0]),
                 ]),
+                dbc.Col([
+                    html.P('End frame'),
+                    dcc.Input(id='range-end', type='number', value=data_numbers[-1]),
+                ]),
+            ]),
             dcc.Loading(
                 id="loading",
                 type="default",  # or "cube", "circle", "dot", "cube"
@@ -162,23 +157,37 @@ def save_data(n_clicks, frame_range_start, frame_range_end):
     if n_clicks is None or len(selected_points) != 4:
         raise PreventUpdate
     else:
-        bar = progressbar.ProgressBar()
-        start,end = frame_range_start, frame_range_end
+
+        start, end = frame_range_start, frame_range_end
         dewarp_params = get_dewarp_parameters(sort_corner_points(selected_points), target_ratio=TARGET_RATIO)
-        result = None
-        for idx in bar(data_numbers [start:end]):
+
+        h5_file = create_h5_file(f'{MEASUREMENT_NAME}')
+        grp = h5_file['dewarped_data']
+        grp.attrs['transformation_matrix'] = dewarp_params['transformation_matrix']
+        grp.attrs['target_pixels_width'] = dewarp_params['target_pixels_width']
+        grp.attrs['target_pixels_height'] = dewarp_params['target_pixels_height']
+        grp.attrs['target_ratio'] = TARGET_RATIO
+        grp.attrs['selected_points'] = selected_points
+        grp.attrs['frame_range'] = (start, end)
+        dset_h,dset_w = dewarp_params['target_pixels_height'], dewarp_params['target_pixels_width']
+
+        dset = grp.create_dataset('data',
+                  (dset_h, dset_h, 1),
+                    maxshape=(dset_h, dset_w, None),
+                    chunks=(dset_h, dset_w, 1),
+
+                           dtype=np.float32)
+        import time
+        start_time = time.time()
+        print('Dewarping data')
+        for i,idx in enumerate(data_numbers[start:end]):
             img = data.get_frame(idx)
             dewarped_data = dewarp_data(img, dewarp_params)
-            # os.makedirs(f'dewarped_data/{MEASUREMENT_NAME}', exist_ok=True)
-            # np.savetxt(f'dewarped_data/{MEASUREMENT_NAME}/{os.path.basename(file)}', dewarped_data, delimiter=';')
-            if result is None:
-                result = dewarped_data
-            else:
-                result = np.dstack((result, dewarped_data))
-        dewarped_data_path=user_config.get_path('dewarped_data')
-        os.makedirs('dewarped_data_path', exist_ok=True)
-        np.save(f'{dewarped_data_path}/{MEASUREMENT_NAME}_dewarped.npy', result)
-        # Show save confirmation
+            dset.resize((dset_h, dset_w, i + 1))
+            dset[:, :, i] = dewarped_data
+            if idx % 100 == 0:
+                print(f'Estimated time left: {((time.time() - start_time) / i) * (end-start - i)} seconds')
+        dataset_handler.close_file()
         dbc.Toast(
             "Data saved!",
             header="Save Confirmation",

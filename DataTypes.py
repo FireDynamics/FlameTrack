@@ -44,6 +44,8 @@ class IrData(DataClass):
         self.data_numbers = list(range(len(self.files)))
         #Todo: Add check for missing files
 
+    def __sort_files(self):
+        pass
     def get_frame(self, framenr) -> np.ndarray:
         file = self.files[framenr]
         return read_IR_data(file)[::-1]
