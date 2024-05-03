@@ -146,7 +146,6 @@ def show_flame_spread(edge_results, y_coord):
     y_coord =-y_coord-1
     fig, ax = plt.subplots()
     ax.plot(edge_results.T[y_coord])
-    ax.legend()
     ax.set_title('Flame spread at y = {}'.format(y_coord))
     ax.set_xlabel('Frame')
     ax.set_ylabel('X coordinate')

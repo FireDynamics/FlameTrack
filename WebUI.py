@@ -8,7 +8,7 @@ import numpy as np
 import os
 from DataTypes import VideoData, IrData
 import progressbar
-from IR_analysis import sort_corner_points, dewarp_data
+from IR_analysis import sort_corner_points, dewarp_data, get_dewarp_parameters
 from collections import deque
 import user_config
 
@@ -121,6 +121,18 @@ app.layout = dbc.Container([
         ),
         dbc.Col([
             dcc.Graph(id=dewarped_data_plot_id, figure=dewarped_data_fig),
+
+            html.P('Select the range of frames to dewarp'),
+            dbc.Row([
+                    dbc.Col([
+                        html.P('Start frame'),
+                        dcc.Input(id='range-start', type='number', value=data_numbers[0]),
+                    ]),
+                    dbc.Col([
+                        html.P('End frame'),
+                        dcc.Input(id='range-end', type='number', value=data_numbers[-1]),
+                    ]),
+                ]),
             dcc.Loading(
                 id="loading",
                 type="default",  # or "cube", "circle", "dot", "cube"
@@ -129,11 +141,6 @@ app.layout = dbc.Container([
                     dbc.Button("Save Data", id="save-button", color="primary", className="mr-1"),  # new button
                 ]
             ),
-            dcc.RangeSlider(
-                id='range-slider',
-                min=data_numbers[0],
-                max=data_numbers[-1],
-                step=1,),
 
         ]),
     ])
@@ -144,23 +151,24 @@ app.layout = dbc.Container([
 @app.callback(
     Output('save-button', 'children'),  # this output is dummy, just to allow the callback
     Input('save-button', 'n_clicks'),
-    Input('range-slider', 'value'),
+    Input('range-start', 'value'),
+    Input('range-end', 'value'),
     prevent_initial_call=True,
 )
-def save_data(n_clicks,frame_range):
+def save_data(n_clicks, frame_range_start, frame_range_end):
     global data_files
     global selected_points
     global TARGET_PIXELS_WIDTH, TARGET_PIXELS_HEIGHT
-    print(frame_range)
     if n_clicks is None or len(selected_points) != 4:
         raise PreventUpdate
     else:
         bar = progressbar.ProgressBar()
-        start,end = frame_range
+        start,end = frame_range_start, frame_range_end
+        dewarp_params = get_dewarp_parameters(sort_corner_points(selected_points), target_ratio=TARGET_RATIO)
         result = None
         for idx in bar(data_numbers [start:end]):
             img = data.get_frame(idx)
-            dewarped_data = dewarp_data(img, sort_corner_points(selected_points), target_ratio=TARGET_RATIO)
+            dewarped_data = dewarp_data(img, dewarp_params)
             # os.makedirs(f'dewarped_data/{MEASUREMENT_NAME}', exist_ok=True)
             # np.savetxt(f'dewarped_data/{MEASUREMENT_NAME}/{os.path.basename(file)}', dewarped_data, delimiter=';')
             if result is None:

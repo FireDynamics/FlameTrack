@@ -16,21 +16,20 @@ def read_IR_data(filename: str) -> np.ndarray:
         line = f.readline()
         while line:
             if line.startswith('[Data]'):
-                return np.genfromtxt((line.replace(',','.') for line in f.readlines()), delimiter=';')
+                return np.genfromtxt((line.replace(',', '.') for line in f.readlines()), delimiter=';')
             line = f.readline()
 
     raise ValueError('No data found in file, check file format!')
 
 
-def dewarp_data(data, corners, target_pixels_width= None, target_pixels_height= None, target_ratio = None) -> np.ndarray:
+def get_dewarp_parameters(corners, target_pixels_width=None, target_pixels_height=None, target_ratio=None) -> dict:
     """
-    Dewarp the data using the corners and the target pixels width and height
+    Get the dewarp parameters using the corners and the target pixels width and height
     :param target_ratio: target ratio of the dewarped data
-    :param data: IR image data to be dewarped
     :param corners: selected corners of the data
     :param target_pixels_width: target width of the dewarped data
     :param target_pixels_height: target height of the dewarped data
-    :return: dewarped data as numpy array
+    :return: dewarp parameters as dictionary
     """
     buffer = 1.1
     if all(x is None for x in [target_pixels_width, target_pixels_height, target_ratio]):
@@ -40,7 +39,7 @@ def dewarp_data(data, corners, target_pixels_width= None, target_pixels_height= 
     if target_pixels_width is None and target_pixels_height is None:
         max_width = max(source_corners[1][0] - source_corners[0][0], source_corners[2][0] - source_corners[3][0])
         max_height = max(source_corners[2][1] - source_corners[1][1], source_corners[3][1] - source_corners[0][1])
-        target_pixels_height = int(max(max_height, max_width * target_ratio)*buffer)
+        target_pixels_height = int(max(max_height, max_width * target_ratio) * buffer)
         target_pixels_width = int(target_pixels_height / target_ratio)
     target_corners = np.array(
         [[0, 0], [target_pixels_width, 0], [target_pixels_width, target_pixels_height], [0, target_pixels_height]],
@@ -49,10 +48,22 @@ def dewarp_data(data, corners, target_pixels_width= None, target_pixels_height= 
     # Use getPerspectiveTransform instead of findHomography. findHomography is useful for multiple points since it is
     # able to reject outliers, since only 4 points are used, getPerspectiveTransform is sufficient
     transformation_matrix = cv2.getPerspectiveTransform(source_corners, target_corners)
-    # apply the transformation matrix to the data
+    return {'transformation_matrix': transformation_matrix, 'target_pixels_width': target_pixels_width,
+            'target_pixels_height': target_pixels_height}
+
+
+def dewarp_data(data, dewarp_params) -> np.ndarray:
+    """
+    Dewarp the data using the corners and the target pixels width and height
+    :param data: data to dewarp
+    :param dewarp_params: dewarp parameters from get_dewarp_parameters
+    :return: dewarped data as numpy array
+    """
+    transformation_matrix = dewarp_params['transformation_matrix']
+    target_pixels_width = dewarp_params['target_pixels_width']
+    target_pixels_height = dewarp_params['target_pixels_height']
     dewarped_data = cv2.warpPerspective(data, transformation_matrix, (target_pixels_width, target_pixels_height))
     return dewarped_data
-
 
 
 def sort_corner_points(points):
@@ -70,7 +81,3 @@ def sort_corner_points(points):
         points[np.argmax(summ)],
         points[np.argmax(diff)]
     ])
-
-
-
-
