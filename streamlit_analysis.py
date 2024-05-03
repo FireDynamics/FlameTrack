@@ -47,15 +47,14 @@ if dewarped_data is not  None and edge_results is not None:
         frame = st.slider('Select frame', 0, dewarped_data.shape[-1]-1, 0)
     with c2:
         y_coord = st.slider('Select y coordinate', 0, dewarped_data.shape[0]-1, 0)
-        fig,ax = show_flame_spread(edge_results, y_coord)
+        fig,ax = show_flame_spread(edge_results, -y_coord)
         ax.axvline(frame, color='green', linestyle='--')
-        ax.axhline(edge_results[frame,-y_coord-1], color='green', linestyle='--')
+        ax.axhline(edge_results[frame,y_coord], color='green', linestyle='--')
         st.pyplot(fig)
 
     with c1:
         fig, ax = show_flame_contour(dewarped_data, edge_results, frame)
         h= ax.get_ylim()[1]
-        st.write(h)
-        ax.axhline(h-y_coord, color='green', linestyle='--')
-        ax.axvline(edge_results[frame,-y_coord-1], color='green', linestyle='--')
+        ax.axhline(y_coord, color='green', linestyle='--')
+        ax.axvline(edge_results[frame,y_coord], color='green', linestyle='--')
         st.pyplot(fig)

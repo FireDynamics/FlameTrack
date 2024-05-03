@@ -197,5 +197,6 @@ if __name__ == '__main__':
     print(f'Loading {filename}')
     data = load_data(f'{dewarped_data_folder}/{filename}')
     print('Finding edge')
+    peak_method = lambda x: highest_peak_to_lowest_value(x,min_distance=10,min_height=2,min_width=2,ambient_weighting=1)
     results = write_out_edge_results(data,highest_peak_to_lowest_value)
     np.save(f'{edge_results_folder}/{filename.replace("dewarped","edge_results_highest")}',np.array(results))
