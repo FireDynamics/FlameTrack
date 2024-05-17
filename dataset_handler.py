@@ -27,7 +27,7 @@ def get_data(exp_name, group_name):
 
 
 def get_edge_results(exp_name):
-    return get_data(exp_name, 'edge_results')
+    return get_data(exp_name, 'edge_results')[:]
 
 def get_dewarped_data(name):
     return get_data(name, 'dewarped_data')
