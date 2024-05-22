@@ -29,9 +29,12 @@ def get_data(exp_name, group_name):
 def get_edge_results(exp_name):
     return get_data(exp_name, 'edge_results')[:]
 
-def get_dewarped_data(name):
-    return get_data(name, 'dewarped_data')
+def get_dewarped_data(exp_name):
+    return get_data(exp_name, 'dewarped_data')
 
+def get_dewarped_metadata(exp_name):
+    f = get_file(exp_name)
+    return f['dewarped_data'].attrs
 def get_file(exp_name,mode='r'):
     if mode =='w':
         raise ValueError('Use create_h5_file to create a new file')
