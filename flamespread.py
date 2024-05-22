@@ -274,14 +274,35 @@ def show_flame_contour_plotly(data, edge_results, frame):
     return fig
 
 
+def right_most_point_over_threshold(y, threshold=0):
+    """
+    Find edge point in 1D data
+    :param y: y-axis of the data
+    :param threshold: threshold value
+    """
+    peaks = np.where(y > threshold)[-1]
+    if len(peaks) == 0:
+        return 0
+    return peaks[-1]
+
+
 if __name__ == '__main__':
-    for exp_name in ['lfs_pmma_DE_6mm_tc_R1_0001','lfs_pmma_DE_6mm_tc_R2_0001']:
-        print(f'Loading {exp_name}')
-        dewarped_data = get_dewarped_data(exp_name)
-        print('Finding edge')
-        peak_method = lambda x,params = None: highest_peak_to_lowest_value(x, min_distance=10, min_height=1, min_width=2,
-                                                             ambient_weighting=2, high_val=320, low_val=380, **params)
-        # peak_method = highest_peak
-        results = calculate_edge_data(dewarped_data, peak_method, custom_filter=lambda x: band_filter(x, low=150, high=450))
-        dst_handler.close_file()
-        save_edge_results(exp_name, np.array(results))
+    # for exp_name in ['lfs_pmma_DE_6mm_tc_R1_CANON',]:
+    #     print(f'Loading {exp_name}')
+    #     dewarped_data = get_dewarped_data(exp_name)
+    #     print('Finding edge')
+    #     peak_method = lambda x,params = None: highest_peak_to_lowest_value(x, min_distance=10, min_height=1, min_width=2,
+    #                                                          ambient_weighting=2, high_val=320, low_val=380, **params)
+    #     # peak_method = highest_peak
+    #     results = calculate_edge_data(dewarped_data, peak_method, custom_filter=lambda x: band_filter(x, low=150, high=450))
+    #     dst_handler.close_file()
+    #     save_edge_results(exp_name, np.array(results))
+
+
+    #Canon
+    exp_name = 'lfs_pmma_DE_6mm_tc_R1_CANON'
+    peak_method = lambda x,params={}: right_most_point_over_threshold(x, threshold=125)
+    dewarped_data = get_dewarped_data(exp_name)
+    results = calculate_edge_data(dewarped_data, peak_method)
+    dst_handler.close_file()
+    save_edge_results(exp_name, np.array(results))

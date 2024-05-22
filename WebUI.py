@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import glob
 import numpy as np
 import os
-from DataTypes import VideoData, IrData
+from DataTypes import VideoData, IrData,ImageData
 import progressbar
 from IR_analysis import sort_corner_points, dewarp_data, get_dewarp_parameters
 from collections import deque
@@ -20,10 +20,12 @@ TARGET_RATIO = 15.5 / 80  # ratio of width to height
 # Data structure is: {data}/{MEASUREMENT_NAME}/file1.csv, file2.csv, ...
 # Path where the data folder is located in config.ini
 
-MEASUREMENT_NAME = 'lfs_pmma_DE_6mm_tc_R1_0001'
-
-# Hier wird entschieden um was für Daten es sich handelt
-data = IrData(os.path.join(user_config.get_path('data_folder'), MEASUREMENT_NAME))
+# MEASUREMENT_NAME = 'lfs_pmma_DE_6mm_tc_R1_0001'
+#
+# # Hier wird entschieden um was für Daten es sich handelt
+# data = IrData(os.path.join(user_config.get_path('data_folder'), MEASUREMENT_NAME))
+MEASUREMENT_NAME = 'lfs_PMMA_DE_6mm_tc_R1_CANON'
+data = ImageData(os.path.join(r'E:\OM', 'lfs_PMMA_DE_6mm_tc_R1'), 'jpg')
 
 selected_points = deque(maxlen=4)
 plasma_colors = px.colors.sequential.Plasma

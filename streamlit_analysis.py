@@ -22,13 +22,13 @@ with data_form:
     data_submitted =st.form_submit_button('Load data')
 if data_submitted:
 
-    dewarped_data = get_dewarped_data(exp_name_selected)[:]
+    dewarped_data = get_dewarped_data(exp_name_selected)
     edge_results = get_edge_results(exp_name_selected)[:]
     dewarped_meta_data = dict(get_dewarped_metadata(exp_name_selected))
     st.session_state['dewarped_data'] = dewarped_data
     st.session_state['edge_results'] = edge_results
     st.session_state['dewarped_meta_data'] = dewarped_meta_data
-    close_file()
+    # close_file()
 
 
 

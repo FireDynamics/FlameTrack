@@ -36,6 +36,22 @@ class VideoData(DataClass):
         return len(self.data)
 
 
+class ImageData(DataClass):
+    def __init__(self, image_folder, image_extension='jpg'):
+        super().__init__()
+        self.files = glob.glob(f'{image_folder}/*.{image_extension}')
+        self.files = sorted(self.files)
+        self.data_numbers = list(range(len(self.files)))
+
+    def get_frame(self, framenr) -> np.ndarray:
+        frame = cv2.imread(self.files[framenr], cv2.IMREAD_GRAYSCALE)
+        #resize frame to 640x480
+        return cv2.resize(frame, (1500, 1000))
+
+    def get_frame_count(self) -> int:
+        return len(self.files)
+
+
 class IrData(DataClass):
     def __init__(self, data_folder):
         self.data_folder = data_folder
