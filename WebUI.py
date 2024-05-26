@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from dash import Dash, Input, Output, dcc, html
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
@@ -11,6 +13,7 @@ import progressbar
 from IR_analysis import sort_corner_points, dewarp_data, get_dewarp_parameters
 from collections import deque
 from dataset_handler import *
+import dataset_handler
 import user_config
 
 # Parameters for the dewarping
@@ -19,13 +22,27 @@ TARGET_RATIO = 15.5 / 80  # ratio of width to height
 # Measurment name is used for saving the data
 # Data structure is: {data}/{MEASUREMENT_NAME}/file1.csv, file2.csv, ...
 # Path where the data folder is located in config.ini
+exp_names = [f'lfs_pmma_DE_6mm_tc_R{number}_{datatype}' for datatype in ['CANON', 'IR'] for number in [1,2, 3, 4]]
+MEASUREMENT_NAME = exp_names[0]
+# exp_names[0] = 'lfs_pmma_DE_6mm_tc_R1_CANON'
+# exp_names[1] = 'lfs_pmma_DE_6mm_tc_R2_CANON'
+# exp_names[2] = 'lfs_pmma_DE_6mm_tc_R3_CANON'
+# exp_names[3] = 'lfs_pmma_DE_6mm_tc_R4_CANON'
+# exp_names[4] = 'lfs_pmma_DE_6mm_tc_R1_IR'
+# exp_names[5] = 'lfs_pmma_DE_6mm_tc_R2_IR'
+# exp_names[6] = 'lfs_pmma_DE_6mm_tc_R3_IR'
+# exp_names[7] = 'lfs_pmma_DE_6mm_tc_R4_IR'
 
-# MEASUREMENT_NAME = 'lfs_pmma_DE_6mm_tc_R1_0001'
+
+
+
+
+
 #
-# # Hier wird entschieden um was für Daten es sich handelt
-# data = IrData(os.path.join(user_config.get_path('data_folder'), MEASUREMENT_NAME))
-MEASUREMENT_NAME = 'lfs_PMMA_DE_6mm_tc_R1_CANON'
-data = ImageData(os.path.join(r'E:\OM', 'lfs_PMMA_DE_6mm_tc_R1'), 'jpg')
+if 'IR' in MEASUREMENT_NAME:
+    data = IrData(os.path.join(user_config.get_path('data_folder'), MEASUREMENT_NAME.replace('IR', "0001")))
+else:
+    data = ImageData(os.path.join(r'/Volumes/Tam Backup/OM/', MEASUREMENT_NAME.replace('_CANON', "")), 'JPG')
 
 selected_points = deque(maxlen=4)
 plasma_colors = px.colors.sequential.Plasma
@@ -62,7 +79,7 @@ figure_layout = {
 }
 raw_data_fig.update_layout(figure_layout)
 dewarped_data_fig.update_layout(figure_layout)
-raw_data_fig.update_layout({'title': 'Original Data'})
+raw_data_fig.update_layout({'title': f'Original Data {MEASUREMENT_NAME}'})
 dewarped_data_fig.update_layout({'title': 'Dewarped Data'})
 
 
@@ -109,7 +126,7 @@ app.layout = dbc.Container([
             dcc.Graph(id=raw_data_plot_id, figure=raw_data_fig),
 
             html.P('Select the file number to display'),
-            dcc.Slider(id='data-slider', min=data_numbers[0], max=data_numbers[-1], value=data_numbers[0]),
+            dcc.Slider(id='data-slider', min=data_numbers[0], max=data_numbers[-1], value=data_numbers[0],step=1),
             html.P('Select min temperature'),
             dcc.Slider(id='min-temp-slider', min=int(img_min), max=int(img_max), value=int(img_min)),
             html.P('Select max temperature'),
@@ -144,6 +161,7 @@ app.layout = dbc.Container([
 ], fluid=True)
 
 
+
 # Callback for saving the data
 @app.callback(
     Output('save-button', 'children'),  # this output is dummy, just to allow the callback
@@ -171,6 +189,7 @@ def save_data(n_clicks, frame_range_start, frame_range_end):
         grp.attrs['target_ratio'] = TARGET_RATIO
         grp.attrs['selected_points'] = selected_points
         grp.attrs['frame_range'] = (start, end)
+        grp.attrs['points_selection_date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         dset_h,dset_w = dewarp_params['target_pixels_height'], dewarp_params['target_pixels_width']
 
         dset = grp.create_dataset('data',
@@ -179,24 +198,24 @@ def save_data(n_clicks, frame_range_start, frame_range_end):
                     chunks=(dset_h, dset_w, 1),
 
                            dtype=np.float32)
-        import time
-        start_time = time.time()
-        print('Dewarping data')
-        for i,idx in enumerate(data_numbers[start:end]):
-            img = data.get_frame(idx)
-            dewarped_data = dewarp_data(img, dewarp_params)
-            dset.resize((dset_h, dset_w, i + 1))
-            dset[:, :, i] = dewarped_data
-            if idx % 100 == 0:
-                print(f'Estimated time left: {((time.time() - start_time) / i) * (end-start - i)} seconds')
-        dataset_handler.close_file()
-        dbc.Toast(
-            "Data saved!",
-            header="Save Confirmation",
-            icon="success",
-            dismissable=True,
-            duration=5000,
-        )
+        # import time
+        # start_time = time.time()
+        # print('Dewarping data')
+        # for i,idx in enumerate(data_numbers[start:end]):
+        #     img = data.get_frame(idx)
+        #     dewarped_data = dewarp_data(img, dewarp_params)
+        #     dset.resize((dset_h, dset_w, i + 1))
+        #     dset[:, :, i] = dewarped_data
+        #     if idx % 100 == 0:
+        #         print(f'Estimated time left: {((time.time() - start_time) / i) * (end-start - i)} seconds')
+        # dataset_handler.close_file()
+        # dbc.Toast(
+        #     "Data saved!",
+        #     header="Save Confirmation",
+        #     icon="success",
+        #     dismissable=True,
+        #     duration=5000,
+        # )
     return "Save Data"
 
 

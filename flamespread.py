@@ -286,8 +286,26 @@ def right_most_point_over_threshold(y, threshold=0):
     return peaks[-1]
 
 
+def calculate_edge_results_for_exp_name(exp_name):
+    print(f'Loading {exp_name}')
+    dewarped_data = get_dewarped_data(exp_name)
+    print('Finding edge')
+    if 'CANON' in exp_name:
+        peak_method = lambda x, params=None: right_most_point_over_threshold(x, threshold=125)
+        custom_filter = lambda x: x
+    else:
+        peak_method = lambda x, params=None: highest_peak_to_lowest_value(x, min_distance=10, min_height=1, min_width=2,
+                                                                      ambient_weighting=2, high_val=320, low_val=380,
+                                                                      **params)
+        custom_filter = lambda x: band_filter(x, low=150, high=450)
+    # peak_method = highest_peak
+    results = calculate_edge_data(dewarped_data, peak_method, custom_filter=custom_filter)
+    dst_handler.close_file()
+    save_edge_results(exp_name, np.array(results))
+
+
 if __name__ == '__main__':
-    # for exp_name in ['lfs_pmma_DE_6mm_tc_R1_CANON',]:
+    # for exp_name in ['lfs_pmma_DE_6mm_tc_R3_0001',]:
     #     print(f'Loading {exp_name}')
     #     dewarped_data = get_dewarped_data(exp_name)
     #     print('Finding edge')
@@ -300,8 +318,8 @@ if __name__ == '__main__':
 
 
     #Canon
-    exp_name = 'lfs_pmma_DE_6mm_tc_R1_CANON'
-    peak_method = lambda x,params={}: right_most_point_over_threshold(x, threshold=125)
+    exp_name = 'lfs_pmma_DE_6mm_tc_R2_CANON'
+    peak_method = lambda x,params={}: right_most_point_over_threshold(x, threshold=75)
     dewarped_data = get_dewarped_data(exp_name)
     results = calculate_edge_data(dewarped_data, peak_method)
     dst_handler.close_file()

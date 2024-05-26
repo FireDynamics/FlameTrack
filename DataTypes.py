@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from IR_analysis import read_IR_data
 import glob
+import os
 
 class DataClass:
     def __init__(self):
@@ -40,11 +41,12 @@ class ImageData(DataClass):
     def __init__(self, image_folder, image_extension='jpg'):
         super().__init__()
         self.files = glob.glob(f'{image_folder}/*.{image_extension}')
-        self.files = sorted(self.files)
+        self.files = sorted(self.files, key=lambda x: os.path.getmtime(x))
         self.data_numbers = list(range(len(self.files)))
 
     def get_frame(self, framenr) -> np.ndarray:
-        frame = cv2.imread(self.files[framenr], cv2.IMREAD_GRAYSCALE)
+        frame = cv2.imread(self.files[framenr])
+        frame = frame [:,:,1]
         #resize frame to 640x480
         return cv2.resize(frame, (1500, 1000))
 
