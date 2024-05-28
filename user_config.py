@@ -9,7 +9,7 @@ def create_missing_config():
     if not os.path.exists('config.ini'):
         config = configparser.ConfigParser()
         config['DEFAULT'] = {}
-        config['DEFAULT']['data_prefix_path'] = './'
+        config['DEFAULT']['data_prefix_path'] = '/Volumes/Tam Backup/IR'
         config['DEFAULT']['data_folder'] = 'data/'
         config['DEFAULT']['dewarped_data_folder'] = 'dewarped_data/'
         config['DEFAULT']['edge_results_folder'] = 'edge_results/'
