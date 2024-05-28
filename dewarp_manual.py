@@ -38,8 +38,8 @@ def dewarp_exp(exp_name,data):
 # print(IrData(os.path.join(user_config.get_path('data_folder'), 'lfs_pmma_DE_6mm_tc_R4_0001')).data_numbers)
 # dewarp_exp('lfs_pmma_DE_6mm_tc_R4_0001',IrData('lfs_pmma_DE_6mm_tc_R4_0001'))
 if __name__ == '__main__':
-    exp_names = ['lfs_pmma_DE_6mm_tc_R3_0001','lfs_pmma_DE_6mm_tc_R4_0001']
-    exp_names += ['lfs_pmma_DE_6mm_tc_R2_CANON','lfs_pmma_DE_6mm_tc_R3_CANON','lfs_pmma_DE_6mm_tc_R4_CANON']
+    exp_names = ['lfs_pmma_DE_6mm_tc_R3_0001','lfs_pmma_DE_6mm_tc_R4_0001','lfs_pmma_DE_6mm_tc_R1_0001','lfs_pmma_DE_6mm_tc_R2_0001']
+    exp_names += ['lfs_pmma_DE_6mm_tc_R1_CANON','lfs_pmma_DE_6mm_tc_R2_CANON','lfs_pmma_DE_6mm_tc_R3_CANON','lfs_pmma_DE_6mm_tc_R4_CANON']
 
     for exp_name in exp_names:
         if 'CANON' in exp_name:
