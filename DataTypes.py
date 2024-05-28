@@ -47,7 +47,7 @@ class ImageData(DataClass):
     def get_frame(self, framenr) -> np.ndarray:
         frame = cv2.imread(self.files[framenr])
         frame = frame [:,:,1]
-        #resize frame to 640x480
+        #resize frame to 1500x1000
         return cv2.resize(frame, (1500, 1000))
 
     def get_frame_count(self) -> int:

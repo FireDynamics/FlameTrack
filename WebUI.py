@@ -22,8 +22,10 @@ TARGET_RATIO = 15.5 / 80  # ratio of width to height
 # Measurment name is used for saving the data
 # Data structure is: {data}/{MEASUREMENT_NAME}/file1.csv, file2.csv, ...
 # Path where the data folder is located in config.ini
+
+
 exp_names = [f'lfs_pmma_DE_6mm_tc_R{number}_{datatype}' for datatype in ['CANON', 'IR'] for number in [1,2, 3, 4]]
-MEASUREMENT_NAME = exp_names[0]
+MEASUREMENT_NAME = exp_names[3] # <--- Change this to the measurement you want to dewarp
 # exp_names[0] = 'lfs_pmma_DE_6mm_tc_R1_CANON'
 # exp_names[1] = 'lfs_pmma_DE_6mm_tc_R2_CANON'
 # exp_names[2] = 'lfs_pmma_DE_6mm_tc_R3_CANON'
