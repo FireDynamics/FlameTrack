@@ -1,5 +1,7 @@
 import os
 
+import numpy as np
+
 import dataset_handler
 import user_config
 from IR_analysis import dewarp_data
@@ -9,7 +11,8 @@ from flamespread import calculate_edge_results_for_exp_name
 
 
 def dewarp_exp(exp_name, data, testing=False):
-    dset = dataset_handler.get_file(exp_name, 'a')['dewarped_data']['data']
+    grp = dataset_handler.get_file(exp_name, 'a')['dewarped_data']
+
     metadata = dataset_handler.get_dewarped_metadata(exp_name)
     data_numbers = data.data_numbers
     dewarp_params = {}
@@ -28,6 +31,12 @@ def dewarp_exp(exp_name, data, testing=False):
     dewarp_params['target_ratio'] = metadata['target_ratio']
     dewarp_params['selected_points'] = metadata['selected_points']
     dewarp_params['frame_range'] = metadata['frame_range']
+    dset = grp.create_dataset('data',
+                              (dset_h, dset_h, 1),
+                              maxshape=(dset_h, dset_w, None),
+                              chunks=(dset_h, dset_w, 1),
+
+                              dtype=np.float32)
     if testing:
         start = len(data_numbers) // 2 - 10
         end = len(data_numbers) // 2 + 10
