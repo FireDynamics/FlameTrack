@@ -67,3 +67,4 @@ def save_edge_results(exp_name,edge_results):
         if 'data' in grp:
             del grp['data']
         f['edge_results'].create_dataset('data', data=edge_results)
+    close_file()
