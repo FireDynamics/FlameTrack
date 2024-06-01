@@ -23,7 +23,7 @@ def export_csv(exp_name,height_percentage):
     width, height = dh.get_dewarped_data(exp_name).shape[1:]
     y_slice = int(height_percentage * len(edge_results.T))
     dh.close_file()
-    width_factor = target_width/len(edge_results)
+    width_factor = target_width/width
     height_factor = target_height/len(edge_results.T)
     edge_results =edge_results * width_factor
     data = edge_results.T[y_slice]

@@ -40,12 +40,13 @@ MEASUREMENT_NAME = exp_names[3] # <--- Change this to the measurement you want t
 
 
 
-#
-if 'IR' in MEASUREMENT_NAME:
-    data = IrData(os.path.join(user_config.get_path('data_folder'), MEASUREMENT_NAME.replace('IR', "0001")))
-else:
-    data = ImageData(os.path.join(user_config.get_path('canon_folder'), MEASUREMENT_NAME.replace('_CANON', "")), 'JPG')
-
+# #
+# if 'IR' in MEASUREMENT_NAME:
+#     data = IrData(os.path.join(user_config.get_path('data_folder'), MEASUREMENT_NAME.replace('IR', "0001")))
+# else:
+#     data = ImageData(os.path.join(user_config.get_path('canon_folder'), MEASUREMENT_NAME.replace('_CANON', "")), 'JPG')
+MEASUREMENT_NAME='test_data'
+data = IrData('data')
 selected_points = deque(maxlen=4)
 plasma_colors = px.colors.sequential.Plasma
 colorscale = [[i / (len(plasma_colors) - 1), color] for i, color in enumerate(plasma_colors)]
