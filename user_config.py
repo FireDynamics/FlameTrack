@@ -1,54 +1,56 @@
 import configparser
 import os
+import DataTypes
 
 # create config file if not exists
-config_mode = 'DEFAULT'
+config_mode = 'SERVER'
 
 
-def get_default_value(name):
+def __get_default_values():
     default_values = {}
-    default_values ['data_prefix_path'] = '/Volumes/Tam Backup/IR'
-    default_values ['data_folder'] = 'data/'
-    default_values ['dewarped_data_folder'] = 'dewarped_data/'
-    default_values ['edge_results_folder'] = 'edge_results/'
-    default_values ['saved_data'] = 'saved_data/'
-    default_values ['canon_folder'] = r'/Volumes/Tam Backup/OM/'
-    default_values['csv_folder'] = 'csv/'
-    return default_values.get(name, None)
+    default_values ['exp_folder'] = '.'
+    default_values ['IR_folder'] = 'exported_data/'
+    default_values ['saved_data'] = 'processed_data/'
+    return default_values
 
-def create_missing_config():
+def __create_missing_config():
     if not os.path.exists('config.ini'):
         config = configparser.ConfigParser()
-        config['DEFAULT'] = {}
-        config['DEFAULT']['data_prefix_path'] = '/Volumes/Tam Backup/IR'
-        config['DEFAULT']['data_folder'] = 'data/'
-        config['DEFAULT']['dewarped_data_folder'] = 'dewarped_data/'
-        config['DEFAULT']['edge_results_folder'] = 'edge_results/'
-        config['DEFAULT']['saved_data'] = 'saved_data/'
-        config['DEFAULT']['canon_folder'] = r'/Volumes/Tam Backup/OM/'
-        config['DEFAULT']['csv_folder'] = 'csv/'
+        config['DEFAULT'] = __get_default_values()
 
         with open('config.ini', 'w') as configfile:
             config.write(configfile)
 
 
-def get_value(name,config,config_mode = 'DEFAULT'):
+def __get_value(name,config,config_mode = 'DEFAULT'):
     value =  config[config_mode].get(name, None)
     if value is None:
-        value = config['DEFAULT'].get(name, get_default_value(name))
+        try:
+            value = config['DEFAULT']['name']
+        except KeyError:
+            raise KeyError(f'No value for {name} found in config file')
     return value
 
+def get_experiments():
+    config =get_config()
+    exp_folder =__get_value('experiment_folder',config,config_mode)
+    folders = os.listdir(exp_folder)
+    return [folder for folder in folders if os.path.isdir(os.path.join(exp_folder, folder))]
 
-def get_path(name):
-    create_missing_config()
+
+def get_config():
     config = configparser.ConfigParser()
     config.read('config.ini')
-    folder = get_value(name,config,config_mode)
-    path_prefix = get_value('data_prefix_path',config,config_mode)
-    result = os.path.join(path_prefix, folder)
-    if folder is None or not os.path.exists(result):
-        raise FileNotFoundError(
-            f'Folder \"{folder}\" does not exist at \"{path_prefix}\", either create it or change the path for \"{name}\" in config.ini')
-    return result
+    return config
+def get_IR_path(exp_name):
+    config = get_config()
+    exp_folder = __get_value('experiment_folder',config,config_mode)
+    IR_folder = __get_value('IR_folder',config,config_mode)
+    path = os.path.join(exp_folder, exp_name, IR_folder)
+    return path
 
-create_missing_config()
+def get_IR_data(exp_name):
+    return DataTypes.IrData(get_IR_path(exp_name))
+
+
+__create_missing_config()
