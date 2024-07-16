@@ -17,7 +17,7 @@ import dataset_handler
 import user_config
 
 # Parameters for the dewarping
-TARGET_RATIO = 15.5 / 80  # ratio of width to height
+TARGET_RATIO = 100/50  # ratio of height to width
 
 # Measurment name is used for saving the data
 # Data structure is: {data}/{MEASUREMENT_NAME}/file1.csv, file2.csv, ...
@@ -25,8 +25,8 @@ TARGET_RATIO = 15.5 / 80  # ratio of width to height
 
 
 exp_names = [f'lfs_pmma_DE_6mm_tc_R{number}_{datatype}' for datatype in ['CANON', 'IR'] for number in [1,2, 3, 4]]
-MEASUREMENT_NAME = exp_names[3] # <--- Change this to the measurement you want to dewarp
-# exp_names[0] = 'lfs_pmma_DE_6mm_tc_R1_CANON'
+# MEASUREMENT_NAME = exp_names[7] # <--- Change this to the measurement you want to dewarp
+exp_names[0] = 'lfs_pmma_DE_6mm_tc_R1_CANON'
 # exp_names[1] = 'lfs_pmma_DE_6mm_tc_R2_CANON'
 # exp_names[2] = 'lfs_pmma_DE_6mm_tc_R3_CANON'
 # exp_names[3] = 'lfs_pmma_DE_6mm_tc_R4_CANON'
@@ -36,17 +36,21 @@ MEASUREMENT_NAME = exp_names[3] # <--- Change this to the measurement you want t
 # exp_names[7] = 'lfs_pmma_DE_6mm_tc_R4_IR'
 
 
+MEASUREMENT_NAME ='PMMA_DE_6mm_RCE_1m_R3_IR'
+# MEASUREMENT_NAME = exp_names[0]
 
 
 
+#
+if 'IR' in MEASUREMENT_NAME:
+    data = IrData(os.path.join(user_config.get_path('data_folder'), MEASUREMENT_NAME.replace('IR', "0001")))
+else:
+    data = ImageData(os.path.join(user_config.get_path('canon_folder'), MEASUREMENT_NAME.replace('_CANON', "")), 'JPG')
 
-# #
-# if 'IR' in MEASUREMENT_NAME:
-#     data = IrData(os.path.join(user_config.get_path('data_folder'), MEASUREMENT_NAME.replace('IR', "0001")))
-# else:
-#     data = ImageData(os.path.join(user_config.get_path('canon_folder'), MEASUREMENT_NAME.replace('_CANON', "")), 'JPG')
-MEASUREMENT_NAME='test_data'
-data = IrData('data')
+# data =IrData(os.path.join('/Volumes/Revoltec3TB/RST_042024/Export',MEASUREMENT_NAME))
+
+# MEASUREMENT_NAME='testing'
+# data = IrData('data')
 selected_points = deque(maxlen=4)
 plasma_colors = px.colors.sequential.Plasma
 colorscale = [[i / (len(plasma_colors) - 1), color] for i, color in enumerate(plasma_colors)]
@@ -196,11 +200,12 @@ def save_data(n_clicks, frame_range_start, frame_range_end):
         dset_h,dset_w = dewarp_params['target_pixels_height'], dewarp_params['target_pixels_width']
 
         dset = grp.create_dataset('data',
-                  (dset_h, dset_h, 1),
+                  (dset_h, dset_w, 1),
                     maxshape=(dset_h, dset_w, None),
                     chunks=(dset_h, dset_w, 1),
 
                            dtype=np.float32)
+        dataset_handler.close_file()
         # import time
         # start_time = time.time()
         # print('Dewarping data')

@@ -38,7 +38,7 @@ class VideoData(DataClass):
 
 
 class ImageData(DataClass):
-    def __init__(self, image_folder, image_extension='jpg'):
+    def __init__(self, image_folder, image_extension='JPG'):
         super().__init__()
         self.files = glob.glob(f'{image_folder}/*.{image_extension}')
         self.files = sorted(self.files, key=lambda x: os.path.getmtime(x))
@@ -48,6 +48,10 @@ class ImageData(DataClass):
         frame = cv2.imread(self.files[framenr])
         frame = frame [:,:,1]
         #resize frame to 1500x1000
+        return cv2.resize(frame, (1500, 1000))
+
+    def get_org_frame(self, framenr) -> np.ndarray:
+        frame = cv2.imread(self.files[framenr])
         return cv2.resize(frame, (1500, 1000))
 
     def get_frame_count(self) -> int:
