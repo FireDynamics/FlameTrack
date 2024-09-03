@@ -1,4 +1,5 @@
 import cv2
+import h5py
 import numpy as np
 from IR_analysis import read_IR_data
 import glob
@@ -74,4 +75,54 @@ class IrData(DataClass):
 
     def get_frame_count(self) -> int:
         return max(self.data_numbers)
+
+
+class RCE_Experiment:
+    def __init__(self, folder_path):
+        self.folder_path = folder_path
+        self.exp_name = os.path.basename(folder_path)
+        self.IR_data = None
+        self.Video_data = None
+        self.Picture_data = None
+        self._h5_file = None
+
+
+    @property
+    def h5_file(self):
+        try:
+            self._h5_file.close()
+        except:
+            pass
+        self._h5_file = h5py.File(os.path.join(self.folder_path, 'processed_data', self.exp_name + '_results_RCE.h5'), 'a')
+        return self._h5_file
+    @h5_file.setter
+    def h5_file(self, value):
+        self._h5_file = value
+
+
+
+
+    def get_IR_data(self):
+        if not os.path.exists(os.path.join(self.folder_path, 'exported_data')):
+            raise FileNotFoundError('No exported data found')
+        if self.IR_data is None:
+            self.IR_data = IrData(os.path.join(self.folder_path, 'exported_data'))
+        return self.IR_data
+
+    def get_Video_data(self):
+        if not os.path.exists(os.path.join(self.folder_path, 'video')):
+            raise FileNotFoundError('No video data found')
+        file = glob.glob(os.path.join(self.folder_path, 'video', '*.mp4'))[0]
+        return VideoData(file)
+
+    def get_Picture_data(self):
+        if not os.path.exists(os.path.join(self.folder_path, 'images')):
+            raise FileNotFoundError('No image data found')
+        return ImageData(os.path.join(self.folder_path, 'images'))
+
+    def get_processed_data(self):
+        if not os.path.exists(os.path.join(self.folder_path, 'processed_data')):
+            raise FileNotFoundError('No processed data found')
+        return IrData(os.path.join(self.folder_path, 'processed_data'))
+
 

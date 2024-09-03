@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 import glob
 import numpy as np
 import os
-from DataTypes import VideoData, IrData,ImageData
+from DataTypes import VideoData, IrData, ImageData
 import progressbar
 from IR_analysis import sort_corner_points, dewarp_data, get_dewarp_parameters
 from collections import deque
@@ -17,40 +17,16 @@ import dataset_handler
 import user_config
 
 # Parameters for the dewarping
-TARGET_RATIO = 100/50  # ratio of height to width
+TARGET_RATIO = 100 / 50  # ratio of height to width
 
-# Measurment name is used for saving the data
-# Data structure is: {data}/{MEASUREMENT_NAME}/file1.csv, file2.csv, ...
-# Path where the data folder is located in config.ini
+# Select experiments. Must be in folder structure as defined in config.ini
+exp_names = user_config.get_experiments()
+for i, exp_name in enumerate(exp_names):
+    print(f'{i}: {exp_name}')
+MEASUREMENT_NAME = exp_names[0]
+data = IrData(user_config.get_IR_path(MEASUREMENT_NAME))  # load the data
 
-
-exp_names = [f'lfs_pmma_DE_6mm_tc_R{number}_{datatype}' for datatype in ['CANON', 'IR'] for number in [1,2, 3, 4]]
-# MEASUREMENT_NAME = exp_names[7] # <--- Change this to the measurement you want to dewarp
-exp_names[0] = 'lfs_pmma_DE_6mm_tc_R1_CANON'
-# exp_names[1] = 'lfs_pmma_DE_6mm_tc_R2_CANON'
-# exp_names[2] = 'lfs_pmma_DE_6mm_tc_R3_CANON'
-# exp_names[3] = 'lfs_pmma_DE_6mm_tc_R4_CANON'
-# exp_names[4] = 'lfs_pmma_DE_6mm_tc_R1_IR'
-# exp_names[5] = 'lfs_pmma_DE_6mm_tc_R2_IR'
-# exp_names[6] = 'lfs_pmma_DE_6mm_tc_R3_IR'
-# exp_names[7] = 'lfs_pmma_DE_6mm_tc_R4_IR'
-
-
-MEASUREMENT_NAME ='PMMA_DE_6mm_RCE_1m_R3_IR'
-# MEASUREMENT_NAME = exp_names[0]
-
-
-
-#
-if 'IR' in MEASUREMENT_NAME:
-    data = IrData(os.path.join(user_config.get_path('data_folder'), MEASUREMENT_NAME.replace('IR', "0001")))
-else:
-    data = ImageData(os.path.join(user_config.get_path('canon_folder'), MEASUREMENT_NAME.replace('_CANON', "")), 'JPG')
-
-# data =IrData(os.path.join('/Volumes/Revoltec3TB/RST_042024/Export',MEASUREMENT_NAME))
-
-# MEASUREMENT_NAME='testing'
-# data = IrData('data')
+# initialize some variables
 selected_points = deque(maxlen=4)
 plasma_colors = px.colors.sequential.Plasma
 colorscale = [[i / (len(plasma_colors) - 1), color] for i, color in enumerate(plasma_colors)]
@@ -132,8 +108,11 @@ app.layout = dbc.Container([
 
             dcc.Graph(id=raw_data_plot_id, figure=raw_data_fig),
 
-            html.P('Select the file number to display'),
-            dcc.Slider(id='data-slider', min=data_numbers[0], max=data_numbers[-1], value=data_numbers[0],step=1),
+            html.P('Select the file number to display', id='data-slider-label'),
+            dcc.Slider(id='data-slider', min=data_numbers[0], max=data_numbers[-1], value=data_numbers[0], step=1,
+                       marks={int(i): str(int(i)) for i in np.arange(start=data_numbers[0],
+                                                                     stop=data_numbers[-1],
+                                                                     step=round(data_numbers[-1] / 10, -2))}),
             html.P('Select min temperature'),
             dcc.Slider(id='min-temp-slider', min=int(img_min), max=int(img_max), value=int(img_min)),
             html.P('Select max temperature'),
@@ -168,7 +147,6 @@ app.layout = dbc.Container([
 ], fluid=True)
 
 
-
 # Callback for saving the data
 @app.callback(
     Output('save-button', 'children'),  # this output is dummy, just to allow the callback
@@ -188,6 +166,8 @@ def save_data(n_clicks, frame_range_start, frame_range_end):
         start, end = frame_range_start, frame_range_end
         dewarp_params = get_dewarp_parameters(sort_corner_points(selected_points), target_ratio=TARGET_RATIO)
 
+        # write the dewarp parameters to the h5 file
+        # no dewarping is done here
         h5_file = create_h5_file(f'{MEASUREMENT_NAME}')
         grp = h5_file['dewarped_data']
         grp.attrs['transformation_matrix'] = dewarp_params['transformation_matrix']
@@ -197,33 +177,15 @@ def save_data(n_clicks, frame_range_start, frame_range_end):
         grp.attrs['selected_points'] = selected_points
         grp.attrs['frame_range'] = (start, end)
         grp.attrs['points_selection_date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        dset_h,dset_w = dewarp_params['target_pixels_height'], dewarp_params['target_pixels_width']
+        dset_h, dset_w = dewarp_params['target_pixels_height'], dewarp_params['target_pixels_width']
 
         dset = grp.create_dataset('data',
-                  (dset_h, dset_w, 1),
-                    maxshape=(dset_h, dset_w, None),
-                    chunks=(dset_h, dset_w, 1),
+                                  (dset_h, dset_w, 1),
+                                  maxshape=(dset_h, dset_w, None),
+                                  chunks=(dset_h, dset_w, 1),
 
-                           dtype=np.float32)
+                                  dtype=np.float32)
         dataset_handler.close_file()
-        # import time
-        # start_time = time.time()
-        # print('Dewarping data')
-        # for i,idx in enumerate(data_numbers[start:end]):
-        #     img = data.get_frame(idx)
-        #     dewarped_data = dewarp_data(img, dewarp_params)
-        #     dset.resize((dset_h, dset_w, i + 1))
-        #     dset[:, :, i] = dewarped_data
-        #     if idx % 100 == 0:
-        #         print(f'Estimated time left: {((time.time() - start_time) / i) * (end-start - i)} seconds')
-        # dataset_handler.close_file()
-        # dbc.Toast(
-        #     "Data saved!",
-        #     header="Save Confirmation",
-        #     icon="success",
-        #     dismissable=True,
-        #     duration=5000,
-        # )
     return "Save Data"
 
 
@@ -263,6 +225,7 @@ def update_colorscale(min_temp, max_temp):
     Output('max-temp-slider', 'min'),
     Output('max-temp-slider', 'max'),
     Output('max-temp-slider', 'value'),
+    Output('data-slider-label', 'children'),
     Input('data-slider', 'value'),
     prevent_initial_call=True,
 )
@@ -278,7 +241,8 @@ def update_figure(data_index):
     for trace in raw_data_fig.data:
         if trace.name == 'IR_data':
             trace.z = img
-            return raw_data_fig, dewarped_data_fig, img_min, img_max, img_min, img_min, img_max, img_max
+            return (raw_data_fig, dewarped_data_fig, img_min, img_max, img_min, img_min, img_max, img_max,
+                    f"Select the file number to display. Current f ile selected: {data_index}")
 
 
 @app.callback(

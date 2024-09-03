@@ -38,7 +38,7 @@ def export_csv(exp_name,height_percentage,start_frame = 0):
 
 
 if __name__ == '__main__':
-    for exp_name,start in zip(['R1','R2'],[,364]):
+    for exp_name,start in zip(['R1','R2'],[10,364]):
         target_width = 773
         target_height = 133
         for hp in [0.25,0.5,0.75]:

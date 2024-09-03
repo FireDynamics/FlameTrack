@@ -157,7 +157,7 @@ def plot_edge(frame, find_edge_point=right_most_peak):
         plt.scatter(peak, slice, c='purple')
 
 
-def calculate_edge_data(data, find_edge_point, custom_filter=lambda x: x,mirror=False):
+def calculate_edge_data(data, find_edge_point, custom_filter=lambda x: x, left=False):
     # data = data[:,::-1]
     result = []
     bar = progressbar.ProgressBar()
@@ -166,7 +166,7 @@ def calculate_edge_data(data, find_edge_point, custom_filter=lambda x: x,mirror=
         frame = data[:, :, n]
         background_frame = data[:, :, max(n - 1, 0)]
 
-        if mirror:
+        if left:
             frame =np.flip(frame,axis=1)
             background_frame = np.flip(background_frame,axis=1)
         frame_result = []
@@ -192,7 +192,7 @@ def calculate_edge_data(data, find_edge_point, custom_filter=lambda x: x,mirror=
             peak = find_edge_point(y, params =params)
             if peak > 0:
                 peak += start
-            if mirror:
+            if left:
                 peak = frame.shape[1] - peak
             frame_result.append(peak)
         result.append(frame_result)
@@ -294,24 +294,19 @@ def right_most_point_over_threshold(y, threshold=0):
     return peaks[-1]
 
 
-def calculate_edge_results_for_exp_name(exp_name,mirror=False):
+def calculate_edge_results_for_exp_name(exp_name, left=False,dewarped_data=None,save=True):
     print(f'Loading {exp_name}')
-    dewarped_data = get_dewarped_data(exp_name)
+    if dewarped_data is None:
+        dewarped_data = get_dewarped_data(exp_name)
     print('Finding edge')
     if 'CANON' in exp_name:
+        #Settings for videos recorded with Canon camera
         peak_method = lambda x, params=None: right_most_point_over_threshold(x, threshold=125)
         custom_filter = lambda x: x
-    if 'RCE' in exp_name:
-        # peak_method = lambda x, params=None: highest_peak_to_lowest_value(x, min_distance=10, min_height=1, min_width=2,
-        #                                                                   ambient_weighting=1,
-        #                                                                   high_val=220,
-        #                                                                   low_val=250,
-        #                                                                   **params)
-        #
+    elif 'RCE' in exp_name:
+        #Settings for room corner experiment
         peak_method =lambda x,params = None : right_most_point_over_threshold(x,threshold=280)
         custom_filter = lambda x: band_filter(x, low=100, high=380)
-
-
     else:
         # for lateral framespread
         peak_method = lambda x, params=None: highest_peak_to_lowest_value(x, min_distance=10, min_height=1, min_width=2,
@@ -320,31 +315,13 @@ def calculate_edge_results_for_exp_name(exp_name,mirror=False):
         custom_filter = lambda x: band_filter(x, low=150, high=450)
 
 
-        # for room corner experiment
-        #
-    # peak_method = highest_peak
-    results = calculate_edge_data(dewarped_data, peak_method, custom_filter=custom_filter,mirror=mirror)
+    results = calculate_edge_data(dewarped_data, peak_method, custom_filter=custom_filter, left=left)
     dst_handler.close_file()
+    if not save:
+        return results
     save_edge_results(exp_name, np.array(results))
 
 
 if __name__ == '__main__':
-    # for exp_name in ['lfs_pmma_DE_6mm_tc_R3_0001',]:
-    #     print(f'Loading {exp_name}')
-    #     dewarped_data = get_dewarped_data(exp_name)
-    #     print('Finding edge')
-    #     peak_method = lambda x,params = None: highest_peak_to_lowest_value(x, min_distance=10, min_height=1, min_width=2,
-    #                                                          ambient_weighting=2, high_val=320, low_val=380, **params)
-    #     # peak_method = highest_peak
-    #     results = calculate_edge_data(dewarped_data, peak_method, custom_filter=lambda x: band_filter(x, low=150, high=450))
-    #     dst_handler.close_file()
-    #     save_edge_results(exp_name, np.array(results))
+    pass
 
-
-    #Canon
-    exp_name = 'lfs_pmma_DE_6mm_tc_R2_CANON'
-    peak_method = lambda x,params={}: right_most_point_over_threshold(x, threshold=75)
-    dewarped_data = get_dewarped_data(exp_name)
-    results = calculate_edge_data(dewarped_data, peak_method)
-    dst_handler.close_file()
-    save_edge_results(exp_name, np.array(results))

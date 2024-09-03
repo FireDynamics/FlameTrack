@@ -9,7 +9,7 @@ import streamlit as st
 
 
 
-exp_names = os.listdir(user_config.get_path('saved_data'))
+exp_names = os.listdir(user_config.get_path('processed_data'))
 exp_names.sort()
 exp_names = [exp_name for exp_name in exp_names if exp_name.endswith('.h5')]
 exp_names = [exp_name[:-3] for exp_name in exp_names ]

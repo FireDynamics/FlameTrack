@@ -12,9 +12,7 @@ import streamlit.components.v1 as components
 st.title('Framespread Analysis')
 
 
-exp_names = os.listdir(user_config.get_path('saved_data'))
-exp_names = [exp_name for exp_name in exp_names if exp_name.endswith('.h5')]
-exp_names = [exp_name[:-3] for exp_name in exp_names ]
+exp_names = user_config.get_experiments()
 data_form = st.form(key='data_form')
 with data_form:
     exp_name_selected = st.selectbox('Select Experiment', exp_names )
