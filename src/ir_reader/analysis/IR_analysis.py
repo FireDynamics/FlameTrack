@@ -1,9 +1,7 @@
 import numpy as np
 import cv2
-
 import progressbar
-
-import dataset_handler
+from analysis.dataset_handler import *
 
 
 def read_IR_data(filename: str) -> np.ndarray:
@@ -54,7 +52,7 @@ def get_dewarp_parameters(corners, target_pixels_width=None, target_pixels_heigh
 
 
 
-def dewarp_exp(exp_name, data, frequency=10,testing= False,renew=False ):
+def dewarp_exp(exp_name, data, rotationfactor, frequency=10,testing= False,renew=False):
     dewarped_grp = dataset_handler.get_file(exp_name, 'a').get('dewarped_data', None)
     #Should not be necessary (but just in case keep commented)
     # if dewarped_grp is None:
@@ -111,7 +109,7 @@ def dewarp_exp(exp_name, data, frequency=10,testing= False,renew=False ):
     for i, idx in bar(enumerate(data_numbers[start:end:frequency])):
         if not renew and dset.shape[2] > i + 2:
             continue
-        img = data.get_frame(idx)
+        img = data.get_frame(idx, rotationfactor)
         dewarped_data = cv2.remap(img, src_x_map, src_y_map, interpolation=cv2.INTER_LINEAR)
         dset.resize((dset_h, dset_w, i + 1))
         dset[:, :, i] = dewarped_data
@@ -119,7 +117,7 @@ def dewarp_exp(exp_name, data, frequency=10,testing= False,renew=False ):
     return src_x, src_y
 
 
-def dewarp_RCE_exp(experiment, frequency=1,testing= False,renew=False ):
+def dewarp_RCE_exp(experiment, rotationfactor, frequency=1,testing= False,renew=False ):
     h5_file = experiment.h5_file
     data = experiment.get_IR_data()
     dewarped_grp_left = h5_file['dewarped_data_left']
@@ -181,7 +179,7 @@ def dewarp_RCE_exp(experiment, frequency=1,testing= False,renew=False ):
         for dset,src_x_map,src_y_map,dset_w,dset_h in zip(dsets,src_x_maps,src_y_maps,dset_ws,dset_hs):
             if not renew and dset.shape[2] > i + 2:
                 continue
-            img = data.get_frame(idx)
+            img = data.get_frame(idx, rotationfactor)
             dewarped_data = cv2.remap(img, src_x_map, src_y_map, interpolation=cv2.INTER_LINEAR)
             dset.resize((dset_h, dset_w, i + 1))
             dset[:, :, i] = dewarped_data

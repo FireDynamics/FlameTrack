@@ -1,7 +1,7 @@
 import cv2
 import h5py
 import numpy as np
-from IR_analysis import read_IR_data
+from analysis.IR_analysis import read_IR_data
 import glob
 import os
 
@@ -9,7 +9,7 @@ class DataClass:
     def __init__(self):
         self.data_numbers =[]
 
-    def get_frame(self, framenr) -> np.ndarray:
+    def get_frame(self, framenr, rotationfactor) -> np.ndarray:
         pass
 
     def get_frame_count(self) -> int:
@@ -31,7 +31,7 @@ class VideoData(DataClass):
             else:
                 break
         self.data_numbers = list(range(self.get_frame_count()))
-    def get_frame(self, framenr) -> np.ndarray:
+    def get_frame(self, framenr, rotationfactor) -> np.ndarray:
         return cv2.cvtColor(self.data[framenr], cv2.COLOR_BGR2GRAY)
 
     def get_frame_count(self) -> int:
@@ -45,7 +45,7 @@ class ImageData(DataClass):
         self.files = sorted(self.files, key=lambda x: os.path.getmtime(x))
         self.data_numbers = list(range(len(self.files)))
 
-    def get_frame(self, framenr) -> np.ndarray:
+    def get_frame(self, framenr, rotationfactor) -> np.ndarray:
         frame = cv2.imread(self.files[framenr])
         frame = frame [:,:,1]
         #resize frame to 1500x1000
@@ -69,10 +69,11 @@ class IrData(DataClass):
 
     def __sort_files(self):
         pass
-    def get_frame(self, framenr) -> np.ndarray:
+    def get_frame(self, framenr, rotationfactor) -> np.ndarray:
         file = self.files[framenr]
-        return read_IR_data(file)[::-1]
-
+        # Rotate image 
+        return np.rot90(read_IR_data(file)[::-1],rotationfactor)
+    
     def get_frame_count(self) -> int:
         return max(self.data_numbers)
 

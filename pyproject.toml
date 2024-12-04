@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "IR-reader"
+version = "1.0.0"
+description = ""
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    
+]
+classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",,
+    ]
+dependencies = [
+
+]
+
+[project.urls]
+Repository = "https://github.com/FireDynamics/fdsreader"

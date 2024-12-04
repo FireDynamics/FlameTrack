@@ -1,0 +1,12 @@
+# Ignore mac files
+.DS_Store
+
+# Ignore VS Code configuration
+.vscode/
+_environment
+
+# Ignore venv
+/.venv/
+
+# Ignore additional documents
+to_sort/

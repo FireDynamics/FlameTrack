@@ -5,7 +5,7 @@ matplotlib==3.9.2
 numpy==2.1.0
 pandas==2.2.2
 plotly==5.18.0
-progressbar33==2.4
+progressbar2==4.5.0
 PyQt5==5.15.11
 pyqtgraph==0.13.7
 scipy==1.14.1

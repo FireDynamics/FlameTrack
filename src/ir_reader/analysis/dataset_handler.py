@@ -1,6 +1,6 @@
 import h5py
 import os
-import user_config
+import analysis.user_config
 
 
 HDF_FILE = None

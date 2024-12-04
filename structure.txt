@@ -1,0 +1,25 @@
+ir_reader/
+│
+├── src/
+│   ├── ir_reader/
+│   │   ├── __init__.py
+│   │   ├── main.py                   # Entry point of the application
+│   │   ├── gui/
+│   │   │   ├── main_window.py         # Logic class for the main window (previously in one file)
+│   │   │   ├── imshow_canvas.py       # Contains the ImshowCanvas and SelectableImshowCanvas
+│   │   │   ├── ui/
+│   │   │   │   ├── main_window.ui     # The .ui file for the main window layout
+│   │   ├── utils/
+│   │   │   ├── file_handling.py       # Functions for file handling (load, save, etc.)
+│   │   │   ├── data_processing.py     # Functions for data processing (dewarp, edge results)
+│   │   ├── models/
+│   │   │   ├── experiment.py          # RCE_Experiment class and related data models
+│   │   │   ├── __init__.py
+│   ├── tests/
+│   │   ├── test_main.py               # Tests for the main application
+│   │   ├── test_file_handling.py      # Tests for file handling functions
+│   │   ├── test_data_processing.py    # Tests for data processing functions
+│
+├── README.md
+├── requirements.txt                   # List of dependencies (PyQt5, numpy, etc.)
+├── setup.py                           # Package setup file
