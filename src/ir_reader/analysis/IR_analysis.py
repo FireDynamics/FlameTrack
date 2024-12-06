@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import progressbar
-from analysis.dataset_handler import *
+from ir_reader.analysis.dataset_handler import *
 
 
 def read_IR_data(filename: str) -> np.ndarray:

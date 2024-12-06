@@ -9,15 +9,23 @@ description = ""
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
-    
+    {name = "Minh Tam Würzburger"},
+    {name = "Marc Fehr"}
 ]
+
 classifiers=[
         "Programming Language :: Python :: 3",
-        "Operating System :: OS Independent",,
+        "Operating System :: OS Independent",
     ]
 dependencies = [
-
+    "numpy"
 ]
 
+[tool.setuptools]
+packages = ["ir-reader","ir-reader.analysis","ir-reader.gui"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
 [project.urls]
-Repository = "https://github.com/FireDynamics/fdsreader"
+Repository = "https://github.com/FireDynamics/IR-reader"

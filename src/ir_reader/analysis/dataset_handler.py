@@ -1,6 +1,6 @@
 import h5py
 import os
-import analysis.user_config
+import ir_reader.analysis.user_config
 
 
 HDF_FILE = None
