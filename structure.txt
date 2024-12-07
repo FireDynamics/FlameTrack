@@ -23,3 +23,10 @@ ir_reader/
 ├── README.md
 ├── requirements.txt                   # List of dependencies (PyQt5, numpy, etc.)
 ├── setup.py                           # Package setup file
+
+
+
+Testing commands:
+pytest tests
+
+coverage run --source=src -m pytest -v tests && coverage report -m

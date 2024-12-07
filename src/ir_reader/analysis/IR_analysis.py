@@ -33,6 +33,7 @@ def get_dewarp_parameters(corners, target_pixels_width=None, target_pixels_heigh
     if all(x is None for x in [target_pixels_width, target_pixels_height, target_ratio]):
         raise ValueError('Either target_pixels_width and target_pixels_height or target_ratio must be provided')
 
+    # Calculate target size if not provided
     source_corners = np.array(corners, dtype=np.float32)
     if target_pixels_width is None and target_pixels_height is None:
         max_width = max(source_corners[1][0] - source_corners[0][0], source_corners[2][0] - source_corners[3][0])
@@ -46,9 +47,13 @@ def get_dewarp_parameters(corners, target_pixels_width=None, target_pixels_heigh
     # Use getPerspectiveTransform instead of findHomography. findHomography is useful for multiple points since it is
     # able to reject outliers, since only 4 points are used, getPerspectiveTransform is sufficient
     transformation_matrix = cv2.getPerspectiveTransform(source_corners, target_corners)
-    return {'transformation_matrix': transformation_matrix, 'target_pixels_width': target_pixels_width,
-            'target_pixels_height': target_pixels_height, 'target_ratio': target_pixels_height / target_pixels_width}
-
+ 
+    return {
+        'transformation_matrix': transformation_matrix,
+        'target_pixels_width': target_pixels_width,
+        'target_pixels_height': target_pixels_height,
+        'target_ratio': target_pixels_height / target_pixels_width
+    }
 
 
 
