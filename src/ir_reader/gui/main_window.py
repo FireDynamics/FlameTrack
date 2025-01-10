@@ -10,6 +10,8 @@ from datetime import datetime
 import os
 import numpy as np
 
+DATATYPE = 'ir'
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -25,7 +27,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Flamespread Analysis Tool')
 
         ## Set up Dewarp page
-        
+
         # Connect button 
         self.ui.button_open_folder.clicked.connect(self.load_file)
 
@@ -33,18 +35,21 @@ class MainWindow(QMainWindow):
         self.rotation_factor = 0
 
         # Connect signal to slot (function) to handle selection
-        self.ui.combo_rotation.currentIndexChanged.connect(lambda: self.update_plot(framenr=self.ui.slider_frame.value(),rotationfactor=self.rotation_factor))
+        self.ui.combo_rotation.currentIndexChanged.connect(
+            lambda: self.update_plot(framenr=self.ui.slider_frame.value(), rotationfactor=self.rotation_factor))
         # Connect sliders
-        self.ui.slider_frame.sliderReleased.connect(lambda: self.update_plot(framenr=self.ui.slider_frame.value(),rotationfactor=self.rotation_factor))
-        self.ui.slider_scale_min.sliderReleased.connect(lambda: self.update_plot(cmin=self.ui.slider_scale_min.value(),rotationfactor=self.rotation_factor))
-        self.ui.slider_scale_max.sliderReleased.connect(lambda: self.update_plot(cmax=self.ui.slider_scale_max.value(),rotationfactor=self.rotation_factor))
+        self.ui.slider_frame.sliderReleased.connect(
+            lambda: self.update_plot(framenr=self.ui.slider_frame.value(), rotationfactor=self.rotation_factor))
+        self.ui.slider_scale_min.sliderReleased.connect(
+            lambda: self.update_plot(cmin=self.ui.slider_scale_min.value(), rotationfactor=self.rotation_factor))
+        self.ui.slider_scale_max.sliderReleased.connect(
+            lambda: self.update_plot(cmax=self.ui.slider_scale_max.value(), rotationfactor=self.rotation_factor))
 
         # Setup dewarp button
         self.ui.button_dewarp.clicked.connect(self.dewarp)
-        
-        
+
         ## Set up edge recognition tab
-        
+
         # Connect start  edge recognition button
         self.ui.button_find_edge.clicked.connect(self.calculate_edge_results)
 
@@ -53,8 +58,8 @@ class MainWindow(QMainWindow):
         self.ui.slider_analysis_y.setMaximum(100)
         self.ui.slider_analysis_y.setTickPosition(QSlider.TicksBothSides)
         self.ui.slider_analysis_y.setTickInterval(10)
-        self.ui.slider_analysis_y.valueChanged.connect(lambda: self.ui.plot_analysis.plot_edge_results(self.experiment, self.ui.slider_analysis_y.value()/100))       
-        
+        self.ui.slider_analysis_y.valueChanged.connect(
+            lambda: self.ui.plot_analysis.plot_edge_results(self.experiment, self.ui.slider_analysis_y.value() / 100))
 
     def load_file(self):
         folder = QFileDialog.getExistingDirectory(self, 'Select Directory')
@@ -67,9 +72,9 @@ class MainWindow(QMainWindow):
             self.ui.slider_scale_min.setDisabled(False)
             self.ui.slider_scale_max.setDisabled(False)
             self.ui.slider_frame.setMinimum(0)
-            self.ui.slider_frame.setMaximum(self.experiment.get_IR_data().get_frame_count())
+            self.ui.slider_frame.setMaximum(self.experiment.get_data(DATATYPE).get_frame_count())
 
-    def update_plot(self, framenr=None, rotationfactor=None,cmin=None, cmax=None):
+    def update_plot(self, framenr=None, rotationfactor=None, cmin=None, cmax=None):
         if self.experiment is None:
             return
         rotationfactor = self.ui.combo_rotation.currentIndex()
@@ -78,12 +83,13 @@ class MainWindow(QMainWindow):
         cmax = cmax or self.ui.slider_scale_max.value()
         cmin = min(cmin, cmax) / 100
         cmax = max(cmin, cmax) / 100
-        print("update plot:",rotationfactor)
+        print("update plot:", rotationfactor)
         if framenr is None:
             self.ui.plot_dewarping.update_colormap(cmin, cmax)
         else:
-            self.ui.plot_dewarping.plot(self.experiment.get_IR_data().get_frame(framenr,rotationfactor), cmin, cmax)
-        
+            self.ui.plot_dewarping.plot(self.experiment.get_data(DATATYPE).get_frame(framenr, rotationfactor), cmin,
+                                        cmax)
+
     def dewarp(self):
         filename = os.path.join(self.experiment.folder_path, 'processed_data',
                                 f'{self.experiment.exp_name}_results_RCE.h5')
@@ -122,7 +128,7 @@ class MainWindow(QMainWindow):
                 grp.attrs['target_pixels_height'] = dewarp_params['target_pixels_height']
                 grp.attrs['target_ratio'] = dewarp_params['target_ratio']
                 grp.attrs['selected_points'] = selected_points
-                grp.attrs['frame_range'] = [0, self.experiment.get_IR_data().get_frame_count()]
+                grp.attrs['frame_range'] = [0, self.experiment.get_data(DATATYPE).get_frame_count()]
                 grp.attrs['points_selection_date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 dset_h, dset_w = dewarp_params['target_pixels_height'], dewarp_params['target_pixels_width']
                 dset = grp.create_dataset('data',
@@ -136,9 +142,10 @@ class MainWindow(QMainWindow):
             self.ui.button_dewarp.setDisabled(True)
             # refresh the window
             self.ui.progress_dewarping.setFormat('%p%')
-            self.ui.progress_dewarping.setRange(0, self.experiment.get_IR_data().get_frame_count()-1)
+            self.ui.progress_dewarping.setRange(0, self.experiment.get_data(DATATYPE).get_frame_count() - 1)
 
-            for progress in dewarp_RCE_exp(self.experiment, self.ui.combo_rotation.currentIndex(), testing=False,frequency=1):
+            for progress in dewarp_RCE_exp(self.experiment, self.ui.combo_rotation.currentIndex(), testing=False,
+                                           frequency=1,data_type=DATATYPE):
                 self.ui.progress_dewarping.setValue(progress)
                 # refresh the window
                 QApplication.processEvents()
@@ -152,7 +159,6 @@ class MainWindow(QMainWindow):
         dewarped_data_left = self.experiment.h5_file['dewarped_data_left']['data'][:]
         dewarped_data_right = self.experiment.h5_file['dewarped_data_right']['data'][:]
 
-
         # # refresh the window
         # QApplication.processEvents()
         # progressbar = QProgressBar()
@@ -164,15 +170,14 @@ class MainWindow(QMainWindow):
         #     # refresh the window
         #     QApplication.processEvents()
         # self.dewarp_button_layout.removeWidget(progressbar)
-            # refresh the window
-        #self.ui.progress_edge_finding.setFormat('%p%')
-        #self.ui.progress_edge_finding.setRange(0, self.experiment.get_IR_data().get_frame_count()-1)
+        # refresh the window
+        # self.ui.progress_edge_finding.setFormat('%p%')
+        # self.ui.progress_edge_finding.setRange(0, self.experiment.get_IR_data().get_frame_count()-1)
 
-        #for progress in dewarp_RCE_exp(self.experiment, self.ui.combo_rotation.currentIndex(), testing=False,frequency=1):
+        # for progress in dewarp_RCE_exp(self.experiment, self.ui.combo_rotation.currentIndex(), testing=False,frequency=1):
         #    self.ui.progress_edge_finding.setValue(progress)
         #    # refresh the window
         #    QApplication.processEvents()
-
 
         results_left = calculate_edge_results_for_exp_name(self.experiment.exp_name, left=True,
                                                            dewarped_data=dewarped_data_left, save=False)

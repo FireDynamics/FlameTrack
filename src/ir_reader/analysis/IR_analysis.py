@@ -47,7 +47,7 @@ def get_dewarp_parameters(corners, target_pixels_width=None, target_pixels_heigh
     # Use getPerspectiveTransform instead of findHomography. findHomography is useful for multiple points since it is
     # able to reject outliers, since only 4 points are used, getPerspectiveTransform is sufficient
     transformation_matrix = cv2.getPerspectiveTransform(source_corners, target_corners)
- 
+
     return {
         'transformation_matrix': transformation_matrix,
         'target_pixels_width': target_pixels_width,
@@ -56,10 +56,9 @@ def get_dewarp_parameters(corners, target_pixels_width=None, target_pixels_heigh
     }
 
 
-
-def dewarp_exp(exp_name, data, rotationfactor, frequency=10,testing= False,renew=False):
+def dewarp_exp(exp_name, data, rotationfactor, frequency=10, testing=False, renew=False):
     dewarped_grp = dataset_handler.get_file(exp_name, 'a').get('dewarped_data', None)
-    #Should not be necessary (but just in case keep commented)
+    # Should not be necessary (but just in case keep commented)
     # if dewarped_grp is None:
     #     dewarped_grp = dataset_handler.get_file(exp_name, 'a').create_group('dewarped_data')
     #     dset = dewarped_grp.get('data', None)
@@ -122,9 +121,9 @@ def dewarp_exp(exp_name, data, rotationfactor, frequency=10,testing= False,renew
     return src_x, src_y
 
 
-def dewarp_RCE_exp(experiment, rotationfactor, frequency=1,testing= False,renew=False ):
+def dewarp_RCE_exp(experiment, rotationfactor, frequency=1, testing=False, renew=False, data_type='IR'):
     h5_file = experiment.h5_file
-    data = experiment.get_IR_data()
+    data = experiment.get_data(data_type)
     dewarped_grp_left = h5_file['dewarped_data_left']
     dewarped_grp_right = h5_file['dewarped_data_right']
 
@@ -134,7 +133,7 @@ def dewarp_RCE_exp(experiment, rotationfactor, frequency=1,testing= False,renew=
     dset_ws = []
     dset_hs = []
 
-    for dewarped_grp in [dewarped_grp_left,dewarped_grp_right]:
+    for dewarped_grp in [dewarped_grp_left, dewarped_grp_right]:
 
         dset = dewarped_grp['data']
         metadata = dewarped_grp.attrs
@@ -177,11 +176,11 @@ def dewarp_RCE_exp(experiment, rotationfactor, frequency=1,testing= False,renew=
         dset_hs.append(dset_h)
 
     if testing:
-        start = len(data_numbers) // 2 - 10
-        end = len(data_numbers) // 2 + 10
+        start = len(data_numbers) // 2 - 50
+        end = len(data_numbers) // 2 + 50
 
     for i, idx in enumerate(data_numbers[start:end:frequency]):
-        for dset,src_x_map,src_y_map,dset_w,dset_h in zip(dsets,src_x_maps,src_y_maps,dset_ws,dset_hs):
+        for dset, src_x_map, src_y_map, dset_w, dset_h in zip(dsets, src_x_maps, src_y_maps, dset_ws, dset_hs):
             if not renew and dset.shape[2] > i + 2:
                 continue
             img = data.get_frame(idx, rotationfactor)
@@ -189,7 +188,6 @@ def dewarp_RCE_exp(experiment, rotationfactor, frequency=1,testing= False,renew=
             dset.resize((dset_h, dset_w, i + 1))
             dset[:, :, i] = dewarped_data
         yield idx
-
 
 
 def dewarp_data(data, dewarp_params) -> np.ndarray:
@@ -220,7 +218,3 @@ def sort_corner_points(points) -> list:
     sort_by_angle = lambda x: np.arctan2(x[1] - origin[1], x[0] - origin[0])
     points = sorted(points, key=sort_by_angle, reverse=True)
     return points
-
-
-
-
