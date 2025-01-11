@@ -1,4 +1,4 @@
-# IR-Reader
+# FireTrack
 
 #Installation
 1. Install the required packages using the following command:
