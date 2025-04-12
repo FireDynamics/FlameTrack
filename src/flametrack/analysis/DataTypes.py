@@ -1,7 +1,7 @@
 import cv2
 import h5py
 import numpy as np
-from ir_reader.analysis.IR_analysis import read_IR_data
+from flametrack.analysis.IR_analysis import read_IR_data
 import glob
 import os
 

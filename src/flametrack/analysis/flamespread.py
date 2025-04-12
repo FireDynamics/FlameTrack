@@ -7,9 +7,9 @@ import progressbar
 import scipy
 from scipy.stats import skewnorm
 
-import ir_reader.analysis.user_config as user_config
-import ir_reader.analysis.dataset_handler as dst_handler
-from ir_reader.analysis.dataset_handler import get_dewarped_data, get_edge_results, save_edge_results
+import flametrack.analysis.user_config as user_config
+import flametrack.analysis.dataset_handler as dst_handler
+from flametrack.analysis.dataset_handler import get_dewarped_data, get_edge_results, save_edge_results
 import plotly.express as px
 from plotly import graph_objects as go
 

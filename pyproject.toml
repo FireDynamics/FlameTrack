@@ -3,8 +3,8 @@ requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "IR-reader"
-version = "1.0.0"
+name = "FlameTrack"
+version = "1.0.1"
 description = ""
 readme = "README.md"
 license = {file = "LICENSE"}

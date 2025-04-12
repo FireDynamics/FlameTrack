@@ -1,5 +1,5 @@
 import pytest
-from ir_reader.analysis.IR_analysis import get_dewarp_parameters
+from flametrack.analysis.IR_analysis import get_dewarp_parameters
 
 def test_get_dewarp_parameters_valid():
     corners = [[0, 0], [100, 0], [100, 100], [0, 100]]

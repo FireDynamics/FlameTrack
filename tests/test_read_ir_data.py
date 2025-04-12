@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import os
 
-from ir_reader.analysis.IR_analysis import read_IR_data
+from flametrack.analysis.IR_analysis import read_IR_data
 
 def test_read_IR_data_valid():
     file_path = os.path.join(os.path.dirname(__file__), "fixtures", "test_data.txt")

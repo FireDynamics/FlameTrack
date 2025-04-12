@@ -1,7 +1,7 @@
-ir_reader/
+FlameTrack/
 │
 ├── src/
-│   ├── ir_reader/
+│   ├── flametrack/
 │   │   ├── __init__.py
 │   │   ├── main.py                   # Entry point of the application
 │   │   ├── gui/
