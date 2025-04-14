@@ -1,7 +1,6 @@
 import sys
 from PySide6.QtWidgets import QApplication
-from gui.main_window import MainWindow
-
+from flametrack.gui.main_window import MainWindow
 
 def main():
     # Create the application object

@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import progressbar
-from flametrack.analysis.dataset_handler import *
+from analysis.dataset_handler import *
 
 
 def read_IR_data(filename: str) -> np.ndarray:

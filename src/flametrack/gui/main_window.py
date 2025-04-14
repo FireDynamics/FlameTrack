@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QApplication, QProgressBar, QSlider
-from gui.ui_form import Ui_MainWindow  # Import the converted UI class
+from .ui_form import Ui_MainWindow
 from gui.draggable_point import DraggablePoint
 from gui.selectable_imshow_canvas import SelectableImshowCanvas
 from analysis.DataTypes import RCE_Experiment

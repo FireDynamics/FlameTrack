@@ -10,3 +10,6 @@ PyQt5==5.15.11
 pyqtgraph==0.13.7
 scipy==1.14.1
 streamlit==1.38.0
+opencv-python
+pytest
+pytest-cov

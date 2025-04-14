@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "FlameTrack"
-version = "1.0.1"
+version = "1.0.6"
 description = ""
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -18,11 +18,17 @@ classifiers=[
         "Operating System :: OS Independent",
     ]
 dependencies = [
-    "numpy"
+    "numpy",
 ]
 
+[project.scripts]
+TrackFlame = "flametrack.main:main"
+
 [tool.setuptools]
-packages = ["ir-reader","ir-reader.analysis","ir-reader.gui"]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

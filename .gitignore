@@ -10,3 +10,6 @@ _environment
 
 # Ignore additional documents
 to_sort/
+instructions.md
+FlameTrack.egg-info/
+dist/
