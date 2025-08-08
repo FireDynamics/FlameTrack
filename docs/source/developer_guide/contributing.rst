@@ -1,5 +1,5 @@
 Contributing to FlameTrack
-========================
+==========================
 
 Guidelines for contributing:
 
