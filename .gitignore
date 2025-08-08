@@ -56,12 +56,3 @@ devtest.sh
 # Log files
 # ----------------------------
 *.log
-
-# ----------------------------
-# Local experiment / output data (optional)
-# Uncomment if you don't want to commit generated files
-# ----------------------------
-# *.h5
-# *.hdf5
-# *.csv
-# *.tmp
