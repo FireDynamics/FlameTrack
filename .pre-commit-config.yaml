@@ -1,0 +1,41 @@
+repos:
+  # Black: Code-Formatierung
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        args: ["--check", "--diff"]
+
+  # isort: Import-Sortierung
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ["--check-only", "--diff"]
+
+  # Pylint: Codequalität
+  - repo: https://github.com/pycqa/pylint
+    rev: v3.2.7
+    hooks:
+      - id: pylint
+        args: ["--disable=R,C"]
+
+  # MyPy: Typprüfung
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - types-setuptools
+        args: []
+
+  # Standard-Hooks für sauberen Code
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ["--maxkb=6000"]          # ~6 MB
+        exclude: "^tests/fixtures/.*$"  # erlaubt große Dateien nur in tests/fixtures

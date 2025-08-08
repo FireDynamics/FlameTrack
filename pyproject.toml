@@ -1,0 +1,130 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "FlameTrack"
+version = "1.0.0"
+description = "Python tool for image dewarping and flame front tracking in experimental fire research."
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["fire dynamics", "flame tracking", "image analysis", "computer vision"]
+authors = [
+    { name = "Minh Tam Würzburger" },
+    { name = "Marc Fehr" }
+]
+maintainers = [
+  {name = "Marc Fehr", email = "mfehr@uni-wuppertal.de"}
+]
+requires-python = ">=3.10, <3.14"
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "PySide6<=6.9.0",
+    "pyqtgraph",
+    "opencv-python",
+    "progressbar2",
+    "scipy",
+    "h5py",
+    "plotly",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-qt",
+    "pylint",
+    "black",
+    "isort",
+    "mypy",
+    "scikit-image",
+    "coverage[toml]",
+    "sphinx",
+    "sphinx-rtd-theme",
+    "tomli; python_version<'3.11'",
+    "pre-commit"
+]
+
+[project.scripts]
+FlameTrack = "flametrack.main:main"
+flametrack = "flametrack.main:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/flametrack"]
+omit = [
+    "src/flametrack/gui/ui_form.py",
+    "src/flametrack/__init__.py",
+    "src/flametrack/analysis/__init__.py",
+    "src/flametrack/gui/__init__.py",
+    "src/flametrack/main.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError"
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "--cov"
+markers = [
+    "rotation: mark test as related to rotation processing"
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.isort]
+profile = "black"
+known_first_party = ["flametrack"]
+line_length = 88
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+
+# Basis: sinnvolle Defaults, aber nicht Full-Strict:
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+# GUI (PySide6/pyqtgraph haben oft keine Typstubs)
+module = ["flametrack.gui.*"]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+# Tests erstmal nicht blockieren
+module = ["tests.*"]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+# Deine Kernlogik soll sauber bleiben/werden
+module = ["flametrack.analysis.*", "flametrack.processing.*"]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+
+
+[project.urls]
+Repository = "https://github.com/FireDynamics/FlameTrack"

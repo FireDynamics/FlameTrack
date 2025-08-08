@@ -1,0 +1,67 @@
+# ----------------------------
+# OS-specific files
+# ----------------------------
+.DS_Store
+Thumbs.db
+
+# ----------------------------
+# IDE / Editor settings
+# ----------------------------
+.vscode/
+.idea/
+*.code-workspace
+
+# ----------------------------
+# Virtual environments
+# ----------------------------
+.venv/
+env/
+venv/
+_environment
+
+# ----------------------------
+# Python build / distribution artifacts
+# ----------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ----------------------------
+# Test / coverage artifacts
+# ----------------------------
+htmlcov/
+.tox/
+.nox/
+.coverage
+coverage.xml
+.cache/
+pytest_cache/
+
+# ----------------------------
+# Temporary / work files
+# ----------------------------
+to_sort/
+instructions.md
+structure.txt
+devtest.sh
+
+# ----------------------------
+# Log files
+# ----------------------------
+*.log
+
+# ----------------------------
+# Local experiment / output data (optional)
+# Uncomment if you don't want to commit generated files
+# ----------------------------
+# *.h5
+# *.hdf5
+# *.csv
+# *.tmp

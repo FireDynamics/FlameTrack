@@ -1,0 +1,33 @@
+[MASTER]
+ignore=.venv,venv,build,dist
+init-hook='import sys; sys.path.append("src")'
+
+[MESSAGES CONTROL]
+disable=
+    C0114,  # missing-module-docstring
+    C0115,  # missing-class-docstring
+    C0116,  # missing-function-docstring
+    R0903,  # too-few-public-methods
+    R0913,  # too-many-arguments
+    R0914,  # too-many-locals
+    R0915,  # too-many-statements
+    W0511,  # fixme (TODOs sind erlaubt)
+    W0703,  # broad-except (in Testcode erlaubt)
+    C0103,  # invalid-name (z. B. x, y in Mathecode erlaubt)
+
+[FORMAT]
+max-line-length=100
+indent-string='    '
+
+[BASIC]
+good-names=i,j,k,x,y,z,df,ex,_,pt
+variable-rgx=[a-z_][a-z0-9_]{1,30}$
+function-rgx=[a-z_][a-z0-9_]{2,30}$
+
+[TYPECHECK]
+ignored-classes=MagicMock
+
+[REPORTS]
+output-format=colorized
+reports=no
+score=no
