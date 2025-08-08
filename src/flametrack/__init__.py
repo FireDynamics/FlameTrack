@@ -1,6 +1,4 @@
-try:
-    from importlib.metadata import version
-except ImportError:
-    from importlib_metadata import version  # fallback für Python <3.8
+from importlib.metadata import version as _dist_version
 
-__version__ = version("flametrack")
+__all__ = ["__version__"]
+__version__ = _dist_version("FlameTrack")

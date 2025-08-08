@@ -1,56 +1,51 @@
+from __future__ import annotations
+
 import glob
 import os
-from typing import Optional, Tuple
+from abc import ABC, abstractmethod
+from typing import Any, List, Optional, Tuple, TypeAlias, cast
 
 import cv2
 import h5py
 import numpy as np
+from numpy.typing import NDArray
 
 from .IR_analysis import read_IR_data
 
+# Typalias: Frames können ganzzahlig (u. a. uint8) oder float sein
+FrameInt: TypeAlias = NDArray[np.integer]
+FrameFloat: TypeAlias = NDArray[np.floating]
+Frame: TypeAlias = FrameInt | FrameFloat
 
-class DataClass:
+
+class DataClass(ABC):
     """
     Abstract base class for different types of experiment data sources.
     Defines interface for frame access and metadata.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # List of valid frame indices or identifiers
         self.data_numbers: list[int] = []
 
-    def get_frame(self, framenr: int, rotation_index: int) -> np.ndarray:
+    @abstractmethod
+    def get_frame(self, framenr: int, rotation_index: int) -> NDArray[Any]:
         """
         Return a single frame by index, rotated as specified.
         Must be implemented by subclasses.
-
-        Args:
-            framenr: Index of the frame to retrieve.
-            rotation_index: Number of 90 degree rotations (counterclockwise).
-
-        Returns:
-            np.ndarray: Frame image array.
         """
-        pass
+        raise NotImplementedError
 
+    @abstractmethod
     def get_frame_count(self) -> int:
-        """
-        Return the total number of frames available.
-        Must be implemented by subclasses.
-
-        Returns:
-            int: Number of frames.
-        """
-        pass
+        """Return the total number of frames available."""
 
     def get_frame_size(self) -> Tuple[int, int]:
         """
         Returns shape (height, width) of a single frame.
-
-        Returns:
-            Tuple[int, int]: Frame size as (height, width).
         """
-        return self.get_frame(0, 0).shape
+        h, w = self.get_frame(0, 0).shape[:2]
+        return int(h), int(w)
 
 
 class VideoData(DataClass):
@@ -58,12 +53,11 @@ class VideoData(DataClass):
     Handles video files, supports lazy loading or loading full video into memory.
     """
 
-    def __init__(self, videofile: str, load_to_memory: bool = False):
+    def __init__(self, videofile: str, load_to_memory: bool = False) -> None:
         super().__init__()
-        self.data: list[np.ndarray] = []  # In-memory frames if loaded
+        self.data: list[NDArray[np.uint8]] = []  # In-memory frames if loaded (BGR)
         self.videofile = videofile
 
-        # Open video capture
         cap = cv2.VideoCapture(videofile)
 
         if load_to_memory:
@@ -72,103 +66,89 @@ class VideoData(DataClass):
                 ret, frame = cap.read()
                 if not ret:
                     break
-                self.data.append(frame)
-            self.data_numbers = list(range(self.get_frame_count()))
+                # frame: HxWx3 uint8 (BGR)
+                frame_u8 = np.asarray(frame, dtype=np.uint8)
+                self.data.append(frame_u8)
+            cap.release()
+            self.data_numbers = list(range(len(self.data)))
         else:
             # Just store indices, load frames on demand
-            self.data_numbers = list(range(int(cap.get(cv2.CAP_PROP_FRAME_COUNT))))
+            count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            cap.release()
+            self.data_numbers = list(range(count))
 
-    def get_frame(self, framenr: int, rotation_index: int) -> np.ndarray:
-        """
-        Retrieve a video frame, converting to grayscale and applying rotation.
-
-        Args:
-            framenr: Frame index.
-            rotation_index: Number of 90 degree CCW rotations.
-
-        Returns:
-            np.ndarray: Rotated grayscale frame.
-        """
-        if len(self.data) > 0:
-            # In-memory access
-            frame = self.data[framenr]
+    def get_frame(self, framenr: int, rotation_index: int) -> NDArray[np.uint8]:
+        if self.data:
+            frame_bgr: NDArray[np.uint8] = self.data[framenr]
         else:
-            # Load frame from file on demand
             cap = cv2.VideoCapture(self.videofile)
             cap.set(cv2.CAP_PROP_POS_FRAMES, framenr)
-            ret, frame = cap.read()
+            ret, frame_bgr_any = cap.read()
             cap.release()
-            if not ret:
+            if not ret or frame_bgr_any is None:
                 raise IndexError(f"Frame {framenr} could not be read.")
-        # Convert to grayscale
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # Rotate counterclockwise
-        return np.rot90(frame, rotation_index)
+            frame_bgr = cast(NDArray[np.uint8], frame_bgr_any)
+
+        # OpenCV gibt laut Stubs Mat|ndarray zurück → zu uint8 casten
+        frame_gray = cast(
+            NDArray[np.uint8], cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+        )
+
+        # np.rot90 behält dtype, aber mypy kennt das nicht → cast
+        rotated = cast(NDArray[np.uint8], np.rot90(frame_gray, rotation_index))
+        return rotated
 
     def get_frame_count(self) -> int:
-        """
-        Get number of frames in video.
-
-        Returns:
-            int: Frame count.
-        """
         return len(self.data_numbers)
 
 
 class ImageData(DataClass):
     """
-    Handles sequential image files (e.g. JPG) from a folder.
+    Lädt sequenzielle Bilddateien (z. B. JPG/PNG) aus einem Ordner.
+    Liefert uint8-Graustufenframes.
     """
 
-    def __init__(self, image_folder: str, image_extension: str = "JPG"):
+    def __init__(self, image_folder: str, image_extension: str | None = None) -> None:
         super().__init__()
-        # Get all image files matching extension, sorted by modification time
-        self.files: list[str] = glob.glob(f"{image_folder}/*.{image_extension}")
-        self.files.sort(key=lambda x: os.path.getmtime(x))
+        patterns: list[str]
+        if image_extension:
+            # Case-insensitive Pattern aus dem Extension-String bauen
+            ext_pat = "".join(f"[{c.lower()}{c.upper()}]" for c in image_extension)
+            patterns = [os.path.join(image_folder, f"*.{ext_pat}")]
+        else:
+            # Gängige Formate, case-insensitiv
+            patterns = [
+                os.path.join(image_folder, "*.[Jj][Pp][Gg]"),
+                os.path.join(image_folder, "*.[Jj][Pp][Ee][Gg]"),
+                os.path.join(image_folder, "*.[Pp][Nn][Gg]"),
+                os.path.join(image_folder, "*.[Tt][Ii][Ff]"),
+                os.path.join(image_folder, "*.[Tt][Ii][Ff][Ff]"),
+            ]
+
+        files: list[str] = []
+        for pat in patterns:
+            files.extend(glob.glob(pat))
+
+        self.files = sorted(files)
         self.data_numbers = list(range(len(self.files)))
 
-    def get_frame(self, framenr: int, rotation_index: int) -> np.ndarray:
-        """
-        Read and return the resized frame for the given index and rotation.
-        Only the green channel is used.
+    def get_frame(self, framenr: int, rotation_index: int) -> NDArray[np.uint8]:
+        path = self.files[framenr]
+        bgr = cv2.imread(path, cv2.IMREAD_COLOR)
+        if bgr is None:
+            raise FileNotFoundError(f"Image file not found: {path}")
+        gray = cast(NDArray[np.uint8], cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY))
+        rotated = np.rot90(gray, rotation_index)
+        return rotated
 
-        Args:
-            framenr: Frame index.
-            rotation_index: Rotation in 90 deg steps CCW (ignored currently).
-
-        Returns:
-            np.ndarray: Resized frame.
-        """
-        frame = cv2.imread(self.files[framenr])
-        if frame is None:
-            raise FileNotFoundError(f"Image file not found: {self.files[framenr]}")
-        # Use green channel (index 1)
-        frame = frame[:, :, 1]
-        # Resize to fixed 1500x1000 (hardcoded)
-        return cv2.resize(frame, (1500, 1000))
-
-    def get_org_frame(self, framenr: int) -> np.ndarray:
-        """
-        Read original frame without rotation or modification.
-
-        Args:
-            framenr: Frame index.
-
-        Returns:
-            np.ndarray: Resized original frame.
-        """
-        frame = cv2.imread(self.files[framenr])
-        if frame is None:
-            raise FileNotFoundError(f"Image file not found: {self.files[framenr]}")
-        return cv2.resize(frame, (1500, 1000))
+    def get_org_frame(self, framenr: int) -> NDArray[np.uint8]:
+        path = self.files[framenr]
+        bgr = cast(NDArray[np.uint8], cv2.imread(path, cv2.IMREAD_COLOR))
+        if bgr is None:
+            raise FileNotFoundError(f"Image file not found: {path}")
+        return bgr
 
     def get_frame_count(self) -> int:
-        """
-        Number of image frames.
-
-        Returns:
-            int: Number of images.
-        """
         return len(self.files)
 
 
@@ -177,74 +157,38 @@ class IrData(DataClass):
     Handles infrared CSV data files.
     """
 
-    def __init__(self, data_folder: str):
+    def __init__(self, data_folder: str) -> None:
         super().__init__()
         self.data_folder = data_folder
-        # Collect all CSV files in folder
         self.files: list[str] = glob.glob(f"{self.data_folder}/*.csv")
         self.files.sort()
         self.data_numbers = list(range(len(self.files)))
-        # TODO: Add check for missing files in sequence
 
-    def __sort_files(self):
-        """
-        Placeholder for file sorting logic if needed.
-        """
-        pass
+    def __sort_files(self) -> None:
+        """Placeholder for file sorting logic if needed."""
+        # keep for future logic
+        return None
 
-    def get_frame(self, framenr: int, rotation_index: int) -> np.ndarray:
-        """
-        Load and return rotated IR data frame.
-
-        Args:
-            framenr: Frame index.
-            rotation_index: Number of 90 degree rotations CCW.
-
-        Returns:
-            np.ndarray: Rotated IR data frame.
-        """
-        file = self.files[framenr]
-        frame = read_IR_data(file)
+    def get_frame(self, framenr: int, rotation_index: int) -> NDArray[np.float64]:
+        frame = read_IR_data(self.files[framenr])  # float
         return np.rot90(frame, k=rotation_index)
 
-    def get_raw_frame(self, framenr: int) -> np.ndarray:
-        """
-        Return unrotated raw IR frame.
-
-        Args:
-            framenr: Frame index.
-
-        Returns:
-            np.ndarray: Raw IR data frame.
-        """
-        file = self.files[framenr]
-        frame = read_IR_data(file)
+    def get_raw_frame(self, framenr: int) -> FrameFloat:
+        """Return unrotated raw IR frame."""
+        path = self.files[framenr]
+        frame = read_IR_data(path)
         return frame
 
     def get_frame_count(self) -> int:
-        """
-        Number of IR frames available.
-
-        Returns:
-            int: Frame count.
-        """
         return len(self.data_numbers)
 
 
 class RCE_Experiment:
     """
     Manages experiment data and access to various data sources.
-
-    Attributes:
-        folder_path: Path to experiment folder.
-        exp_name: Experiment name derived from folder.
-        IR_data: Cached IR data handler.
-        Video_data: Cached video data handler.
-        Picture_data: Cached image data handler.
-        _h5_file: Cached h5py file handle.
     """
 
-    def __init__(self, folder_path: str):
+    def __init__(self, folder_path: str) -> None:
         self.folder_path = folder_path
         self.exp_name = os.path.basename(folder_path)
         self.IR_data: Optional[IrData] = None
@@ -256,9 +200,6 @@ class RCE_Experiment:
     def h5_file(self) -> h5py.File:
         """
         Lazy-load or reload HDF5 file for experiment results.
-
-        Returns:
-            h5py.File: Open file handle.
         """
         try:
             if self._h5_file is not None:
@@ -275,48 +216,26 @@ class RCE_Experiment:
 
     @h5_file.setter
     def h5_file(self, value: h5py.File) -> None:
-        """
-        Setter for HDF5 file handle.
-
-        Args:
-            value: New file handle.
-        """
+        """Setter for HDF5 file handle."""
         self._h5_file = value
 
     def get_data(self, data_type: str) -> DataClass:
         """
         Retrieve data handler for specified data type.
-
-        Args:
-            data_type: One of 'ir', 'video', 'picture', 'processed'.
-
-        Returns:
-            DataClass: Corresponding data handler instance.
-
-        Raises:
-            ValueError: If unknown data type is requested.
         """
-        data_type = data_type.lower()
-        if data_type == "ir":
+        dt = data_type.lower()
+        if dt == "ir":
             return self._get_IR_data()
-        if data_type == "video":
+        if dt == "video":
             return self._get_video_data()
-        if data_type == "picture":
+        if dt == "picture":
             return self._get_picture_data()
-        if data_type == "processed":
+        if dt == "processed":
             return self._get_processed_data()
         raise ValueError(f"Unknown data type: {data_type}")
 
     def _get_IR_data(self) -> IrData:
-        """
-        Lazily load IR data from exported_data folder.
-
-        Returns:
-            IrData: IR data handler.
-
-        Raises:
-            FileNotFoundError: If expected folder is missing.
-        """
+        """Lazily load IR data from exported_data folder."""
         exported_dir = os.path.join(self.folder_path, "exported_data")
         if not os.path.exists(exported_dir):
             raise FileNotFoundError("No exported data found")
@@ -325,15 +244,7 @@ class RCE_Experiment:
         return self.IR_data
 
     def _get_video_data(self) -> VideoData:
-        """
-        Lazily load video data from video folder.
-
-        Returns:
-            VideoData: Video data handler.
-
-        Raises:
-            FileNotFoundError: If expected folder or files missing.
-        """
+        """Lazily load video data from video folder."""
         video_dir = os.path.join(self.folder_path, "video")
         if not os.path.exists(video_dir):
             raise FileNotFoundError("No video data found")
@@ -343,30 +254,14 @@ class RCE_Experiment:
         return VideoData(file_list[0])
 
     def _get_picture_data(self) -> ImageData:
-        """
-        Lazily load image data from images folder.
-
-        Returns:
-            ImageData: Image data handler.
-
-        Raises:
-            FileNotFoundError: If folder missing.
-        """
+        """Lazily load image data from images folder."""
         image_dir = os.path.join(self.folder_path, "images")
         if not os.path.exists(image_dir):
             raise FileNotFoundError("No image data found")
         return ImageData(image_dir)
 
     def _get_processed_data(self) -> IrData:
-        """
-        Lazily load processed IR data from processed_data folder.
-
-        Returns:
-            IrData: Processed IR data handler.
-
-        Raises:
-            FileNotFoundError: If folder missing.
-        """
+        """Lazily load processed IR data from processed_data folder."""
         processed_dir = os.path.join(self.folder_path, "processed_data")
         if not os.path.exists(processed_dir):
             raise FileNotFoundError("No processed data found")

@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import os
-from typing import Optional
+from typing import Any, Literal, Optional
 
 import h5py
+import numpy as np
+from numpy.typing import NDArray
 
 from flametrack.analysis import user_config
 
 HDF_FILE: Optional[h5py.File] = None
-LOADED_EXP_NAME: Optional[str] = None
+LOADED_FILE_PATH: Optional[str] = None
 
 
 def create_h5_file(
@@ -15,15 +19,15 @@ def create_h5_file(
     """
     Create a new HDF5 file.
     Diese Funktion erzeugt KEINE experiment-spezifischen Gruppen.
-    Gruppen wie 'dewarped_data' oder 'dewarped_data_left/right' werden
-    von den jeweiligen Schreibern (z. B. Dewarping-Funktionen) angelegt
-    oder über init_h5_for_experiment() erstellt.
     """
-    global HDF_FILE
-    global LOADED_EXP_NAME
+    global HDF_FILE, LOADED_FILE_PATH
 
     if filename is None:
+        # -> filename soll aus exp_name abgeleitet werden: exp_name MUSS dann gesetzt sein.
+        if exp_name is None:
+            raise ValueError("exp_name must be provided when filename is None")
         filename = get_h5_file_path(exp_name)
+
     foldername = os.path.dirname(filename)
     os.makedirs(foldername, exist_ok=True)
 
@@ -31,7 +35,7 @@ def create_h5_file(
     f.attrs["file_version"] = "1.0"
 
     HDF_FILE = f
-    LOADED_EXP_NAME = filename
+    LOADED_FILE_PATH = filename
     return f
 
 
@@ -66,16 +70,6 @@ def assert_h5_schema(h5: h5py.File, experiment_type: str) -> None:
 
 
 def get_h5_file_path(exp_name: str, left: bool = False) -> str:
-    """
-    Construct the path to the HDF5 file for the experiment.
-
-    Args:
-        exp_name: Experiment name.
-        left: If True, use suffix '_left'.
-
-    Returns:
-        str: Path to the HDF5 file.
-    """
     left_str = "_left" if left else ""
     return os.path.join(
         user_config.get_path(exp_name, "processed_data"),
@@ -116,32 +110,32 @@ def get_dewarped_metadata(exp_name: str, left: bool = False) -> dict:
     return dict(f["dewarped_data"].attrs)
 
 
-def get_file(exp_name: str, mode: str = "r", left: bool = False) -> h5py.File:
+def get_file(
+    exp_name: str, mode: Literal["r", "a"] = "r", left: bool = False
+) -> h5py.File:
     """
     Open or reuse HDF5 file for the experiment.
-
-    Args:
-        exp_name: Experiment name.
-        mode: File mode ('r' or 'a'), 'w' not supported here.
-        left: Use left variant if True.
-
-    Returns:
-        h5py.File: Opened HDF5 file handle.
     """
     if mode == "w":
         raise ValueError("Use create_h5_file to create a new file")
 
-    global HDF_FILE
-    global LOADED_EXP_NAME
+    global HDF_FILE, LOADED_FILE_PATH
 
-    if HDF_FILE is None:
-        filename = get_h5_file_path(exp_name, left=left)
-        HDF_FILE = h5py.File(filename, mode)
-        LOADED_EXP_NAME = filename
+    wanted_path = get_h5_file_path(exp_name, left=left)
 
-    elif LOADED_EXP_NAME != get_h5_file_path(exp_name, left=left):
-        close_file()
-        return get_file(exp_name, mode, left=left)
+    need_reopen = (
+        HDF_FILE is None
+        or LOADED_FILE_PATH != wanted_path
+        or (
+            hasattr(HDF_FILE, "id") and not HDF_FILE.id.valid
+        )  # falls bereits geschlossen
+    )
+
+    if need_reopen:
+        if HDF_FILE is not None and hasattr(HDF_FILE, "id") and HDF_FILE.id.valid:
+            HDF_FILE.close()
+        HDF_FILE = h5py.File(wanted_path, mode)
+        LOADED_FILE_PATH = wanted_path
 
     return HDF_FILE
 
@@ -149,26 +143,28 @@ def get_file(exp_name: str, mode: str = "r", left: bool = False) -> h5py.File:
 def close_file() -> None:
     """Close the currently opened HDF5 file, if any."""
     global HDF_FILE
-    global LOADED_EXP_NAME
+    global LOADED_FILE_PATH
 
     if HDF_FILE is not None:
         HDF_FILE.close()
         HDF_FILE = None
-        LOADED_EXP_NAME = None
+        LOADED_FILE_PATH = None
 
 
-def save_edge_results(exp_name: str, edge_results, left: bool = False) -> None:
+def save_edge_results(
+    exp_name: str,
+    edge_results: NDArray[np.floating] | NDArray[np.integer],
+    left: bool = False,
+) -> None:
     """
     Save edge results array to the experiment's HDF5 file.
 
-    Args:
-        exp_name: Experiment name.
-        edge_results: Numpy array with edge results.
-        left: Use left variant if True.
+    Opens a fresh file handle just for this write (no global handle usage).
     """
-    with get_file(exp_name, "a", left=left) as f:
-        grp = f["edge_results"]
+    filename = get_h5_file_path(exp_name, left=left)
+    # Ephemeres Handle → kein Einfluss auf globale HDF_FILE/LOADED_FILE_PATH
+    with h5py.File(filename, "a") as f:
+        grp = f.require_group("edge_results")
         if "data" in grp:
             del grp["data"]
         grp.create_dataset("data", data=edge_results)
-    close_file()

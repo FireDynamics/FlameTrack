@@ -1,17 +1,18 @@
 import logging
 import os
 from datetime import datetime
-from typing import Generator, Optional, Sequence, Tuple
+from typing import Any, Generator, Optional, Sequence, Tuple
 
 import cv2
 import h5py
 import numpy as np
+from numpy.typing import NDArray
 
 # NEU: init/assert importieren
 from flametrack.analysis.dataset_handler import (
+    assert_h5_schema,
     create_h5_file,
     init_h5_for_experiment,
-    assert_h5_schema,
 )
 from flametrack.analysis.IR_analysis import (
     compute_remap_from_homography,
@@ -24,8 +25,8 @@ DATATYPE = "IR"
 
 
 def dewarp_room_corner_remap(
-    experiment,
-    points: Sequence[Tuple[float, float]],
+    experiment: Any,
+    points: NDArray[np.float32] | Sequence[Tuple[float, float]],
     target_ratio: float,
     target_pixels_width: int,
     target_pixels_height: int,
@@ -46,9 +47,10 @@ def dewarp_room_corner_remap(
     if target_pixels_width <= 10 or target_pixels_height <= 10:
         raise ValueError("Target image size too small for meaningful dewarping.")
 
-    points = np.array(points, dtype=np.float32)
-    points_left = points[[0, 1, 4, 5]]
-    points_right = points[[1, 2, 3, 4]]
+    pts: NDArray[np.float32] = np.asarray(points, dtype=np.float32)
+
+    points_left = pts[[0, 1, 4, 5]]
+    points_right = pts[[1, 2, 3, 4]]
 
     frame_shape = experiment.get_data(DATATYPE).get_frame(0, 0).shape
     selected_left = rotate_points(points_left, frame_shape, rotation_index)
@@ -103,7 +105,9 @@ def dewarp_room_corner_remap(
                     "target_ratio": params["target_ratio"],
                     "selected_points": pts,
                     "frame_range": [0, experiment.get_data(DATATYPE).get_frame_count()],
-                    "points_selection_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "points_selection_date": datetime.now().strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    ),
                     "error_unit": "pixels",
                     "plate_width_mm": plate_width_mm,
                     "plate_height_mm": plate_height_mm,
@@ -120,7 +124,9 @@ def dewarp_room_corner_remap(
                 grp.attrs["plate_height_mm"] = plate_height_mm
                 grp.attrs.update(res)
             except Exception as e:
-                logging.warning(f"[DEWARP] Resolution estimation failed for {side}: {e}")
+                logging.warning(
+                    f"[DEWARP] Resolution estimation failed for {side}: {e}"
+                )
 
             dset_h = params["target_pixels_height"]
             dset_w = params["target_pixels_width"]
@@ -181,9 +187,8 @@ def dewarp_room_corner_remap(
     experiment.h5_path = filename
 
 
-
 def dewarp_lateral_flame_spread(
-    experiment,
+    experiment: Any,
     points: Sequence[Tuple[float, float]],
     target_ratio: float,
     target_pixels_width: int,
@@ -328,8 +333,10 @@ def dewarp_lateral_flame_spread(
 
 
 def rotate_image_and_points(
-    image: np.ndarray, points: np.ndarray, angle_degrees: float
-) -> Tuple[np.ndarray, np.ndarray]:
+    image: NDArray[np.float32] | NDArray[np.uint8],
+    points: NDArray[np.float32],
+    angle_degrees: float,
+) -> Tuple[NDArray[np.float32], NDArray[np.float32]]:
     """
     Rotate both image and corresponding points.
 
@@ -346,10 +353,10 @@ def rotate_image_and_points(
     M = cv2.getRotationMatrix2D(center, angle_degrees, 1.0)
 
     rotated_img = cv2.warpAffine(image, M, (w_img, h_img))
-    points_h = np.hstack([points, np.ones((points.shape[0], 1))])
+    points_h = np.hstack([points, np.ones((points.shape[0], 1), dtype=points.dtype)])
     rotated_pts = (M @ points_h.T).T.astype(np.float32)
+    return rotated_img.astype(np.float32, copy=False), rotated_pts
 
-    return rotated_img, rotated_pts
 
 # ==============================================================================
 # ARCHIVED FUNCTION — no longer used in GUI (replaced by dewarp_room_corner_remap)

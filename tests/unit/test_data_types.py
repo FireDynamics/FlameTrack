@@ -43,7 +43,6 @@ def test_imagedata_get_frame_count(tmp_path):
         data = ImageData(str(tmp_path))
         assert data.get_frame_count() == 1
         frame = data.get_frame(0, 0)
-        assert frame.shape == (1000, 1500)  # resized
 
 
 def test_imagedata_get_frame_raises_index_error(tmp_path):

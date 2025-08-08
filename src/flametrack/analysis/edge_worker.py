@@ -5,7 +5,7 @@ import h5py
 import numpy as np
 from PySide6.QtCore import QObject, Signal
 
-from flametrack.analysis.flamespread import calculate_edge_data
+from flametrack.analysis.flamespread import EdgeFn, calculate_edge_data
 
 
 class EdgeDetectionWorker(QObject):
@@ -26,8 +26,8 @@ class EdgeDetectionWorker(QObject):
         dataset_key: str,
         result_key: str,
         threshold: int,
-        method: Optional[Callable] = None,
-        flame_direction: Optional[str] = None,  # ✅ NEW
+        method: EdgeFn,
+        flame_direction: Optional[str] = None,
     ):
         """
         Initialize the edge detection worker.
@@ -45,8 +45,8 @@ class EdgeDetectionWorker(QObject):
         self.dataset_key = dataset_key
         self.result_key = result_key
         self.threshold = threshold
-        self.method = method
-        self.flame_direction = flame_direction  # ✅ NEW
+        self.method: EdgeFn = method
+        self.flame_direction = flame_direction
 
     def run(self) -> None:
         """
@@ -63,14 +63,15 @@ class EdgeDetectionWorker(QObject):
         with h5py.File(self.h5_path, "r") as f:
             data = f[self.dataset_key]
             total_frames = data.shape[-1]
+            method = self.method
 
             for i in range(total_frames):
                 frame = data[:, :, i]
 
                 # Perform edge detection using provided method
                 edge = calculate_edge_data(
-                    np.expand_dims(frame, axis=-1),  # shape (H, W, 1)
-                    lambda y, params={}: self.method(y, params=params),
+                    np.expand_dims(frame, axis=-1),
+                    method,  # <- direkt übergeben
                 )
 
                 result.append(edge[0])  # only one frame processed

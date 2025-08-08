@@ -1,12 +1,20 @@
+from __future__ import annotations
+
 import logging
+from typing import Any, Sequence, Tuple
 
 import cv2
 import numpy as np
+from numpy.typing import NDArray
 
 from flametrack.analysis import dataset_handler
 
 
-def compute_remap_from_homography(H, width, height):
+def compute_remap_from_homography(
+    H: NDArray[np.float32] | NDArray[np.float64],
+    width: int,
+    height: int,
+) -> Tuple[NDArray[np.float32], NDArray[np.float32]]:
     """
     Compute remap grids from a homography matrix H.
 
@@ -18,20 +26,25 @@ def compute_remap_from_homography(H, width, height):
     Returns:
         Tuple[np.ndarray, np.ndarray]: src_x and src_y remap matrices.
     """
-    map_x, map_y = np.meshgrid(np.arange(width) + 0.5, np.arange(height) + 0.5)
-    ones = np.ones_like(map_x)
-    target_coords = np.stack([map_x, map_y, ones], axis=-1).reshape(-1, 3).T
+    # Pixelzentren (x+0.5, y+0.5)
+    map_x_f = np.arange(width, dtype=np.float32) + 0.5
+    map_y_f = np.arange(height, dtype=np.float32) + 0.5
+    map_x, map_y = np.meshgrid(map_x_f, map_y_f, indexing="xy")
 
-    source_coords = H @ target_coords
+    ones = np.ones_like(map_x, dtype=np.float32)
+    target_coords = np.stack([map_x, map_y, ones], axis=-1).reshape(-1, 3).T  # (3, N)
+
+    Hf: NDArray[np.float32] = np.asarray(H, dtype=np.float32)
+    source_coords = Hf @ target_coords
     source_coords /= source_coords[2, :]  # normalize
 
-    src_x = source_coords[0, :].reshape((height, width)).astype(np.float32)
-    src_y = source_coords[1, :].reshape((height, width)).astype(np.float32)
+    src_x = source_coords[0, :].reshape((height, width)).astype(np.float32, copy=False)
+    src_y = source_coords[1, :].reshape((height, width)).astype(np.float32, copy=False)
 
     return src_x, src_y
 
 
-def read_IR_data(filename: str) -> np.ndarray:
+def read_IR_data(filename: str) -> NDArray[np.float64]:
     """
     Read raw IR data from CSV-like ASCII export format.
 
@@ -45,68 +58,72 @@ def read_IR_data(filename: str) -> np.ndarray:
         line = f.readline()
         while line:
             if line.startswith("[Data]"):
-                return np.genfromtxt(
+                arr = np.genfromtxt(
                     (line.replace(",", ".")[:-2] for line in f.readlines()),
                     delimiter=";",
                 )
+                return np.asarray(arr, dtype=np.float64)
             line = f.readline()
 
     raise ValueError("No data found in file, check file format!")
 
 
 def get_dewarp_parameters(
-    corners,
-    target_pixels_width=None,
-    target_pixels_height=None,
-    target_ratio=None,
-    plate_width_m=None,
-    plate_height_m=None,
-    pixels_per_millimeter=1,
-) -> dict:
+    corners: NDArray[np.float32] | Sequence[Tuple[float, float]],
+    target_pixels_width: int | None = None,
+    target_pixels_height: int | None = None,
+    target_ratio: float | None = None,
+    plate_width_m: float | None = None,
+    plate_height_m: float | None = None,
+    pixels_per_millimeter: int = 1,
+) -> dict[str, Any]:
     """
     Calculate the transformation matrix and target geometry for dewarping.
 
-    Args:
-        corners (array-like): Four corner points.
-        target_pixels_width (int): Desired width in pixels.
-        target_pixels_height (int): Desired height in pixels.
-        target_ratio (float): Desired width/height ratio.
-        plate_width_m (float): Real-world plate width (optional).
-        plate_height_m (float): Real-world plate height (optional).
-        pixels_per_millimeter (int): Resolution scaling factor.
-
     Returns:
-        dict: Dictionary with keys: transformation_matrix, target_pixels_width,
-              target_pixels_height, target_ratio.
+        {
+          "transformation_matrix": np.ndarray(float32, 3x3),
+          "target_pixels_width": int,
+          "target_pixels_height": int,
+          "target_ratio": float,   # height/width (wie in deinem Original)
+        }
     """
     buffer = 1.1
-    source_corners = np.array(corners, dtype=np.float32)
+    source_corners: NDArray[np.float32] = np.asarray(corners, dtype=np.float32)
 
+    # Falls echte Plattenmaße gegeben sind, direkt daraus Pixel ableiten
     if plate_width_m is not None and plate_height_m is not None:
         target_pixels_width = int(plate_width_m * pixels_per_millimeter)
         target_pixels_height = int(plate_height_m * pixels_per_millimeter)
 
+    # Sonst versucht: aus Ecken + Ratio ableiten
     if target_pixels_width is None or target_pixels_height is None:
         if target_ratio is None:
             raise ValueError("Either plate dimensions or target ratio must be provided")
 
+        # grobe Abschätzung Breite/Höhe in Pixeln aus den Ecken
         max_width = max(
-            source_corners[1][0] - source_corners[0][0],
-            source_corners[2][0] - source_corners[3][0],
+            float(source_corners[1][0] - source_corners[0][0]),
+            float(source_corners[2][0] - source_corners[3][0]),
         )
         max_height = max(
-            source_corners[2][1] - source_corners[1][1],
-            source_corners[3][1] - source_corners[0][1],
+            float(source_corners[2][1] - source_corners[1][1]),
+            float(source_corners[3][1] - source_corners[0][1]),
         )
-        target_pixels_height = int(max(max_height, max_width / target_ratio) * buffer)
-        target_pixels_width = int(target_pixels_height * target_ratio)
+        target_pixels_height = int(
+            max(max_height, max_width / float(target_ratio)) * buffer
+        )
+        target_pixels_width = int(target_pixels_height * float(target_ratio))
+
+    tpw = int(target_pixels_width)  # mypy-safe ints
+    tph = int(target_pixels_height)
 
     target_corners = np.array(
         [
-            [0, 0],
-            [target_pixels_width, 0],
-            [target_pixels_width, target_pixels_height],
-            [0, target_pixels_height],
+            [0.0, 0.0],
+            [float(tpw), 0.0],
+            [float(tpw), float(tph)],
+            [0.0, float(tph)],
         ],
         dtype=np.float32,
     )
@@ -114,10 +131,11 @@ def get_dewarp_parameters(
     transformation_matrix = cv2.getPerspectiveTransform(source_corners, target_corners)
 
     return {
-        "transformation_matrix": transformation_matrix,
-        "target_pixels_width": target_pixels_width,
-        "target_pixels_height": target_pixels_height,
-        "target_ratio": target_pixels_height / target_pixels_width,
+        "transformation_matrix": np.asarray(transformation_matrix, dtype=np.float32),
+        "target_pixels_width": tpw,
+        "target_pixels_height": tph,
+        # Beibehaltung deines bisherigen Verhältnisses (height/width):
+        "target_ratio": float(tph) / float(tpw),
     }
 
 

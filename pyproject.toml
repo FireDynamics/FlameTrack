@@ -97,6 +97,7 @@ target-version = ["py310"]
 [tool.isort]
 profile = "black"
 known_first_party = ["flametrack"]
+known_third_party = ["tomli"]
 line_length = 88
 
 [tool.mypy]
@@ -126,6 +127,23 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true
 
+[tool.pylint]
+init-hook = 'import sys; sys.path.append("src")'
 
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+  "import-error",
+  "unused-import",
+  "unused-argument",
+  "missing-docstring",
+  "too-few-public-methods",
+  "redefined-builtin"
+]
+
+[tool.pylint.BASIC]
+good-names = ["i", "j", "x", "y", "k", "ex", "df"]
+
+[tool.pylint.FORMAT]
+max-line-length = 88
 [project.urls]
 Repository = "https://github.com/FireDynamics/FlameTrack"

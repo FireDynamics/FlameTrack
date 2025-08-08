@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import logging
+from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, Tuple
 
 import cv2
 import matplotlib.pyplot as plt
@@ -15,7 +18,13 @@ from .dataset_handler import get_dewarped_data, save_edge_results
 # =====================================================================================
 
 
-def find_peaks_in_gradient(y, min_distance=10, min_height=2, min_width=2):
+class EdgeFn(Protocol):
+    def __call__(self, y: np.ndarray, params: Optional[Dict] = ...) -> int: ...
+
+
+def find_peaks_in_gradient(
+    y: np.ndarray, min_distance: int = 10, min_height: float = 2, min_width: int = 2
+) -> np.ndarray:
     """
     Find peaks in the negative gradient of a 1D signal.
 
@@ -28,14 +37,23 @@ def find_peaks_in_gradient(y, min_distance=10, min_height=2, min_width=2):
     Returns:
         np.ndarray: Indices of detected peaks.
     """
-    gradient = -np.gradient(y)
-    peaks, _ = find_peaks(
-        gradient, height=min_height, distance=min_distance, width=min_width
-    )
+
+    # Scipy-Stubs wollen hier eine Sequence/Array – Liste mit float passt:
+    g = -np.gradient(y)
+    kwargs: dict[str, Any] = {}
+    if min_height is not None:
+        kwargs["height"] = float(min_height)
+    if min_distance is not None:
+        kwargs["distance"] = int(min_distance)
+    if min_width is not None:
+        kwargs["width"] = float(min_width)
+    peaks, _ = find_peaks(g, **kwargs)
     return peaks
 
 
-def right_most_point_over_threshold(y, threshold=0, params=None):
+def right_most_point_over_threshold(
+    y: np.ndarray, threshold: float = 0, params: Optional[Dict] = None
+) -> int:
     """
     Find the last point in the signal above the given threshold.
 
@@ -51,7 +69,9 @@ def right_most_point_over_threshold(y, threshold=0, params=None):
     return peaks[-1] if len(peaks) else 0
 
 
-def left_most_point_over_threshold(y, threshold=0, params=None):
+def left_most_point_over_threshold(
+    y: np.ndarray, threshold: float = 0, params: Optional[dict] = None
+) -> int:
     """
     Find the first point in the signal above the given threshold.
 
@@ -67,7 +87,9 @@ def left_most_point_over_threshold(y, threshold=0, params=None):
     return peaks[0] if len(peaks) else len(y)
 
 
-def right_most_peak(y, min_distance=10, min_height=2, min_width=2):
+def right_most_peak(
+    y: np.ndarray, min_distance: int = 10, min_height: float = 2, min_width: int = 2
+) -> int:
     """
     Return the right-most peak in the gradient of the signal.
 
@@ -78,7 +100,9 @@ def right_most_peak(y, min_distance=10, min_height=2, min_width=2):
     return peaks[-1] if len(peaks) else 0
 
 
-def highest_peak(y, min_distance=10, min_height=2, min_width=2):
+def highest_peak(
+    y: np.ndarray, min_distance: int = 10, min_height: float = 2, min_width: int = 2
+) -> int:
     """
     Return the index of the peak with the highest gradient.
 
@@ -91,17 +115,17 @@ def highest_peak(y, min_distance=10, min_height=2, min_width=2):
 
 
 def highest_peak_to_lowest_value(
-    y,
-    min_distance=10,
-    min_height=2,
-    min_width=2,
-    ambient_weighting=2,
-    high_val=0,
-    low_val=1e10,
-    direction_weighting=0.0,
-    previous_peak=None,
-    previous_velocity=0,
-):
+    y: np.ndarray,
+    min_distance: int = 10,
+    min_height: float = 2,
+    min_width: int = 2,
+    ambient_weighting: float = 2,
+    high_val: float = 0,
+    low_val: float = 1e10,
+    direction_weighting: float = 0.0,
+    previous_peak: Optional[int] = None,
+    previous_velocity: float = 0,
+) -> int:
     """
     Find the most plausible flame front peak using gradient + ambient suppression + direction.
 
@@ -112,42 +136,48 @@ def highest_peak_to_lowest_value(
     peaks = find_peaks_in_gradient(y, min_distance, min_height, min_width)
 
     y_len = len(y) - 1
-    peaks = [
-        peak
-        for peak in peaks
-        if y[max(peak - 10, 0)] >= high_val and y[min(peak + 10, y_len)] <= low_val
-    ]
-    if len(peaks) == 0:
+    # ❗ nicht zu einer list casten (mypy meckert über Typwechsel).
+    # Danach wieder ndarray machen:
+    peaks = np.array(
+        [
+            int(peak)
+            for peak in peaks
+            if y[max(peak - 10, 0)] >= high_val and y[min(peak + 10, y_len)] <= low_val
+        ],
+        dtype=int,
+    )
+    if peaks.size == 0:
         return 0
 
     peak_values = gradient[peaks]
     ambient_values = y[peaks]
     rv = skewnorm(3)
-    mean, _, _ = skewnorm.stats(3, moments="mvs")
+    mean, _, _ = rv.stats(moments="mvs")
 
-    if previous_peak is not None and previous_peak > 0:
-        if previous_velocity > 5:
-            direction_factor = rv.pdf(
-                (
-                    (np.array(peaks) - previous_peak + previous_velocity)
-                    / previous_velocity
-                )
-                / 10
-                + mean * (1 - 1 / 10)
-            )
-            direction_factor[direction_factor == 0] = 1
-            return peaks[
+    if previous_peak is not None and previous_peak > 0 and previous_velocity > 5:
+        direction_factor = rv.pdf(
+            ((peaks - previous_peak + previous_velocity) / previous_velocity) / 10
+            + mean * (1 - 1 / 10)
+        )
+        direction_factor[direction_factor == 0] = 1
+        return int(
+            peaks[
                 np.argmax(
                     peak_values
-                    / ambient_values**ambient_weighting
-                    * direction_factor**direction_weighting
+                    / (ambient_values**ambient_weighting)
+                    * (direction_factor**direction_weighting)
                 )
             ]
+        )
 
-    return peaks[np.argmax(peak_values / ambient_values**ambient_weighting)]
+    return int(peaks[np.argmax(peak_values / (ambient_values**ambient_weighting))])
 
 
-def calculate_edge_data(data, find_edge_point, custom_filter=lambda x: x):
+def calculate_edge_data(
+    data: np.ndarray,
+    find_edge_point: EdgeFn,
+    custom_filter: Callable[[np.ndarray], np.ndarray] = lambda x: x,
+) -> list[list[int]]:
     """
     Calculates the edge position for each row of each frame.
 
@@ -159,32 +189,39 @@ def calculate_edge_data(data, find_edge_point, custom_filter=lambda x: x):
     Returns:
         list[list[int]]: Edge coordinates per frame.
     """
-    result = []
+    result: list[list[int]] = []
     # bar = progressbar.ProgressBar()
     # for n in bar(range(data.shape[-1])):
     for n in range(data.shape[-1]):
         logging.debug(f"[DEBUG] Processing frame {n + 1}/{data.shape[-1]}")
-        frame = data[:, :, n]
-        background_frame = data[:, :, max(n - 1, 0)]
+        frame = data[:, :, n].astype(np.float32)  # float32 behalten
+        background_frame = data[:, :, max(n - 1, 0)].astype(np.float32)
 
         filtered_frame = custom_filter(frame.copy())
         frame = filtered_frame - custom_filter(background_frame)
 
-        cv2_frame = cv2.normalize(frame, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
-        _, thresh = cv2.threshold(
-            cv2_frame, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
-        )
-        thresh = cv2.dilate(thresh, None, iterations=10)
+        # Nur für Binärmaske → 0..1 float → u8
+        minv = float(filtered_frame.min())
+        maxv = float(filtered_frame.max())
+        if maxv > minv:
+            normed = (filtered_frame - minv) / (maxv - minv)
+        else:
+            normed = np.zeros_like(filtered_frame, dtype=np.float32)
 
-        frame_result = []
+        mask_u8 = (normed * 255.0).astype(np.uint8)
+
+        # Otsu + Morphologie auf u8
+        _, thresh = cv2.threshold(mask_u8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        kernel = np.ones((3, 3), dtype=np.uint8)
+        thresh = cv2.dilate(thresh, kernel, iterations=10)
+
+        frame_result: list[int] = []
         for i in range(frame.shape[0]):
             start, end = 0, -1
             if n < 150:
-                try:
-                    start, end = np.where(thresh[i, :] > 0)[0][[0, -1]]
-                    end += 10
-                except IndexError:
-                    pass
+                idx = np.where(thresh[i, :] > 0)[0]
+                if idx.size:
+                    start, end = int(idx[0]), int(idx[-1]) + 10
 
             y = filtered_frame[i, start:end]
             params = {}
@@ -192,18 +229,23 @@ def calculate_edge_data(data, find_edge_point, custom_filter=lambda x: x):
                 params["previous_peak"] = result[-1][i]
                 params["previous_velocity"] = result[-1][i] - result[-2][i]
 
+            # beide Signaturen erlauben
             peak = find_edge_point(y, params=params)
+
             if peak > 0:
                 peak += start
-            frame_result.append(peak)
+            frame_result.append(int(peak))
         result.append(frame_result)
 
     return result
 
 
 def calculate_edge_results_for_exp_name(
-    exp_name, left=False, dewarped_data=None, save=True
-):
+    exp_name: str,
+    left: bool = False,
+    dewarped_data: Optional[np.ndarray] = None,
+    save: bool = True,
+) -> Optional[np.ndarray]:
     """
     Run full edge detection pipeline for a given experiment name.
 
@@ -241,14 +283,14 @@ def calculate_edge_results_for_exp_name(
             **params,
         )
         custom_filter = lambda x: band_filter(x, low=150, high=450)
-
     results = calculate_edge_data(
         dewarped_data, peak_method, custom_filter=custom_filter
     )
     dst_handler.close_file()
     if not save:
-        return results
+        return np.array(results)
     save_edge_results(exp_name, np.array(results))
+    return None
 
 
 # =====================================================================================
@@ -256,7 +298,9 @@ def calculate_edge_results_for_exp_name(
 # =====================================================================================
 
 
-def band_filter(frame, low=None, high=None):
+def band_filter(
+    frame: np.ndarray, low: Optional[float] = None, high: Optional[float] = None
+) -> np.ndarray:
     """
     Clip intensity values between low and high threshold.
 
@@ -278,7 +322,9 @@ def band_filter(frame, low=None, high=None):
     return frame
 
 
-def plot_edge(frame, find_edge_point=right_most_peak):
+def plot_edge(
+    frame: np.ndarray, find_edge_point: Callable[[np.ndarray], int] = right_most_peak
+) -> None:
     """
     Plot detected edge for each line in the frame.
 
@@ -293,7 +339,9 @@ def plot_edge(frame, find_edge_point=right_most_peak):
         plt.scatter(peak, slice, c="purple")
 
 
-def show_flame_spread(edge_results, y_coord):
+def show_flame_spread(
+    edge_results: np.ndarray, y_coord: int
+) -> tuple[plt.Figure, plt.Axes]:
     """
     Plot flame front x-coordinate over time at a given y-line.
 
@@ -313,7 +361,9 @@ def show_flame_spread(edge_results, y_coord):
     return fig, ax
 
 
-def show_flame_contour(data, edge_results, frame):
+def show_flame_contour(
+    data: np.ndarray, edge_results: np.ndarray, frame: int
+) -> tuple[plt.Figure, plt.Axes]:
     """
     Overlay detected edge on thermal image for a given frame.
 
@@ -333,7 +383,9 @@ def show_flame_contour(data, edge_results, frame):
     return fig, ax
 
 
-def show_flame_spread_velocity(edge_results, y_coord, rolling_window=3):
+def show_flame_spread_velocity(
+    edge_results: np.ndarray, y_coord: int, rolling_window: int = 3
+) -> tuple[plt.Figure, plt.Axes]:
     """
     Plot local velocity of flame front at a fixed y-line.
 
