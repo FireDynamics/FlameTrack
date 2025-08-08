@@ -35,9 +35,9 @@ jobs:
     - name: Run tests with coverage
       run: pytest --cov=src/flametrack --cov-report=xml --cov-report=term
 
-    # Optional: Codecov. Wenn du keinen Token setzt, diesen Block einfach löschen.
     - name: Upload coverage to Codecov
-      if: always()
       uses: codecov/codecov-action@v4
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage.xml
+        fail_ci_if_error: true
+        verbose: true
