@@ -1,12 +1,6 @@
 # FlameTrack
 
-| **Release**                                                                                                                       | **Quality** | **Documentation** |
-|-----------------------------------------------------------------------------------------------------------------------------------|-------------|-------------------|
-| [![PyPI Latest Release](https://img.shields.io/badge/PyPI-Version-blue)](https://pypi.org/project/flametrack/)                    | [![CI Status](https://img.shields.io/badge/Build-Passing-green)](https://github.com/FireDynamics/FlameTrack/actions) | [![Docs Status](https://img.shields.io/badge/Docs-Online-blue)](https://<docs-link>) |
-| ![PyPI - Python Version](https://img.shields.io/badge/Python-%3E%3D3.10-blue)                                                     | [![codecov](https://codecov.io/gh/FireDynamics/FlameTrack/branch/main/graph/badge.svg)](https://codecov.io/gh/FireDynamics/FlameTrack) | [![DOI](https://img.shields.io/badge/DOI-Pending-lightgrey)](https://doi.org/<your-doi>) |
-| [![License](https://img.shields.io/badge/License-Apache_2.0-green)](https://github.com/FireDynamics/FlameTrack/blob/main/LICENSE) | [![Ruff](https://img.shields.io/badge/Linting-Ruff-blue)](https://github.com/astral-sh/ruff) | [![OpenSSF Best Practices](https://img.shields.io/badge/OpenSSF-Best%20Practices-green)](https://bestpractices.coreinfrastructure.org/projects/<id>) |
 
----
 
 FlameTrack is a Python application for analyzing **flame spread experiments**, including **room corner tests** and **lateral flame spread tests**.
 It offers an intuitive graphical user interface (GUI) for:
