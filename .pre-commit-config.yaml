@@ -30,6 +30,17 @@ repos:
         require_serial: true
         files: ^src/
 
+# --- Pylint for CI
+  - repo: https://github.com/PyCQA/pylint
+    rev: v3.2.7
+    hooks:
+      - id: pylint
+        name: pylint (CI)
+        args:
+          - --rcfile=pyproject.toml
+          - -j
+          - "0"
+        files: ^src/
 
   # MyPy: Typprüfung
   - repo: https://github.com/pre-commit/mirrors-mypy
