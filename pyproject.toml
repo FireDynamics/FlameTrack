@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "FlameTrack"
 description = "Python tool for image dewarping and flame front tracking in experimental fire research."
 readme = "README.md"
+dynamic = ["version"]
 license = { file = "LICENSE" }
 keywords = ["fire dynamics", "flame tracking", "image analysis", "computer vision"]
 authors = [
