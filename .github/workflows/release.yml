@@ -17,8 +17,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # wichtig: Tags & History für setuptools-scm
+          fetch-depth: 0        # komplette History
+          fetch-tags: true      # und alle Tags (zusätzliche Sicherheit)
+          ref: ${{ github.ref }}  # baue exakt den Tag-Ref
 
+      - name: Debug git refs (optional)
+        run: |
+          git describe --tags --always || true
+          git tag -n --sort=-creatordate | head -n 5 || true
+
+      - name: Clean previous build outputs
+        run: rm -rf dist build *.egg-info
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -74,8 +83,9 @@ jobs:
           python -c "from importlib.metadata import version; print('Installed:', version('FlameTrack'))"
 
   publish-pypi:
-    name: Publish to PyPI (for stable tags like v1.2.3)
+    name: Publish to PyPI (stable only)
     needs: build
+    # KEINE Vorabkennzeichen → NUR PyPI
     if: startsWith(github.ref_name, 'v') && !contains(github.ref_name, 'a') && !contains(github.ref_name, 'b') && !contains(github.ref_name, 'rc')
     runs-on: ubuntu-latest
     # Optional: require manual approval before going live
@@ -93,7 +103,7 @@ jobs:
           skip-existing: true
 
       - name: Create GitHub Release (triggers Zenodo)
-        if: startsWith(github.ref, 'refs/tags/')   # Safety: nur bei Tag-Push
+        if: startsWith(github.ref, 'refs/tags/')   # nur bei Tag-Push
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
@@ -104,8 +114,7 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: true
-          # falls der Release bereits existiert (z. B. Retry) → aktualisieren statt Fehler
-          allow_updates: true
+          fail_on_unmatched_files: false
           files: |
             dist/*.whl
             dist/*.tar.gz
