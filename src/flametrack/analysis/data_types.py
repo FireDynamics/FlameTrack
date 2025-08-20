@@ -1,8 +1,11 @@
+# pylint: disable=unused-private-member
+
 from __future__ import annotations
 
 import glob
 import os
 from abc import ABC, abstractmethod
+from contextlib import suppress
 from typing import Any, List, Optional, Tuple, TypeAlias, cast
 
 import cv2
@@ -10,7 +13,7 @@ import h5py
 import numpy as np
 from numpy.typing import NDArray
 
-from .IR_analysis import read_IR_data
+from .ir_analysis import read_ir_data
 
 # Typalias: Frames können ganzzahlig (u. a. uint8) oder float sein
 FrameInt: TypeAlias = NDArray[np.integer]
@@ -170,20 +173,20 @@ class IrData(DataClass):
         return None
 
     def get_frame(self, framenr: int, rotation_index: int) -> NDArray[np.float64]:
-        frame = read_IR_data(self.files[framenr])  # float
+        frame = read_ir_data(self.files[framenr])  # float
         return np.rot90(frame, k=rotation_index)
 
     def get_raw_frame(self, framenr: int) -> FrameFloat:
         """Return unrotated raw IR frame."""
         path = self.files[framenr]
-        frame = read_IR_data(path)
+        frame = read_ir_data(path)
         return frame
 
     def get_frame_count(self) -> int:
         return len(self.data_numbers)
 
 
-class RCE_Experiment:
+class RceExperiment:
     """
     Manages experiment data and access to various data sources.
     """
@@ -191,21 +194,18 @@ class RCE_Experiment:
     def __init__(self, folder_path: str) -> None:
         self.folder_path = folder_path
         self.exp_name = os.path.basename(folder_path)
-        self.IR_data: Optional[IrData] = None
-        self.Video_data: Optional[VideoData] = None
-        self.Picture_data: Optional[ImageData] = None
+        self.ir_data: Optional[IrData] = None
+        self.video_data: Optional[VideoData] = None
+        self.picture_data: Optional[ImageData] = None
         self._h5_file: Optional[h5py.File] = None
 
     @property
     def h5_file(self) -> h5py.File:
-        """
-        Lazy-load or reload HDF5 file for experiment results.
-        """
-        try:
+        """Lazy-load or reload HDF5 file for experiment results."""
+        with suppress(OSError, AttributeError, ValueError):
             if self._h5_file is not None:
                 self._h5_file.close()
-        except Exception:
-            pass
+
         self._h5_file = h5py.File(
             os.path.join(
                 self.folder_path, "processed_data", self.exp_name + "_results_RCE.h5"
@@ -225,7 +225,7 @@ class RCE_Experiment:
         """
         dt = data_type.lower()
         if dt == "ir":
-            return self._get_IR_data()
+            return self.get_ir_data()
         if dt == "video":
             return self._get_video_data()
         if dt == "picture":
@@ -234,14 +234,14 @@ class RCE_Experiment:
             return self._get_processed_data()
         raise ValueError(f"Unknown data type: {data_type}")
 
-    def _get_IR_data(self) -> IrData:
+    def get_ir_data(self) -> IrData:
         """Lazily load IR data from exported_data folder."""
         exported_dir = os.path.join(self.folder_path, "exported_data")
         if not os.path.exists(exported_dir):
             raise FileNotFoundError("No exported data found")
-        if self.IR_data is None:
-            self.IR_data = IrData(exported_dir)
-        return self.IR_data
+        if self.ir_data is None:
+            self.ir_data = IrData(exported_dir)
+        return self.ir_data
 
     def _get_video_data(self) -> VideoData:
         """Lazily load video data from video folder."""

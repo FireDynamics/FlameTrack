@@ -1,12 +1,10 @@
 import logging
 import os
-from typing import Callable, Optional, Tuple
+from typing import Optional
 
 import h5py
-import matplotlib.pyplot as plt
 import numpy as np
 import progressbar
-import pyqtgraph as pg
 from PySide6.QtCore import QThread
 from PySide6.QtWidgets import (
     QApplication,
@@ -16,16 +14,21 @@ from PySide6.QtWidgets import (
     QSlider,
 )
 
-from flametrack.analysis.DataTypes import RCE_Experiment
+from flametrack.analysis.data_types import RceExperiment
 from flametrack.analysis.edge_worker import EdgeDetectionWorker
-from flametrack.analysis.flamespread import calculate_edge_results_for_exp_name
+from flametrack.analysis.flamespread import (
+    calculate_edge_data,
+    calculate_edge_results_for_exp_name,
+    left_most_point_over_threshold,
+    right_most_point_over_threshold,
+)
 from flametrack.processing.dewarping import (
+    DewarpConfig,
     dewarp_lateral_flame_spread,
     dewarp_room_corner_remap,
 )
 from flametrack.utils.math_utils import compute_target_ratio
 
-from .draggable_point import DraggablePoint
 from .ui_form import Ui_MainWindow
 
 DATATYPE = "IR"
@@ -42,7 +45,7 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.experiment: Optional[RCE_Experiment] = None
+        self.experiment: Optional[RceExperiment] = None
         self.experiment_type: str = "Lateral Flame Spread"
         self.required_points: int = 4
         self.rotation_index: int = 0
@@ -50,6 +53,20 @@ class MainWindow(QMainWindow):
         self.target_pixels_width: Optional[int] = None
         self.target_pixels_height: Optional[int] = None
         self.edge_workers_done: int = 0
+
+        # Initialize values
+        self.plate_width_m: Optional[float] = None
+        self.plate_height_m: Optional[float] = None
+        self.console_bar: Optional[progressbar.ProgressBar] = None
+        self.console_bar_started: bool = False
+        self.console_bar_left: Optional[progressbar.ProgressBar] = None
+        self.console_bar_right: Optional[progressbar.ProgressBar] = None
+        self.thread: Optional[QThread] = None
+        self.worker: Optional[EdgeDetectionWorker] = None
+        self.thread_left: Optional[QThread] = None
+        self.worker_left: Optional[EdgeDetectionWorker] = None
+        self.thread_right: Optional[QThread] = None
+        self.worker_right: Optional[EdgeDetectionWorker] = None
 
         self._setup_ui()
         self._setup_connections()
@@ -117,6 +134,7 @@ class MainWindow(QMainWindow):
         self.rotation_index = index
         self.update_plot(framenr=self.ui.slider_frame.value(), rotation_factor=index)
 
+    @staticmethod
     def _read_plate_mm_from_h5_root_first(
         h5,
     ) -> tuple[Optional[float], Optional[float]]:
@@ -130,10 +148,10 @@ class MainWindow(QMainWindow):
         Nimmt für die GUI (ein Paar Spinboxes) bevorzugt 'left', fällt sonst auf 'right' zurück.
         """
 
-        def _f(x):
+        def _f(x) -> Optional[float]:
             try:
                 return float(x)
-            except Exception:
+            except (TypeError, ValueError):
                 return None
 
         # 1) Room-Corner Root (left preferred, fallback right)
@@ -175,100 +193,115 @@ class MainWindow(QMainWindow):
 
         return None, None
 
+    # ---- Helper inside MainWindow ------------------------------------------------
+    def _detect_experiment_type_from_h5(self, h5) -> None:
+        """Setzt experiment_type und ComboBox anhand der HDF5-Gruppen."""
+        if "dewarped_data_left" in h5 and "dewarped_data_right" in h5:
+            self.experiment_type = "Room Corner"
+            self.ui.comboBox_experiment_type.setCurrentText("Room Corner")
+        elif "dewarped_data" in h5:
+            self.experiment_type = "Lateral Flame Spread"
+            self.ui.comboBox_experiment_type.setCurrentText("Lateral Flame Spread")
+        else:
+            logging.debug("No dewarped data found in HDF5 - type unchanged.")
+
+    def _read_plate_mm(self, h5) -> tuple[Optional[float], Optional[float]]:
+        """Liest Plattenmaße (mm) – Root bevorzugt, dann Gruppen (Room Corner/LFS)."""
+
+        def _f(x) -> Optional[float]:
+            try:
+                return float(x)
+            except (TypeError, ValueError):
+                return None
+
+        # Room-Corner: Root (left/right)
+        w_mm = h5.attrs.get("plate_width_mm_left")
+        h_mm = h5.attrs.get("plate_height_mm_left")
+        if w_mm is None:
+            w_mm = h5.attrs.get("plate_width_mm_right")
+        if h_mm is None:
+            h_mm = h5.attrs.get("plate_height_mm_right")
+        if w_mm is not None or h_mm is not None:
+            return _f(w_mm), _f(h_mm)
+
+        # Room-Corner: Gruppen
+        if "dewarped_data_left" in h5:
+            g = h5["dewarped_data_left"].attrs
+            w_mm = g.get("plate_width_mm")
+            h_mm = g.get("plate_height_mm")
+        if (w_mm is None or h_mm is None) and "dewarped_data_right" in h5:
+            g = h5["dewarped_data_right"].attrs
+            w_mm = g.get("plate_width_mm") if w_mm is None else w_mm
+            h_mm = g.get("plate_height_mm") if h_mm is None else h_mm
+        if w_mm is not None or h_mm is not None:
+            return _f(w_mm), _f(h_mm)
+
+        # LFS: Root
+        w_mm = h5.attrs.get("plate_width_mm")
+        h_mm = h5.attrs.get("plate_height_mm")
+        if w_mm is not None or h_mm is not None:
+            return _f(w_mm), _f(h_mm)
+
+        # LFS: Gruppe
+        if "dewarped_data" in h5:
+            g = h5["dewarped_data"].attrs
+            return _f(g.get("plate_width_mm")), _f(g.get("plate_height_mm"))
+
+        return None, None
+
+    def _apply_plate_mm_to_spinboxes(
+        self, w_mm: Optional[float], h_mm: Optional[float]
+    ) -> None:
+        """Schreibt (falls vorhanden) die Plattenmaße in die SpinBoxes und aktualisiert Ratio."""
+        wrote_any = False
+        if w_mm is not None:
+            self.ui.doubleSpinBox_plate_width.setValue(w_mm)
+            wrote_any = True
+        if h_mm is not None:
+            self.ui.doubleSpinBox_plate_height.setValue(h_mm)
+            wrote_any = True
+        if wrote_any:
+            self.update_target_ratio()
+            logging.debug("Loaded plate size (mm): %s x %s", w_mm, h_mm)
+        else:
+            logging.debug("Plate size (mm) not found in HDF5 (root or groups).")
+
+    def _enable_controls_after_load(self) -> None:
+        """Aktiviert Slider/Controls nach erfolgreichem Laden und setzt Bereiche."""
+        self.ui.slider_frame.setDisabled(False)
+        self.ui.slider_scale_min.setDisabled(False)
+        self.ui.slider_scale_max.setDisabled(False)
+        frame_count = self.experiment.get_data(DATATYPE).get_frame_count()
+        self.ui.slider_frame.setMinimum(0)
+        self.ui.slider_frame.setMaximum(frame_count)
+
     def load_file(self) -> None:
         """Open directory dialog, load experiment data, set UI elements."""
         folder = QFileDialog.getExistingDirectory(self, "Select Directory")
         if not folder:
             return
 
-        self.experiment = RCE_Experiment(folder)
+        self.experiment = RceExperiment(folder)
         try:
             _ = self.experiment.get_data(DATATYPE)  # force load
             h5 = self.experiment.h5_file
             self.experiment.h5_path = h5.filename
 
-            # --- Experimenttyp aus HDF5 ableiten ---
-            if "dewarped_data_left" in h5 and "dewarped_data_right" in h5:
-                self.experiment_type = "Room Corner"
-                self.ui.comboBox_experiment_type.setCurrentText("Room Corner")
-            elif "dewarped_data" in h5:
-                self.experiment_type = "Lateral Flame Spread"
-                self.ui.comboBox_experiment_type.setCurrentText("Lateral Flame Spread")
-            else:
-                logging.debug("No dewarped data found in HDF5 - type unchanged.")
+            # Experiment-Typ & Plattenmaße ermitteln
+            self._detect_experiment_type_from_h5(h5)
+            w_mm, h_mm = self._read_plate_mm(h5)
+            self._apply_plate_mm_to_spinboxes(w_mm, h_mm)
 
-            # --- Plattenmaße (mm) laden: Root bevorzugt, dann Gruppen ---
-            w_mm = h5.attrs.get("plate_width_mm_left", None)
-            h_mm = h5.attrs.get("plate_height_mm_left", None)
+        except (AttributeError, KeyError, TypeError, ValueError) as exc:
+            logging.debug("Error reading experiment type from HDF5: %s", exc)
 
-            if w_mm is None or h_mm is None:
-                # Fallback auf right am Root
-                w_mm = (
-                    w_mm
-                    if w_mm is not None
-                    else h5.attrs.get("plate_width_mm_right", None)
-                )
-                h_mm = (
-                    h_mm
-                    if h_mm is not None
-                    else h5.attrs.get("plate_height_mm_right", None)
-                )
-
-            if (w_mm is None or h_mm is None) and "dewarped_data_left" in h5:
-                g = h5["dewarped_data_left"].attrs
-                w_mm = g.get("plate_width_mm", w_mm)
-                h_mm = g.get("plate_height_mm", h_mm)
-
-            if (w_mm is None or h_mm is None) and "dewarped_data_right" in h5:
-                g = h5["dewarped_data_right"].attrs
-                w_mm = g.get("plate_width_mm", w_mm)
-                h_mm = g.get("plate_height_mm", h_mm)
-
-            # LFS: einheitliche Keys am Root oder Gruppe
-            if w_mm is None or h_mm is None:
-                w_mm = h5.attrs.get("plate_width_mm", w_mm)
-                h_mm = h5.attrs.get("plate_height_mm", h_mm)
-
-            if (w_mm is None or h_mm is None) and "dewarped_data" in h5:
-                g = h5["dewarped_data"].attrs
-                w_mm = g.get("plate_width_mm", w_mm)
-                h_mm = g.get("plate_height_mm", h_mm)
-
-            # In SpinBoxes schreiben (nur wenn gefunden)
-            def _to_float(x):
-                try:
-                    return float(x)
-                except Exception:
-                    return None
-
-            w_val = _to_float(w_mm)
-            h_val = _to_float(h_mm)
-            if w_val is not None:
-                self.ui.doubleSpinBox_plate_width.setValue(w_val)
-            if h_val is not None:
-                self.ui.doubleSpinBox_plate_height.setValue(h_val)
-
-            if (w_val is not None) or (h_val is not None):
-                self.update_target_ratio()
-                logging.debug(f"Loaded plate size (mm): {w_val} x {h_val}")
-            else:
-                logging.debug("Plate size (mm) not found in HDF5 (root or groups).")
-
-        except Exception as e:
-            logging.debug(f"Error reading experiment type from HDF5: {e}")
-
-        # --- Rest wie gehabt ---
+        # UI & Plots aktualisieren
         self.update_plot(framenr=0)
-        self.ui.slider_frame.setDisabled(False)
-        self.ui.slider_scale_min.setDisabled(False)
-        self.ui.slider_scale_max.setDisabled(False)
-        self.ui.slider_frame.setMinimum(0)
-        self.ui.slider_frame.setMaximum(
-            self.experiment.get_data(DATATYPE).get_frame_count()
-        )
+        self._enable_controls_after_load()
         if self.experiment:
             self.experiment.experiment_type = self.experiment_type
         self.update_edge_preview()
+
         y_cutoff = self.ui.slider_analysis_y.value() / 100
         self.ui.plot_analysis.plot_edge_results(self.experiment, y_cutoff=y_cutoff)
 
@@ -286,9 +319,9 @@ class MainWindow(QMainWindow):
         self.plate_width_m = width_mm / 1000.0
         self.plate_height_m = height_mm / 1000.0
 
-        logging.debug(f"target_ratio: {self.target_ratio}")
-        logging.debug(f"target_pixels_width: {self.target_pixels_width}")
-        logging.debug(f"target_pixels_height: {self.target_pixels_height}")
+        logging.debug("target_ratio: %s", self.target_ratio)
+        logging.debug("target_pixels_width: %s", self.target_pixels_width)
+        logging.debug("target_pixels_height: %s", self.target_pixels_height)
 
     def set_experiment_type(self, experiment_type: str) -> None:
         """Set experiment type and adjust UI visibility and required points."""
@@ -311,7 +344,9 @@ class MainWindow(QMainWindow):
             self.ui.plot_dewarping.clear_points()
 
         logging.debug(
-            f"Set experiment type to {experiment_type} - expecting {self.required_points} points"
+            "Set experiment type to %s - expecting %s points",
+            experiment_type,
+            self.required_points,
         )
 
     def update_plot(
@@ -339,7 +374,11 @@ class MainWindow(QMainWindow):
         cmax = max(cmin, cmax) / 100
 
         logging.debug(
-            f"update_plot: frame={frame}, rotation={rotation_factor}, cmin={cmin}, cmax={cmax}"
+            "update_plot: frame=%s, rotation=%s, cmin=%s, cmax=%s",
+            frame,
+            rotation_factor,
+            cmin,
+            cmax,
         )
 
         img = self.experiment.get_data(DATATYPE).get_frame(frame, rotation_factor)
@@ -402,28 +441,30 @@ class MainWindow(QMainWindow):
         plate_width_mm = self.ui.doubleSpinBox_plate_width.value()
         plate_height_mm = self.ui.doubleSpinBox_plate_height.value()
 
+        cfg = DewarpConfig(
+            target_ratio=self.target_ratio or 1.0,
+            target_pixels_width=self.target_pixels_width or 100,
+            target_pixels_height=self.target_pixels_height or 100,
+            plate_width_mm=plate_width_mm,
+            plate_height_mm=plate_height_mm,
+            rotation_index=rotation_index,
+            filename=None,  # optional; du kannst hier auch einen Pfad setzen
+            frequency=1,
+            testing=False,
+        )
+
         try:
             if experiment_type == "Room Corner" and len(points) == 6:
                 dewarp_generator = dewarp_room_corner_remap(
                     experiment=self.experiment,
                     points=points,
-                    target_ratio=self.target_ratio,
-                    target_pixels_width=self.target_pixels_width,
-                    target_pixels_height=self.target_pixels_height,
-                    plate_width_mm=plate_width_mm,
-                    plate_height_mm=plate_height_mm,
-                    rotation_index=rotation_index,
+                    config=cfg,
                 )
             elif experiment_type == "Lateral Flame Spread" and len(points) == 4:
                 dewarp_generator = dewarp_lateral_flame_spread(
                     experiment=self.experiment,
                     points=points,
-                    target_ratio=self.target_ratio,
-                    target_pixels_width=self.target_pixels_width,
-                    target_pixels_height=self.target_pixels_height,
-                    plate_width_mm=plate_width_mm,
-                    plate_height_mm=plate_height_mm,
-                    rotation_index=rotation_index,
+                    config=cfg,
                 )
             else:
                 QMessageBox.warning(
@@ -462,28 +503,25 @@ class MainWindow(QMainWindow):
 
             self.update_edge_preview()
 
-        except FileExistsError as e:
+        except FileExistsError as err:
             choice = QMessageBox.question(
                 self,
                 "File exists",
-                f"{e}\nOverwrite?",
+                f"{err}\nOverwrite?",
                 QMessageBox.Yes | QMessageBox.No,
             )
             if choice == QMessageBox.Yes:
-                os.remove(str(e))
+                os.remove(str(err))
                 self.on_dewarp_clicked()
             return
-        except Exception as e:
-            logging.exception("Unexpected error during dewarping:")
-            QMessageBox.critical(self, "Error", f"An unexpected error occurred:\n{e}")
+        except (OSError, ValueError, KeyError) as err:
+            logging.error("Unexpected error during dewarping: %s", err)
+            self.ui.button_dewarp.setDisabled(False)
+            QMessageBox.critical(self, "Error", f"An unexpected error occurred:\n{err}")
             return
 
     def start_edge_detection(self) -> None:
         """Start edge detection with multi-threading support."""
-        from flametrack.analysis.flamespread import (
-            left_most_point_over_threshold,
-            right_most_point_over_threshold,
-        )
 
         self._disable_ui_while_edge_detecting()
 
@@ -547,7 +585,9 @@ class MainWindow(QMainWindow):
             "Edge Right: ", max_value=frame_count
         )
         if not hasattr(self, "console_bar_right") or self.console_bar_right is None:
-            self.console_bar_right = self._create_progress_bar("Edge Right: ")
+            self.console_bar_right = self._create_progress_bar(
+                "Edge Right: ", max_value=frame_count
+            )
 
         self.console_bar_left.start()
         self.console_bar_right.start()
@@ -651,7 +691,7 @@ class MainWindow(QMainWindow):
                 del group["data"]
             group.create_dataset("data", data=result_array)
 
-        logging.info(f"Edge detection finished for {side.upper()} side.")
+        logging.info("Edge detection finished for %s side.", side.upper())
 
         self.edge_workers_done += 1
         if (
@@ -714,49 +754,54 @@ class MainWindow(QMainWindow):
                 dataset = h5["dewarped_data_left"]["data"]
                 is_left = True
             else:
-                logging.debug(f"Unknown experiment type: {self.experiment_type}")
+                logging.debug("Unknown experiment type: %s", self.experiment_type)
                 return
 
             frame = dataset[:, :, frame_index]
 
-            from flametrack.analysis.flamespread import (
-                calculate_edge_data,
-                left_most_point_over_threshold,
-                right_most_point_over_threshold,
-            )
-
             threshold = 280  # Default threshold
+
+            def edge_left(y, params=None):
+                return left_most_point_over_threshold(y, threshold=threshold)
+
+            def edge_right(y, params=None):
+                return right_most_point_over_threshold(y, threshold=threshold)
+
+            def identity_filter(x):
+                return x
 
             if self.experiment_type == "Lateral Flame Spread":
                 flame_dir = self.ui.comboBox_flame_direction.currentText()
                 if flame_dir == "Right -> Left":
-                    edge_method = lambda y, params=None: left_most_point_over_threshold(
-                        y, threshold=threshold
-                    )
+                    edge_method = edge_left
                 else:
-                    edge_method = (
-                        lambda y, params=None: right_most_point_over_threshold(
-                            y, threshold=threshold
-                        )
-                    )
+                    edge_method = edge_right
             else:
-                edge_method = lambda y, params=None: left_most_point_over_threshold(
-                    y, threshold=threshold
-                )
+                edge_method = edge_left
 
             edge = calculate_edge_data(
                 data=dataset[:, :, frame_index : frame_index + 1],
                 find_edge_point=edge_method,
-                custom_filter=lambda x: x,
+                custom_filter=identity_filter,
             )[0]
 
             self.ui.plot_edge_preview.plot_with_edge(frame, edge, cmin=0.0, cmax=1.0)
             logging.debug(
-                f"Showing dataset shape: {dataset.shape}, from: {'dewarped_data_left' if is_left else 'dewarped_data'}"
+                "Showing dataset shape: %s, from: %s",
+                dataset.shape,
+                "dewarped_data_left" if is_left else "dewarped_data",
             )
 
-        except Exception as e:
-            logging.debug(f"Could not load edge preview: {e}")
+        except (
+            KeyError,
+            IndexError,
+            AttributeError,
+            TypeError,
+            ValueError,
+            OSError,
+        ) as err:
+            # HDF5-Schlüssel fehlt, Frameindex out-of-range, falsche Typen/Werte, IO
+            logging.debug("Could not load edge preview: %s", err)
 
     def update_flame_direction_visibility(self) -> None:
         """Show or hide flame direction controls based on experiment type."""

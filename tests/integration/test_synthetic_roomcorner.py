@@ -5,8 +5,8 @@ import h5py
 import numpy as np
 import pytest
 
-from flametrack.analysis.DataTypes import RCE_Experiment
-from flametrack.analysis.IR_analysis import read_IR_data
+from flametrack.analysis.data_types import RceExperiment
+from flametrack.analysis.ir_analysis import read_ir_data
 from tests.utils.test_helpers import assert_image_similarity
 
 
@@ -85,7 +85,7 @@ def test_synthetic_roomcorner(mainwindow, tmp_path, save_comparison_image):
     assert csv_path.exists()
 
     # === 4. Experiment initialisieren & Dummy-Datenquelle einfügen ===
-    experiment = RCE_Experiment(str(tmp_path))
+    experiment = RceExperiment(str(tmp_path))
     mainwindow.experiment = experiment
     mainwindow.set_experiment_type("Room Corner")
 
@@ -103,7 +103,7 @@ def test_synthetic_roomcorner(mainwindow, tmp_path, save_comparison_image):
         def get_frame_count(self):
             return len(self.frames)
 
-    dummy_data = DummyIRData(read_IR_data(csv_path))
+    dummy_data = DummyIRData(read_ir_data(csv_path))
     experiment.get_data = lambda _: dummy_data
 
     mainwindow.target_ratio = grad_left.shape[0] / grad_left.shape[1]

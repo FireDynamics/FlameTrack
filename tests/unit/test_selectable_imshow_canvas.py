@@ -79,7 +79,7 @@ def test_update_lines_creates_closed_polygon(canvas):
         "flametrack.gui.selectable_imshow_canvas.sort_corner_points"
     ) as mock_sort:
         mock_sort.return_value = [(0, 0), (1, 0), (1, 1)]
-        canvas.updateLines()
+        canvas.update_lines()
 
     assert canvas.lines._setData_called
 

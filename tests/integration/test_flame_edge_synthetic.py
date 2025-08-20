@@ -41,7 +41,7 @@ def generate_synthetic_stack(n_frames=9, shape=(300, 300), vmin=50, vmax=500):
         x_pixel = int(np.round(x_phys_clipped / 100 * (shape[1] - 1)))
         ground_truth.append(x_pixel)
 
-    stack = np.stack(frames, axis=-1)  # shape: (H, W, F)
+    stack = np.stack(frames, axis=-1)  # shape: (homography, W, F)
     return stack, ground_truth, x, y, x_shifts
 
 

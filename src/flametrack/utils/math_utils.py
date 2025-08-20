@@ -6,8 +6,14 @@ def compute_target_ratio(width: float, height: float) -> float:
 
 
 def estimate_resolution_from_points(
-    p0, p1, p3, plate_width_mm, plate_height_mm, assumed_error_px=0.5
-):
+    p0,
+    p1,
+    p3,
+    plate_width_mm,
+    plate_height_mm,
+    *,
+    assumed_error_px: float = 0.5,
+) -> dict:
     """
     Estimate spatial resolution and absolute measurement uncertainty based on manually marked rectangle.
 

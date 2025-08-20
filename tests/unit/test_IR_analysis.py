@@ -1,6 +1,6 @@
 import pytest
 
-from flametrack.analysis.IR_analysis import get_dewarp_parameters
+from flametrack.analysis.ir_analysis import get_dewarp_parameters
 
 
 def test_get_dewarp_parameters_valid():

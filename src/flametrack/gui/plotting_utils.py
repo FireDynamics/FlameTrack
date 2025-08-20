@@ -30,7 +30,7 @@ def sort_corner_points(
 
         return [tuple(pt) for pt in sorted_pts]
 
-    elif experiment_type == "Lateral Flame Spread":
+    if experiment_type == "Lateral Flame Spread":
         if len(points) != 4:
             raise ValueError("Lateral flame spread expects exactly 4 points.")
 
@@ -44,8 +44,7 @@ def sort_corner_points(
 
         return [tuple(pts[i]) for i in sort_order]
 
-    else:
-        raise ValueError(f"Unknown experiment type: {experiment_type}")
+    raise ValueError(f"Unknown experiment type: {experiment_type}")
 
 
 # import numpy as np
@@ -85,12 +84,12 @@ def rotate_points(points, image_shape, rotation_index):
     center = (image_shape[1] / 2, image_shape[0] / 2)  # (x, y)
 
     # Rotationsmatrix (2x3)
-    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+    rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
 
     # Punkte homogenisieren
     points_np = np.array(points, dtype=np.float32)
     points_h = np.hstack([points_np, np.ones((len(points_np), 1))])  # (N, 3)
 
     # Transformation anwenden
-    rotated = (M @ points_h.T).T
+    rotated = (rotation_matrix @ points_h.T).T
     return rotated.tolist()

@@ -39,7 +39,7 @@ def test_updateGraph_updates_data(monkeypatch):
 
     monkeypatch.setattr(dp, "setData", fake_setData)
 
-    dp.updateGraph()
+    dp.update_graph()
 
     # Check if setData was called with expected keys
     assert "pos" in called
@@ -76,18 +76,18 @@ def test_mouseMoveEvent_moves_point_when_dragging(monkeypatch):
     called_updateLines = False
 
     class DummyParent:
-        def updateLines(self):
+        def update_lines(self):
             nonlocal called_updateLines
             called_updateLines = True
 
     dp.parent = DummyParent()
-    monkeypatch.setattr(dp, "updateGraph", lambda: None)
+    monkeypatch.setattr(dp, "update_graph", lambda: None)
 
     dp.mouseMoveEvent(event)
     # Point should be updated to new pos
     assert dp.scatter_points[0].x() == 20
     assert dp.scatter_points[0].y() == 20
-    # updateLines() of parent should have been called
+    # update_lines() of parent should have been called
     assert called_updateLines is True
 
 
@@ -98,14 +98,14 @@ def test_mouseMoveEvent_does_nothing_when_not_dragging(monkeypatch):
     event = DummyEvent(20, 20)
 
     called_updateGraph = False
-    monkeypatch.setattr(dp, "updateGraph", lambda: nonlocal_set())
+    monkeypatch.setattr(dp, "update_graph", lambda: nonlocal_set())
 
     def nonlocal_set():
         nonlocal called_updateGraph
         called_updateGraph = True
 
     dp.mouseMoveEvent(event)
-    # updateGraph should NOT have been called
+    # update_graph should NOT have been called
     assert called_updateGraph is False
 
 
@@ -126,13 +126,13 @@ def test_deletePoint_deletes_point_when_dragging(monkeypatch):
     dp.dragged_index = 1
 
     called_updateGraph = False
-    monkeypatch.setattr(dp, "updateGraph", lambda: nonlocal_set())
+    monkeypatch.setattr(dp, "update_graph", lambda: nonlocal_set())
 
     def nonlocal_set():
         nonlocal called_updateGraph
         called_updateGraph = True
 
-    dp.deletePoint()
+    dp.delete_point()
     assert len(dp.scatter_points) == 1
     assert dp.dragging is False
     assert dp.dragged_index is None
@@ -145,14 +145,14 @@ def test_deletePoint_does_nothing_when_not_dragging(monkeypatch):
     dp.dragged_index = 0
 
     called_updateGraph = False
-    monkeypatch.setattr(dp, "updateGraph", lambda: nonlocal_set())
+    monkeypatch.setattr(dp, "update_graph", lambda: nonlocal_set())
 
     def nonlocal_set():
         nonlocal called_updateGraph
         called_updateGraph = True
 
-    dp.deletePoint()
+    dp.delete_point()
     # Point count should remain unchanged
     assert len(dp.scatter_points) == 1
-    # updateGraph should NOT have been called
+    # update_graph should NOT have been called
     assert called_updateGraph is False

@@ -1,5 +1,7 @@
+# pylint: disable=too-many-arguments,too-many-positional-arguments
+
 import logging
-from typing import Callable, Optional
+from typing import Optional
 
 import h5py
 import numpy as np
@@ -56,7 +58,7 @@ class EdgeDetectionWorker(QObject):
             - progress: Current progress percentage.
             - finished: Final result as NumPy array and associated result key.
         """
-        logging.info(f"[EDGE WORKER] Starting edge detection on {self.dataset_key}")
+        logging.info("[EDGE WORKER] Starting edge detection on %s", self.dataset_key)
 
         result = []
 
@@ -76,7 +78,6 @@ class EdgeDetectionWorker(QObject):
 
                 result.append(edge[0])  # only one frame processed
                 # self.progress.emit(int((i + 1) / total_frames * 100))
-                progress_value = int(i + 1)
 
                 self.progress.emit(i + 1)
                 # print(f"[EDGE WORKER] Progress emit: {progress_value}% (frame {i + 1}/{total_frames})")
@@ -93,5 +94,5 @@ class EdgeDetectionWorker(QObject):
             if self.flame_direction in ["left_to_right", "right_to_left"]:
                 group.attrs["flame_direction"] = self.flame_direction
 
-        logging.info(f"[EDGE WORKER] Finished processing {total_frames} frames.")
+        logging.info("[EDGE WORKER] Finished processing %d frames.", total_frames)
         self.finished.emit(result_array, self.result_key)

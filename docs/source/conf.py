@@ -1,11 +1,15 @@
+# pylint: disable=invalid-name
+
 import os
 import sys
-from importlib.metadata import version as get_version  # stdlib first, getrennt
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as get_version
 
 try:
     import tomllib  # Python >= 3.11
 except ModuleNotFoundError:
     import tomli as tomllib  # third-party fallback
+
 
 # -- Path setup --------------------------------------------------------------
 sys.path.insert(0, os.path.abspath(os.path.join("..", "..", "src")))
@@ -23,7 +27,7 @@ project_copyright = f"2025, {author}"
 # -- Project version ---------------------------------------------------------
 try:
     release = str(get_version(project))
-except Exception:
+except PackageNotFoundError:
     release = pyproject_data["project"]["version"]
 
 # -- Sphinx extensions -------------------------------------------------------

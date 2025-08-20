@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import pytest
 
-from flametrack.analysis.DataTypes import ImageData, IrData, RCE_Experiment, VideoData
+from flametrack.analysis.data_types import ImageData, IrData, RceExperiment, VideoData
 
 
 # Dummy VideoCapture Mock, der read() korrekt als (ret, frame) liefert
@@ -68,7 +68,8 @@ def test_irdata_get_frame_and_raw_frame(tmp_path):
     with (
         patch("glob.glob", return_value=[str(f) for f in files]),
         patch(
-            "flametrack.analysis.DataTypes.read_IR_data", return_value=np.ones((10, 10))
+            "flametrack.analysis.data_types.read_ir_data",
+            return_value=np.ones((10, 10)),
         ),
         patch("numpy.rot90", side_effect=lambda x, k=1: x),
     ):
@@ -97,12 +98,12 @@ def test_rce_experiment_get_data_variants(tmp_path):
     video_file = tmp_path / "video" / "vid1.mp4"
     video_file.write_bytes(b"dummy")
 
-    rce = RCE_Experiment(str(tmp_path))
+    rce = RceExperiment(str(tmp_path))
 
     with (
-        patch("flametrack.analysis.DataTypes.IrData") as mock_ir,
-        patch("flametrack.analysis.DataTypes.VideoData") as mock_vid,
-        patch("flametrack.analysis.DataTypes.ImageData") as mock_img,
+        patch("flametrack.analysis.data_types.IrData") as mock_ir,
+        patch("flametrack.analysis.data_types.VideoData") as mock_vid,
+        patch("flametrack.analysis.data_types.ImageData") as mock_img,
     ):
 
         mock_ir.return_value = IrData(str(tmp_path / "exported_data"))
@@ -129,7 +130,7 @@ def test_rce_experiment_h5_file_property(tmp_path):
     test_file = proc_dir / f"{tmp_path.name}_results_RCE.h5"
     test_file.write_bytes(b"dummy content")
 
-    rce = RCE_Experiment(str(tmp_path))
+    rce = RceExperiment(str(tmp_path))
 
     with patch("h5py.File") as mock_file:
         mock_handle = MagicMock()
@@ -143,7 +144,7 @@ def test_rce_experiment_h5_file_property(tmp_path):
 
 
 def test_rce_experiment_get_data_file_not_found(tmp_path):
-    rce = RCE_Experiment(str(tmp_path))
+    rce = RceExperiment(str(tmp_path))
     with pytest.raises(FileNotFoundError):
         rce.get_data("ir")
     with pytest.raises(FileNotFoundError):

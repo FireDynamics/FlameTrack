@@ -47,7 +47,8 @@ class SelectableImshowCanvas(ImshowCanvas):
 
         if event.button() == Qt.MouseButton.LeftButton:
             logging.debug(
-                f"[DEBUG] Left click – current point count: {len(self.draggable_points)}"
+                "[DEBUG] Left click – current point count: %d",
+                len(self.draggable_points),
             )
 
             # Anzahl erforderlicher Punkte abhängig vom Parent (Experiment)
@@ -65,14 +66,14 @@ class SelectableImshowCanvas(ImshowCanvas):
             # Mausposition in Datenkoordinaten konvertieren
             mouse_point = self.plot_widget.plotItem.vb.mapSceneToView(event.scenePos())
             x, y = mouse_point.x(), mouse_point.y()
-            logging.debug(f"[DEBUG] Adding point at ({x:.2f}, {y:.2f})")
+            logging.debug("[DEBUG] Adding point at (%.2f, %.2f)", x, y)
 
             # Neuen draggable Punkt erzeugen und hinzufügen
             point = DraggablePoint(x, y, parent=self)
             self.draggable_points.append(point)
             self.plot_widget.addItem(point)
 
-            self.updateLines()
+            self.update_lines()
 
     def keyPressEvent(self, event) -> None:
         """
@@ -81,11 +82,11 @@ class SelectableImshowCanvas(ImshowCanvas):
         'C' löscht alle Punkte.
         """
         if event.key() == Qt.Key.Key_D:
-            self.deleteClosestPoint()
+            self.delete_closest_point()
         elif event.key() == Qt.Key.Key_C:
             self.clear_points()
 
-    def deleteClosestPoint(self) -> None:
+    def delete_closest_point(self) -> None:
         """Löscht den dem Mauszeiger nächstgelegenen Punkt."""
         if not self.draggable_points:
             return
@@ -108,9 +109,9 @@ class SelectableImshowCanvas(ImshowCanvas):
             self.plot_widget.removeItem(closest_point)
             self.draggable_points.remove(closest_point)
 
-        self.updateLines()
+        self.update_lines()
 
-    def updateLines(self) -> None:
+    def update_lines(self) -> None:
         """
         Zeichnet Linien zwischen den gesetzten Punkten.
         Sortiert Punkte je nach Experimenttyp.
@@ -138,7 +139,7 @@ class SelectableImshowCanvas(ImshowCanvas):
             )
             sorted_points.append(sorted_points[0])  # Polygon schließen
         except ValueError as e:
-            logging.debug(f"[WARNING] Cannot update lines: {e}")
+            logging.debug("[WARNING] Cannot update lines: %s", e)
             return
 
         x, y = zip(*sorted_points)
@@ -160,7 +161,7 @@ class SelectableImshowCanvas(ImshowCanvas):
             if self.lines in vb.addedItems:
                 vb.removeItem(self.lines)
             vb.addItem(self.lines)
-            self.updateLines()
+            self.update_lines()
         else:
             logging.debug("[DEBUG] No lines instance present")
 

@@ -40,6 +40,7 @@ dev = [
     "pytest-cov",
     "pytest-qt",
     "pylint",
+    "pylint-venv",
     "black",
     "isort",
     "mypy",
@@ -127,23 +128,54 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true
 
-[tool.pylint]
-init-hook = 'import sys; sys.path.append("src")'
-
-[tool.pylint."MESSAGES CONTROL"]
+[tool.pylint.MAIN]
+# Keep disables minimal; once venv is wired up, import-error should go away
 disable = [
-  "import-error",
-  "unused-import",
-  "unused-argument",
   "missing-docstring",
   "too-few-public-methods",
-  "redefined-builtin"
+  "redefined-builtin",
+  "unused-argument",
+  "unused-import",
 ]
+ignore = ["docs", "tests"]
+ignore-patterns = ["ui_form\\.py$"]
 
 [tool.pylint.BASIC]
 good-names = ["i", "j", "x", "y", "k", "ex", "df"]
 
 [tool.pylint.FORMAT]
-max-line-length = 88
+max-line-length = 120
+
+[tool.pylint.DESIGN]
+max-args = 7
+max-locals = 25
+max-branches = 15
+max-statements = 60
+max-attributes = 25
+
+[tool.pylint.MASTER]
+extension-pkg-allow-list = [
+  "cv2",
+  "numpy",
+  "PySide6.QtCore",
+  "PySide6.QtGui",
+  "PySide6.QtWidgets"
+]
+generated-members = [
+  "cv2.*",
+  "numpy.*",
+  "PySide6.QtCore.*",
+  "PySide6.QtGui.*",
+  "PySide6.QtWidgets.*"
+]
+ignore = ["tests"]
+
+[tool.pylint.SIMILARITIES]
+# Duplikaterkennung entschärfen (betrifft vor allem Tests/Helper)
+min-similarity-lines = 30
+ignore-comments = true
+ignore-docstrings = true
+ignore-imports = true
+
 [project.urls]
 Repository = "https://github.com/FireDynamics/FlameTrack"

@@ -1,3 +1,6 @@
+# pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+# pylint: disable=unnecessary-lambda-assignment
+
 from __future__ import annotations
 
 import logging
@@ -182,7 +185,7 @@ def calculate_edge_data(
     Calculates the edge position for each row of each frame.
 
     Args:
-        data (np.ndarray): 3D array of shape (H, W, T).
+        data (np.ndarray): 3D array of shape (homography, W, T).
         find_edge_point (Callable): Method to find edge in 1D data.
         custom_filter (Callable): Optional filter to apply to each frame.
 
@@ -193,7 +196,7 @@ def calculate_edge_data(
     # bar = progressbar.ProgressBar()
     # for n in bar(range(data.shape[-1])):
     for n in range(data.shape[-1]):
-        logging.debug(f"[DEBUG] Processing frame {n + 1}/{data.shape[-1]}")
+        logging.debug("[DEBUG] Processing frame %d/%d", n + 1, data.shape[-1])
         frame = data[:, :, n].astype(np.float32)  # float32 behalten
         background_frame = data[:, :, max(n - 1, 0)].astype(np.float32)
 
@@ -355,7 +358,7 @@ def show_flame_spread(
     y_coord = -y_coord - 1
     fig, ax = plt.subplots()
     ax.plot(edge_results.T[y_coord])
-    ax.set_title("Flame spread at y = {}".format(y_coord))
+    ax.set_title(f"Flame spread at y = {y_coord}")
     ax.set_xlabel("Frame")
     ax.set_ylabel("X coordinate")
     return fig, ax
@@ -405,7 +408,7 @@ def show_flame_spread_velocity(
         mode="same",
     )
     ax.plot(data)
-    ax.set_title("Flame spread velocity at y = {}".format(y_coord))
+    ax.set_title(f"Flame spread velocity at y = {y_coord}")
     ax.set_xlabel("Frame")
     ax.set_ylabel("Velocity [px/frame]")
     return fig, ax

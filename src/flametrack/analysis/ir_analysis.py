@@ -11,7 +11,7 @@ from flametrack.analysis import dataset_handler
 
 
 def compute_remap_from_homography(
-    H: NDArray[np.float32] | NDArray[np.float64],
+    homography: NDArray[np.float32] | NDArray[np.float64],
     width: int,
     height: int,
 ) -> Tuple[NDArray[np.float32], NDArray[np.float32]]:
@@ -19,7 +19,7 @@ def compute_remap_from_homography(
     Compute remap grids from a homography matrix H.
 
     Args:
-        H (np.ndarray): Homography matrix.
+        homography (np.ndarray): Homography matrix.
         width (int): Width of the target image.
         height (int): Height of the target image.
 
@@ -34,8 +34,8 @@ def compute_remap_from_homography(
     ones = np.ones_like(map_x, dtype=np.float32)
     target_coords = np.stack([map_x, map_y, ones], axis=-1).reshape(-1, 3).T  # (3, N)
 
-    Hf: NDArray[np.float32] = np.asarray(H, dtype=np.float32)
-    source_coords = Hf @ target_coords
+    homography_f: NDArray[np.float32] = np.asarray(homography, dtype=np.float32)
+    source_coords = homography_f @ target_coords
     source_coords /= source_coords[2, :]  # normalize
 
     src_x = source_coords[0, :].reshape((height, width)).astype(np.float32, copy=False)
@@ -44,9 +44,9 @@ def compute_remap_from_homography(
     return src_x, src_y
 
 
-def read_IR_data(filename: str) -> NDArray[np.float64]:
+def read_ir_data(filename: str) -> NDArray[np.float64]:
     """
-    Read raw IR data from CSV-like ASCII export format.
+    Read raw IR data from a CSV-like ASCII export format.
 
     Args:
         filename (str): Path to the IR data file.
@@ -68,11 +68,13 @@ def read_IR_data(filename: str) -> NDArray[np.float64]:
     raise ValueError("No data found in file, check file format!")
 
 
+# pylint: disable=too-many-arguments
 def get_dewarp_parameters(
     corners: NDArray[np.float32] | Sequence[Tuple[float, float]],
     target_pixels_width: int | None = None,
     target_pixels_height: int | None = None,
     target_ratio: float | None = None,
+    *,
     plate_width_m: float | None = None,
     plate_height_m: float | None = None,
     pixels_per_millimeter: int = 1,
@@ -85,7 +87,7 @@ def get_dewarp_parameters(
           "transformation_matrix": np.ndarray(float32, 3x3),
           "target_pixels_width": int,
           "target_pixels_height": int,
-          "target_ratio": float,   # height/width (wie in deinem Original)
+          "target_ratio": float, # height/width
         }
     """
     buffer = 1.1
@@ -96,7 +98,7 @@ def get_dewarp_parameters(
         target_pixels_width = int(plate_width_m * pixels_per_millimeter)
         target_pixels_height = int(plate_height_m * pixels_per_millimeter)
 
-    # Sonst versucht: aus Ecken + Ratio ableiten
+    # Sonst versucht: aus Ecken + Ratio ab zuleiten
     if target_pixels_width is None or target_pixels_height is None:
         if target_ratio is None:
             raise ValueError("Either plate dimensions or target ratio must be provided")
@@ -297,9 +299,9 @@ def get_dewarp_parameters(
 #         map_x, map_y = np.meshgrid(map_x, map_y)
 #
 #         # Compute remap grid without inverting the matrix (to avoid flipping)
-#         H = np.linalg.inv(dewarp_params["transformation_matrix"])
-#         # H = dewarp_params["transformation_matrix"]
-#         src_x, src_y = compute_remap_from_homography(H, dset_w, dset_h)
+#         homography = np.linalg.inv(dewarp_params["transformation_matrix"])
+#         # homography = dewarp_params["transformation_matrix"]
+#         src_x, src_y = compute_remap_from_homography(homography, dset_w, dset_h)
 #
 #         # Remove old remap data if present
 #         if dewarped_grp.get("src_x", None) is not None:

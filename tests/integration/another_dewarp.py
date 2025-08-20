@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from flametrack.analysis.DataTypes import RCE_Experiment
-from flametrack.analysis.IR_analysis import read_IR_data
+from flametrack.analysis.data_types import RceExperiment
+from flametrack.analysis.ir_analysis import read_ir_data
 from flametrack.processing.dewarping import dewarp_room_corner_remap
 
 
@@ -38,8 +38,8 @@ def test_synthetic_roomcorner_remap_2(tmp_path):
         def get_frame_count(self):
             return len(self.frames)
 
-    dummy_data = DummyIRData(read_IR_data(csv_path))
-    experiment = RCE_Experiment(str(tmp_path))
+    dummy_data = DummyIRData(read_ir_data(csv_path))
+    experiment = RceExperiment(str(tmp_path))
     experiment.get_data = lambda _: dummy_data
 
     # === 4. Definiere Punkte auf linker & rechter Platte ===

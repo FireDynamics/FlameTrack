@@ -30,7 +30,7 @@ def __create_missing_config() -> None:
     if not os.path.exists(CONFIG_PATH):
         config = configparser.ConfigParser()
         config["DEFAULT"] = __get_default_values()
-        with open(CONFIG_PATH, "w") as f:
+        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
             config.write(f)
 
 
@@ -66,7 +66,7 @@ def get_config() -> ConfigParser:
     return config
 
 
-def get_IR_path(exp_name: str) -> str:
+def get_ir_path(exp_name: str) -> str:
     return get_path(exp_name, "IR_folder")
 
 

@@ -1,3 +1,6 @@
+# pylint: disable=invalid-name
+# pylint: disable=too-many-arguments
+
 import numpy as np
 import pyqtgraph as pg
 from PySide6.QtCore import QPointF
@@ -8,7 +11,7 @@ class DraggablePoint(pg.GraphItem):
     PyQtGraph GraphItem representing a single draggable point.
 
     Attributes:
-        parent: Optional parent object, expected to have updateLines() method.
+        parent: Optional parent object, expected to have update_lines() method.
         size: Diameter of the point symbol.
         color: RGB tuple for point color.
         scatter_points: List of QPointF representing the point(s).
@@ -22,6 +25,7 @@ class DraggablePoint(pg.GraphItem):
         y: float,
         size: int = 10,
         color: tuple[int, int, int] = (255, 0, 0),
+        *,
         parent=None,
     ):
         """
@@ -42,9 +46,9 @@ class DraggablePoint(pg.GraphItem):
         self.dragging = False
         self.dragged_index = None
         self.setZValue(1000)  # ensure point is drawn on top
-        self.updateGraph()
+        self.update_graph()
 
-    def updateGraph(self) -> None:
+    def update_graph(self) -> None:
         """
         Update the graphical representation of the point(s).
         Converts QPointF positions to numpy array and sets GraphItem data.
@@ -89,9 +93,9 @@ class DraggablePoint(pg.GraphItem):
         if self.dragging:
             pos = event.pos()
             self.scatter_points[self.dragged_index] = pos
-            self.updateGraph()
+            self.update_graph()
             if self.parent:
-                self.parent.updateLines()
+                self.parent.update_lines()
 
     def mouseReleaseEvent(self, event) -> None:
         """
@@ -103,12 +107,16 @@ class DraggablePoint(pg.GraphItem):
         self.dragging = False
         self.dragged_index = None
 
-    def deletePoint(self) -> None:
+    def delete_point(self) -> None:
         """
         Delete the currently dragged point from the list.
         """
         if self.dragging and self.dragged_index is not None:
             del self.scatter_points[self.dragged_index]
-            self.updateGraph()
+            self.update_graph()
             self.dragging = False
             self.dragged_index = None
+
+    def generateSvg(self, *args, **kwargs):
+        """Required abstract method from GraphicsItem (not used)."""
+        return None

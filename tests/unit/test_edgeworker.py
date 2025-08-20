@@ -20,7 +20,7 @@ def temp_h5_file():
         h5_path = tmp.name
 
     with h5py.File(h5_path, "w") as f:
-        data = np.random.rand(10, 10, 5).astype(np.float32)  # shape: (H, W, T)
+        data = np.random.rand(10, 10, 5).astype(np.float32)  # shape: (homography, W, T)
         f.create_dataset("dewarped_data/data", data=data)
 
     yield h5_path

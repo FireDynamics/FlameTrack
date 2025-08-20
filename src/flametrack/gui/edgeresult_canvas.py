@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import pyqtgraph as pg
 from PySide6.QtGui import QColor, QFont
@@ -51,6 +53,106 @@ class EdgeResultCanvas(QWidget):
         layout.addWidget(self.plot_widget)
         self.setLayout(layout)
 
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+    def _y_index(self, height: int, y_cutoff: float) -> int:
+        """Mappe y_cutoff (0..1) auf einen negativen Index von unten."""
+        idx = int(height * y_cutoff)
+        return max(-idx - 1, -height)
+
+    def _add_error_band(
+        self,
+        x_vals: np.ndarray,
+        center: np.ndarray,
+        err_mm: float | None,
+        color_rgba: tuple[int, int, int, int],
+    ) -> None:
+        """Zeichnet optional einen ±err Band um die Kurve."""
+        if err_mm is None:
+            return
+        upper = center + err_mm
+        lower = center - err_mm
+        upper_curve = pg.PlotCurveItem(x_vals, upper, pen=None)
+        lower_curve = pg.PlotCurveItem(x_vals, lower, pen=None)
+        self.plot_widget.addItem(upper_curve)
+        self.plot_widget.addItem(lower_curve)
+        self.plot_widget.addItem(
+            pg.FillBetweenItem(
+                curve1=upper_curve, curve2=lower_curve, brush=QColor(*color_rgba)
+            )
+        )
+
+    def _plot_lfs(self, h5, y_cutoff: float, smooth: bool, smooth_window: int) -> None:
+        data = h5["edge_results"]["data"][:]
+        y_idx = self._y_index(data.shape[1], y_cutoff)
+
+        # Edge-Kurve (von unten gemessen, aufsteigend)
+        edge = -data[:, y_idx] + np.max(data[:, y_idx])
+
+        # Flammenrichtung berücksichtigen
+        flame_dir = h5["edge_results"].attrs.get("flame_direction", "right_to_left")
+        if flame_dir == "left_to_right":
+            edge = edge.max() - edge
+
+        if smooth:
+            edge = moving_average(edge, window=smooth_window)
+
+        x_vals = np.arange(len(edge))
+        self.plot_widget.plot(
+            x_vals, edge, pen=pg.mkPen((0, 100, 180), width=2), name="Edge"
+        )
+
+        # Fehlerband (falls vorhanden)
+        err = h5["dewarped_data"].attrs.get("error_mm_width", None)
+        self._add_error_band(x_vals, edge, err, (0, 100, 180, 50))
+
+    def _plot_room_corner(
+        self, h5, y_cutoff: float, smooth: bool, smooth_window: int
+    ) -> None:
+        d_left = h5["edge_results_left"]["data"][:]
+        d_right = h5["edge_results_right"]["data"][:]
+
+        y1 = self._y_index(d_left.shape[1], y_cutoff)
+        y2 = self._y_index(d_right.shape[1], y_cutoff)
+
+        edge1 = -d_left[:, y1] + np.max(d_left[:, y1])
+        edge2 = -d_right[:, y2] + np.max(d_right[:, y2])
+        edge2 = edge2.max() - edge2  # rechts spiegeln
+
+        if smooth:
+            edge1 = moving_average(edge1, window=smooth_window)
+            edge2 = moving_average(edge2, window=smooth_window)
+
+        # auf gemeinsame Zielbreite normieren
+        w1 = int(h5["dewarped_data_left"].attrs["target_pixels_width"])
+        w2 = int(h5["dewarped_data_right"].attrs["target_pixels_width"])
+        target_w = max(w1, w2)
+        edge1 = edge1.astype(float) * target_w / w1
+        edge2 = edge2.astype(float) * target_w / w2
+
+        x_vals = np.arange(len(edge1))
+        self.plot_widget.plot(
+            x_vals, edge1, pen=pg.mkPen((220, 20, 60), width=2), name="Left"
+        )
+        self.plot_widget.plot(
+            x_vals, edge2, pen=pg.mkPen((0, 0, 128), width=2), name="Right (mirrored)"
+        )
+
+        # Fehlerbänder (falls vorhanden)
+        err1 = h5["dewarped_data_left"].attrs.get("error_mm_width", None)
+        try:
+            # Tippfehler-Variante robust abfangen
+            err2 = h5["dewarwed_data_right"].attrs.get("error_mm_width", None)
+        except KeyError:
+            err2 = h5["dewarped_data_right"].attrs.get("error_mm_width", None)
+
+        self._add_error_band(x_vals, edge1, err1, (220, 20, 60, 50))
+        self._add_error_band(x_vals, edge2, err2, (0, 0, 128, 50))
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
     def plot_edge_results(
         self,
         experiment,
@@ -58,149 +160,29 @@ class EdgeResultCanvas(QWidget):
         smooth: bool = True,
         smooth_window: int = 7,
     ) -> None:
-        """
-        Plot edge tracking results from an experiment's HDF5 data.
-
-        Args:
-            experiment: Experiment object with attribute `h5_file`.
-            y_cutoff: Vertical position ratio (0-1) to select the y-line for plotting.
-            smooth: Whether to apply moving average smoothing.
-            smooth_window: Window size for smoothing.
-        """
+        """Plot edge tracking results from an experiment's HDF5 data."""
         if experiment is None:
             return
 
         self.plot_widget.clear()
         legend = self.plot_widget.addLegend()
-        legend.setBrush(pg.mkBrush(255, 255, 255, 180))  # semi-transparent white
+        legend.setBrush(pg.mkBrush(255, 255, 255, 180))
 
         h5 = experiment.h5_file
         exp_type = getattr(experiment, "experiment_type", "Room Corner")
 
         try:
             if exp_type == "Lateral Flame Spread":
-                data = h5["edge_results"]["data"][:]
-                y_index = int(data.shape[1] * y_cutoff)
-                y_index = max(-y_index - 1, -data.shape[1])
-
-                edge = -data[:, y_index] + np.max(data[:, y_index])
-
-                flame_direction = h5["edge_results"].attrs.get(
-                    "flame_direction", "right_to_left"
-                )
-
-                if flame_direction == "left_to_right":
-                    edge = edge.max() - edge
-
-                if smooth:
-                    edge = moving_average(edge, window=smooth_window)
-
-                x_vals = np.arange(len(edge))
-
-                width = h5["dewarped_data"].attrs["target_pixels_width"]
-                err = h5["dewarped_data"].attrs.get("error_mm_width", None)
-
-                self.plot_widget.plot(
-                    x_vals, edge, pen=pg.mkPen((0, 100, 180), width=2), name="Edge"
-                )
-
-                if err is not None:
-                    band_upper = edge + err
-                    band_lower = edge - err
-
-                    upper_curve = pg.PlotCurveItem(x_vals, band_upper, pen=None)
-                    lower_curve = pg.PlotCurveItem(x_vals, band_lower, pen=None)
-                    self.plot_widget.addItem(upper_curve)
-                    self.plot_widget.addItem(lower_curve)
-
-                    fill = pg.FillBetweenItem(
-                        curve1=upper_curve,
-                        curve2=lower_curve,
-                        brush=QColor(0, 100, 180, 50),
-                    )
-                    self.plot_widget.addItem(fill)
-                else:
-                    print("[WARN] No error_mm_width in dewarped_data")
-
-            else:  # Room Corner experiment
-                d1 = h5["edge_results_left"]["data"][:]
-                d2 = h5["edge_results_right"]["data"][:]
-                y1 = int(d1.shape[1] * y_cutoff)
-                y2 = int(d2.shape[1] * y_cutoff)
-                y1 = max(-y1 - 1, -d1.shape[1])
-                y2 = max(-y2 - 1, -d2.shape[1])
-
-                edge1 = -d1[:, y1] + np.max(d1[:, y1])
-                edge2 = -d2[:, y2] + np.max(d2[:, y2])
-                edge2 = edge2.max() - edge2  # mirror right side
-
-                if smooth:
-                    edge1 = moving_average(edge1, window=smooth_window)
-                    edge2 = moving_average(edge2, window=smooth_window)
-
-                width1 = h5["dewarped_data_left"].attrs["target_pixels_width"]
-                width2 = h5["dewarped_data_right"].attrs["target_pixels_width"]
-                target_width = max(width1, width2)
-
-                edge1 = edge1.astype(float) * target_width / width1
-                edge2 = edge2.astype(float) * target_width / width2
-
-                x_vals = np.arange(len(edge1))
-
-                self.plot_widget.plot(
-                    x_vals, edge1, pen=pg.mkPen((220, 20, 60), width=2), name="Left"
-                )
-                self.plot_widget.plot(
-                    x_vals,
-                    edge2,
-                    pen=pg.mkPen((0, 0, 128), width=2),
-                    name="Right (mirrored)",
-                )
-
-                err1 = h5["dewarped_data_left"].attrs.get("error_mm_width", None)
-                err2 = h5["dewarped_data_right"].attrs.get("error_mm_width", None)
-
-                if err1 is not None:
-                    band1_upper = edge1 + err1
-                    band1_lower = edge1 - err1
-
-                    upper_curve1 = pg.PlotCurveItem(x_vals, band1_upper, pen=None)
-                    lower_curve1 = pg.PlotCurveItem(x_vals, band1_lower, pen=None)
-                    self.plot_widget.addItem(upper_curve1)
-                    self.plot_widget.addItem(lower_curve1)
-
-                    fill_left = pg.FillBetweenItem(
-                        curve1=upper_curve1,
-                        curve2=lower_curve1,
-                        brush=QColor(220, 20, 60, 50),
-                    )
-                    self.plot_widget.addItem(fill_left)
-                else:
-                    print("[WARN] No error_mm_width in dewarped_data_left")
-
-                if err2 is not None:
-                    band2_upper = edge2 + err2
-                    band2_lower = edge2 - err2
-
-                    upper_curve2 = pg.PlotCurveItem(x_vals, band2_upper, pen=None)
-                    lower_curve2 = pg.PlotCurveItem(x_vals, band2_lower, pen=None)
-                    self.plot_widget.addItem(upper_curve2)
-                    self.plot_widget.addItem(lower_curve2)
-
-                    fill_right = pg.FillBetweenItem(
-                        curve1=upper_curve2,
-                        curve2=lower_curve2,
-                        brush=QColor(0, 0, 128, 50),
-                    )
-                    self.plot_widget.addItem(fill_right)
-                else:
-                    print("[WARN] No error_mm_width in dewarped_data_right")
+                self._plot_lfs(h5, y_cutoff, smooth, smooth_window)
+            else:
+                self._plot_room_corner(h5, y_cutoff, smooth, smooth_window)
 
             self.plot_widget.setTitle(
                 f"Edge progression at y = {y_cutoff:.0%} (0 = plate start)",
                 size="10pt",
             )
-
-        except KeyError as e:
+        except KeyError as err:
             self.plot_widget.setTitle("⚠️ Edge result data not found")
-            print(f"[DEBUG] plot_edge_results KeyError: {e}")
+            # bewusst kein f-string in logging (Pylint W1203)
+            # (hier print ist ok, weil GUI-Widget; du kannst auch logging benutzen)
+            logging.debug("plot_edge_results KeyError: %s", err)
