@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import logging
 from typing import Any, Sequence, Tuple
 
 import cv2
 import numpy as np
 from numpy.typing import NDArray
-
-from flametrack.analysis import dataset_handler
 
 
 def compute_remap_from_homography(
@@ -16,15 +13,16 @@ def compute_remap_from_homography(
     height: int,
 ) -> Tuple[NDArray[np.float32], NDArray[np.float32]]:
     """
-    Compute remap grids from a homography matrix H.
+    Compute pixelwise remap grids from a homography.
 
     Args:
-        homography (np.ndarray): Homography matrix.
-        width (int): Width of the target image.
-        height (int): Height of the target image.
+        homography (numpy.ndarray): 3×3 homography mapping output → input coordinates.
+        width (int): Target image width in pixels.
+        height (int): Target image height in pixels.
 
     Returns:
-        Tuple[np.ndarray, np.ndarray]: src_x and src_y remap matrices.
+        tuple[numpy.ndarray, numpy.ndarray]: Two arrays ``(src_x, src_y)`` with shape
+        ``(height, width)``, dtype ``float32`` suitable for ``cv2.remap``.
     """
     # Pixelzentren (x+0.5, y+0.5)
     map_x_f = np.arange(width, dtype=np.float32) + 0.5
@@ -46,13 +44,19 @@ def compute_remap_from_homography(
 
 def read_ir_data(filename: str) -> NDArray[np.float64]:
     """
-    Read raw IR data from a CSV-like ASCII export format.
+    Read raw IR data from a CSV-like ASCII export.
+
+    The file is scanned until a line ``[Data]`` is found; subsequent lines are
+    parsed using ``;`` as delimiter and a comma-to-dot decimal replacement.
 
     Args:
         filename (str): Path to the IR data file.
 
     Returns:
-        np.ndarray: 2D array of IR values.
+        numpy.ndarray: 2D array of IR values (dtype ``float64``).
+
+    Raises:
+        ValueError: If no ``[Data]`` section is found in the file.
     """
     with open(filename, "r", encoding="latin-1") as f:
         line = f.readline()
@@ -80,15 +84,41 @@ def get_dewarp_parameters(
     pixels_per_millimeter: int = 1,
 ) -> dict[str, Any]:
     """
-    Calculate the transformation matrix and target geometry for dewarping.
+    Calculate homography and target geometry for dewarping.
+
+    You can either pass physical plate dimensions (``plate_width_m``,
+    ``plate_height_m``) plus a pixel density, or infer target geometry
+    from the selected corners and a desired aspect ratio.
+
+    Args:
+        corners (numpy.ndarray | Sequence[tuple[float, float]]): Four corner points
+            in pixel coordinates, ordered clockwise starting at top-left.
+        target_pixels_width (int, optional): Target width in pixels. If omitted,
+            it will be derived from ``target_ratio`` and the measured corner distances.
+        target_pixels_height (int, optional): Target height in pixels. If omitted,
+            it will be derived from ``target_ratio`` and the measured corner distances.
+        target_ratio (float, optional): Desired aspect ratio ``height / width``.
+            Required if target size is not specified and no physical plate size is provided.
+        plate_width_m (float, optional): Physical plate width in meters. Used with
+            ``pixels_per_millimeter`` to derive target size if provided with ``plate_height_m``.
+        plate_height_m (float, optional): Physical plate height in meters. Used with
+            ``pixels_per_millimeter`` to derive target size if provided with ``plate_width_m``.
+        pixels_per_millimeter (int, optional): Pixel density (px/mm) used when physical
+            dimensions are given. Default is 1.
 
     Returns:
-        {
-          "transformation_matrix": np.ndarray(float32, 3x3),
-          "target_pixels_width": int,
-          "target_pixels_height": int,
-          "target_ratio": float, # height/width
-        }
+        dict[str, Any]: Dictionary with:
+            - ``transformation_matrix`` (numpy.ndarray): 3×3 homography (float32).
+            - ``target_pixels_width`` (int): Target width in pixels.
+            - ``target_pixels_height`` (int): Target height in pixels.
+            - ``target_ratio`` (float): ``height / width`` of the target.
+
+    Raises:
+        ValueError: If neither physical dimensions nor a target ratio are provided.
+
+    Notes:
+        Current conversion multiplies meter values by ``pixels_per_millimeter``.
+        For strict unit consistency, consider using millimeters or ``pixels_per_meter``.
     """
     buffer = 1.1
     source_corners: NDArray[np.float32] = np.asarray(corners, dtype=np.float32)
