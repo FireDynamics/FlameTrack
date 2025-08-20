@@ -1,10 +1,9 @@
 [build-system]
-requires = ["setuptools >= 61.0"]
+requires = ["setuptools>=61", "wheel", "setuptools_scm[toml]>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "FlameTrack"
-version = "1.0.0"
 description = "Python tool for image dewarping and flame front tracking in experimental fire research."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -49,7 +48,8 @@ dev = [
     "sphinx",
     "sphinx-rtd-theme",
     "tomli; python_version<'3.11'",
-    "pre-commit"
+    "pre-commit",
+    "setuptools-scm"
 ]
 
 [project.scripts]
@@ -61,6 +61,10 @@ package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+local_scheme = "no-local-version"
 
 [tool.coverage.run]
 branch = true

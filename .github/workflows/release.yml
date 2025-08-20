@@ -1,0 +1,108 @@
+name: Release (OIDC + setuptools-scm + Zenodo)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write    # für GitHub Release
+  id-token: write    # für OIDC (PyPI/TestPyPI)
+
+jobs:
+  build:
+    name: Build sdist & wheel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          # setuptools-scm ist notwendig, um Version aus Git-Tag abzuleiten
+          pip install build twine setuptools-scm[toml]
+
+      - name: Show derived version (optional)
+        run: |
+          python - <<'PY'
+          from setuptools_scm import get_version
+          print("Derived version from tag:", get_version())
+          PY
+
+      - name: Build package
+        run: python -m build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+
+  publish-testpypi:
+    name: Publish to TestPyPI (for beta tags like v1.2.3b1)
+    needs: build
+    if: contains(github.ref_name, 'b')   # nur für Beta-Tags
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Publish to TestPyPI (OIDC)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+
+      - name: Smoke test install from TestPyPI
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install --index-url https://test.pypi.org/simple --extra-index-url https://pypi.org/simple FlameTrack
+          python -c "from importlib.metadata import version; print('Installed:', version('FlameTrack'))"
+
+  publish-pypi:
+    name: Publish to PyPI (for stable tags like v1.2.3)
+    needs: build
+    if: startsWith(github.ref_name, 'v') && !contains(github.ref_name, 'a') && !contains(github.ref_name, 'b') && !contains(github.ref_name, 'rc')
+    runs-on: ubuntu-latest
+    # Optional: require manual approval before going live
+    # environment: pypi-release
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Publish to PyPI (OIDC)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+
+      - name: Create GitHub Release (triggers Zenodo)
+        if: startsWith(github.ref, 'refs/tags/')   # Safety: nur bei Tag-Push
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: |
+            FlameTrack ${{ github.ref_name }} released to PyPI.
+            A citable snapshot will be archived on Zenodo (if Zenodo integration is enabled).
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          # falls der Release bereits existiert (z. B. Retry) → aktualisieren statt Fehler
+          allow_updates: true
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
