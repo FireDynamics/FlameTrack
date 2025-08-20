@@ -13,7 +13,7 @@ Analysis
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: flametrack.analysis.IR_analysis
+.. automodule:: flametrack.analysis.ir_analysis
    :members:
    :undoc-members:
    :show-inheritance:

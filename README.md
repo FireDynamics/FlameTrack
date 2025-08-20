@@ -1,5 +1,10 @@
 # FlameTrack
 
+| **Release** | **Quality** | **Documentation** |
+|-------------|-------------|-------------------|
+| [![PyPI Latest Release](https://img.shields.io/badge/PyPI-Version-blue)](https://pypi.org/project/FlameTrack/) | [![CI Status](https://img.shields.io/badge/Build-Passing-green)](https://github.com/FireDynamics/FlameTrack/actions) | [![Documentation Status](https://readthedocs.org/projects/flametrack/badge/?version=latest)](http://flametrack.readthedocs.io/?badge=latest) |
+| ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/flametrack) | [![codecov](https://codecov.io/gh/FireDynamics/FlameTrack/branch/main/graph/badge.svg)](https://codecov.io/gh/FireDynamics/FlameTrack) | [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14633209.svg)](https://doi.org/10.5281/zenodo.14633209) |
+| [![License](https://img.shields.io/badge/License-Apache_2.0-green)](https://github.com/FireDynamics/FlameTrack/blob/main/LICENSE) | [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/pylint-dev/pylint) | |
 
 
 FlameTrack is a Python application for analyzing **flame spread experiments**, including **room corner tests** and **lateral flame spread tests**.
