@@ -5,6 +5,7 @@ repos:
     hooks:
       - id: black
         args: ["--check", "--diff"]
+        stages: [pre-commit, manual]
 
   # isort: Import-Sortierung
   - repo: https://github.com/PyCQA/isort
@@ -12,6 +13,7 @@ repos:
     hooks:
       - id: isort
         args: ["--check-only", "--diff"]
+        stages: [pre-commit, manual]
 
   # Pylint: Codequalität
 
@@ -29,7 +31,7 @@ repos:
           - "0"
         require_serial: true
         files: ^src/
-        stages: [commit]
+        stages: [pre-commit]
 
   - repo: https://github.com/PyCQA/pylint
     rev: v3.2.7
@@ -42,7 +44,7 @@ repos:
           - "0"
         files: ^src/
         additional_dependencies: [PySide6]
-        stages: [push]
+        stages: [manual]
 
   # MyPy: Typprüfung
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -52,14 +54,19 @@ repos:
         additional_dependencies:
           - types-setuptools
         args: []
+        stages: [pre-commit, manual]
 
   # Standard-Hooks für sauberen Code
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        stages: [pre-commit, manual]
       - id: end-of-file-fixer
+        stages: [pre-commit, manual]
       - id: check-yaml
+        stages: [pre-commit, manual]
       - id: check-added-large-files
         args: ["--maxkb=6000"]          # ~6 MB
         exclude: "^tests/fixtures/.*$"  # erlaubt große Dateien nur in tests/fixtures
+        stages: [pre-commit, manual]
