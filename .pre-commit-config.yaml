@@ -29,6 +29,20 @@ repos:
           - "0"
         require_serial: true
         files: ^src/
+        stages: [commit]
+
+  - repo: https://github.com/PyCQA/pylint
+    rev: v3.2.7
+    hooks:
+      - id: pylint
+        name: pylint (CI)
+        args:
+          - "--rcfile=pyproject.toml"
+          - -j
+          - "0"
+        files: ^src/
+        additional_dependencies: [PySide6]
+        stages: [push]
 
   # MyPy: Typprüfung
   - repo: https://github.com/pre-commit/mirrors-mypy
