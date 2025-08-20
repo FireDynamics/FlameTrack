@@ -9,6 +9,15 @@ on:
 jobs:
   lint-test:
     runs-on: ubuntu-latest
+
+    # Headless-Qt Defaults
+    env:
+      QT_QPA_PLATFORM: offscreen
+      QT_OPENGL: software
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      # optional: weniger Lärm
+      QT_DEBUG_PLUGINS: "0"
+
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
@@ -17,25 +26,31 @@ jobs:
     - name: Check out repository
       uses: actions/checkout@v4
 
-    - name: Install system packages for Qt (EGL/X11) & headless run
+    - name: Install system packages for Qt/OpenGL headless
       run: |
         sudo apt-get update
         sudo apt-get install -y \
+          xvfb \
           libegl1 \
           libgl1 \
           libopengl0 \
           libxkbcommon0 \
           libxkbcommon-x11-0 \
+          libx11-xcb1 \
           libxcb1 \
-          libxcb-cursor0 \
+          libxcb-render0 \
+          libxcb-shm0 \
           libxcb-icccm4 \
+          libxcb-image0 \
           libxcb-keysyms1 \
-          libxcb-render-util0 \
-          libxcb-shape0 \
+          libxcb-randr0 \
+          libxcb-util1 \
           libxcb-xfixes0 \
-          libx11-6 \
-          libdbus-1-3 \
-          xvfb
+          libxcb-xinerama0 \
+          libxcb-xkb1 \
+          libfontconfig1 \
+          libfreetype6 \
+          libglib2.0-0
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -52,8 +67,9 @@ jobs:
     - name: Run pre-commit hooks
       run: pre-commit run --all-files --hook-stage manual --show-diff-on-failure --color always
 
-    - name: Run tests with coverage
-      run: pytest --cov=src/flametrack --cov-report=xml --cov-report=term
+    - name: Run tests with coverage (under Xvfb)
+      run: |
+        xvfb-run -a pytest --cov=src/flametrack --cov-report=xml --cov-report=term
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v5
