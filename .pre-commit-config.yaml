@@ -43,7 +43,15 @@ repos:
           - -j
           - "0"
         files: ^src/
-        additional_dependencies: [PySide6]
+        additional_dependencies:
+          - numpy
+          - h5py
+          - opencv-python-headless
+          - PySide6<=6.9.0
+          - pyqtgraph
+          - progressbar2
+          - matplotlib
+          - scipy
         stages: [manual]
 
   # MyPy: Typprüfung
