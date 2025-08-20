@@ -139,21 +139,6 @@ disable = [
 ]
 ignore = ["docs", "tests"]
 ignore-patterns = ["ui_form\\.py$"]
-
-[tool.pylint.BASIC]
-good-names = ["i", "j", "x", "y", "k", "ex", "df"]
-
-[tool.pylint.FORMAT]
-max-line-length = 120
-
-[tool.pylint.DESIGN]
-max-args = 7
-max-locals = 25
-max-branches = 15
-max-statements = 60
-max-attributes = 25
-
-[tool.pylint.MASTER]
 extension-pkg-allow-list = [
   "cv2",
   "numpy",
@@ -168,7 +153,28 @@ generated-members = [
   "PySide6.QtGui.*",
   "PySide6.QtWidgets.*"
 ]
+
+[tool.pylint.BASIC]
+good-names = ["i", "j", "x", "y", "k", "ex", "df"]
+
+[tool.pylint.FORMAT]
+max-line-length = 120
+
+[tool.pylint.DESIGN]
+max-args = 7
+max-locals = 25
+max-branches = 15
+max-statements = 60
+max-attributes = 25
 ignore = ["tests"]
+
+[tool.pylint.TYPECHECK]
+ignored-modules = [
+  "PySide6",
+  "PySide6.QtCore",
+  "PySide6.QtGui",
+  "PySide6.QtWidgets",
+]
 
 [tool.pylint.SIMILARITIES]
 # Duplikaterkennung entschärfen (betrifft vor allem Tests/Helper)

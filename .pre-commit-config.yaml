@@ -34,7 +34,7 @@ repos:
         stages: [pre-commit]
 
   - repo: https://github.com/PyCQA/pylint
-    rev: v3.2.7
+    rev: v3.3.7
     hooks:
       - id: pylint
         name: pylint (CI)

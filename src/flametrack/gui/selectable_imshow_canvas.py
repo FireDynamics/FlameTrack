@@ -75,6 +75,7 @@ class SelectableImshowCanvas(ImshowCanvas):
 
             self.update_lines()
 
+    # pylint: disable=invalid-name
     def keyPressEvent(self, event) -> None:
         """
         Behandelt Tastendruck-Events.
