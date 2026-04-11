@@ -70,26 +70,26 @@ def sort_corner_points(
 
 def rotate_points(points, image_shape, rotation_index):
     """
-    Rotiert Punkte um das Zentrum des Bildes entsprechend der Kamerarotation.
+    Converts points from a np.rot90-rotated display frame back to unrotated image coordinates.
 
-    :param points: Liste von (x, y)-Punkten
-    :param image_shape: Form des Bildes als (Höhe, Breite)
-    :param rotation_index: 0 = 0°, 1 = 90°, 2 = 180°, 3 = 270°
-    :return: Rotierte Punkte als Liste von (x, y)
+    :param points: Liste von (x, y)-Punkten im rotierten Bild
+    :param image_shape: Form des UNROTIERTEN Bildes als (Höhe, Breite)
+    :param rotation_index: 0 = 0°, 1 = 90° CCW, 2 = 180°, 3 = 270° CCW
+    :return: Punkte im unrotierten Bildkoordinatensystem als Liste von (x, y)
     """
-    if rotation_index % 4 == 0:
+    k = rotation_index % 4
+    if k == 0:
         return points
 
-    angle = -rotation_index * 90  # im Uhrzeigersinn
-    center = (image_shape[1] / 2, image_shape[0] / 2)  # (x, y)
+    img_h, img_w = image_shape[0], image_shape[1]
+    pts = np.array(points, dtype=np.float32)
+    rx, ry = pts[:, 0], pts[:, 1]
 
-    # Rotationsmatrix (2x3)
-    rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+    if k == 1:  # 90° CCW: inverse is x = W-1-ry, y = rx
+        x_out, y_out = img_w - 1 - ry, rx
+    elif k == 2:  # 180°: inverse is x = W-1-rx, y = H-1-ry
+        x_out, y_out = img_w - 1 - rx, img_h - 1 - ry
+    else:  # 270° CCW (= 90° CW): inverse is x = ry, y = H-1-rx
+        x_out, y_out = ry, img_h - 1 - rx
 
-    # Punkte homogenisieren
-    points_np = np.array(points, dtype=np.float32)
-    points_h = np.hstack([points_np, np.ones((len(points_np), 1))])  # (N, 3)
-
-    # Transformation anwenden
-    rotated = (rotation_matrix @ points_h.T).T
-    return rotated.tolist()
+    return np.stack([x_out, y_out], axis=1).tolist()

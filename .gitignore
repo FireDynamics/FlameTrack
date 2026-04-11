@@ -56,3 +56,4 @@ devtest.sh
 # Log files
 # ----------------------------
 *.log
+/.claude/worktrees/kind-sanderson/

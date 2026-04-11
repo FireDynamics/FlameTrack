@@ -10,16 +10,6 @@ from flametrack.analysis.ir_analysis import read_ir_data
 from tests.utils.test_helpers import assert_image_similarity
 
 
-def rotate_image_and_points(image, points, angle_degrees):
-    (h_img, w_img) = image.shape[:2]
-    center = (w_img // 2, h_img // 2)
-    M = cv2.getRotationMatrix2D(center, angle_degrees, 1.0)
-    rotated_img = cv2.warpAffine(image, M, (w_img, h_img))
-    points_h = np.hstack([points, np.ones((points.shape[0], 1))])
-    rotated_pts = (M @ points_h.T).T.astype(np.float32)
-    return rotated_img, rotated_pts
-
-
 @pytest.mark.rotation
 def test_room_corner_rotation_dewarp(mainwindow, tmp_path, save_comparison_image):
     # === 1. Testbild erzeugen ===
@@ -90,16 +80,18 @@ def test_room_corner_rotation_dewarp(mainwindow, tmp_path, save_comparison_image
         [[100, 110], [150, 100], [200, 110], [200, 310], [150, 300], [100, 310]],
         dtype=np.float32,
     )
-    rotated_img, rotated_points = rotate_image_and_points(
-        combined_warped, original_points, -rotation_index * 90
-    )
+    # Forward transform of np.rot90(k=3): (x, y) → (H-1-y, x)
+    H_orig = combined_warped.shape[0]
+    rotated_points = np.stack(
+        [H_orig - 1 - original_points[:, 1], original_points[:, 0]], axis=1
+    ).astype(np.float32)
 
-    # === 4. Bild speichern
+    # === 4. Bild speichern (unrotiert; DummyIRData wendet np.rot90 an)
     csv_path = tmp_path / "exported_data" / "frame_0000.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     with open(csv_path, "w", encoding="latin-1") as f:
         f.write("[Data]\n")
-        np.savetxt(f, rotated_img.astype(np.float32), fmt="%.2f", delimiter=";")
+        np.savetxt(f, combined_warped.astype(np.float32), fmt="%.2f", delimiter=";")
 
     # === 5. Experiment einrichten
     experiment = RceExperiment(str(tmp_path))
@@ -131,9 +123,9 @@ def test_room_corner_rotation_dewarp(mainwindow, tmp_path, save_comparison_image
     mainwindow.target_pixels_width = w
     mainwindow.target_pixels_height = h
 
-    # === 6. Mock Punkte setzen (bereits im display frame)
+    # === 6. Mock Punkte setzen (im rotierten Display-Frame)
     mock_points = []
-    for x, y in original_points:
+    for x, y in rotated_points:
         p = MagicMock()
         sp = MagicMock()
         sp.x.return_value = x
