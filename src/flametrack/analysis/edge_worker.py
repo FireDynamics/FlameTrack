@@ -73,14 +73,11 @@ class EdgeDetectionWorker(QObject):
                 # Perform edge detection using provided method
                 edge = calculate_edge_data(
                     np.expand_dims(frame, axis=-1),
-                    method,  # <- direkt übergeben
+                    method,
                 )
 
                 result.append(edge[0])  # only one frame processed
-                # self.progress.emit(int((i + 1) / total_frames * 100))
-
                 self.progress.emit(i + 1)
-                # print(f"[EDGE WORKER] Progress emit: {progress_value}% (frame {i + 1}/{total_frames})")
         result_array = np.stack(result, axis=0)
 
         logging.info("[EDGE WORKER] Finished processing %d frames.", total_frames)

@@ -53,6 +53,7 @@ class MainWindow(QMainWindow):
         self.target_pixels_width: Optional[int] = None
         self.target_pixels_height: Optional[int] = None
         self.edge_workers_done: int = 0
+        self._pending_edge_results: dict = {}
 
         # Initialize values
         self.plate_width_m: Optional[float] = None
@@ -663,44 +664,53 @@ class MainWindow(QMainWindow):
         thread.finished.connect(thread.deleteLater)
 
     def handle_edge_result(self, result_array: np.ndarray, side: str) -> None:
-        """Save detected edge data to HDF5 and manage progress UI."""
-        with h5py.File(self.experiment.h5_path, "a") as f:
-            if side == "lfs":
-                group = f.require_group("edge_results")
-                if self.console_bar:
-                    self.console_bar.finish()
-                    self.console_bar = None
-                    self.console_bar_started = False
-                self.ui.progress_edge_finding_plate1.setValue(100)
+        """Buffer edge result and update UI; write to HDF5 only when all workers are done."""
+        # Update progress UI
+        if side == "lfs":
+            if self.console_bar:
+                self.console_bar.finish()
+                self.console_bar = None
+                self.console_bar_started = False
+            self.ui.progress_edge_finding_plate1.setValue(100)
+        elif side == "left":
+            if self.console_bar_left:
+                self.console_bar_left.finish()
+                self.console_bar_left = None
+            self.ui.progress_edge_finding_plate1.setValue(100)
+        elif side == "right":
+            if self.console_bar_right:
+                self.console_bar_right.finish()
+                self.console_bar_right = None
+            self.ui.progress_edge_finding_plate2.setValue(100)
 
-            else:
-                group = f.require_group(f"edge_results_{side}")
-                if side == "left" and self.console_bar_left:
-                    self.console_bar_left.finish()
-                    self.console_bar_left = None
-                    self.ui.progress_edge_finding_plate1.setValue(100)
-                elif side == "right" and self.console_bar_right:
-                    self.console_bar_right.finish()
-                    self.console_bar_right = None
-                    self.ui.progress_edge_finding_plate2.setValue(100)
-
-            if "data" in group:
-                del group["data"]
-            group.create_dataset("data", data=result_array)
-
-            if side == "lfs" and hasattr(self, "worker"):
-                flame_dir = getattr(self.worker, "flame_direction", None)
-                if flame_dir in ["left_to_right", "right_to_left"]:
-                    group.attrs["flame_direction"] = flame_dir
-
+        # Buffer result – do NOT write to h5 yet (other workers may still be reading)
+        self._pending_edge_results[side] = result_array
         logging.info("Edge detection finished for %s side.", side.upper())
 
         self.edge_workers_done += 1
-        if (
+        all_done = (
             self.experiment_type == "Lateral Flame Spread"
             and self.edge_workers_done == 1
-        ) or (self.experiment_type == "Room Corner" and self.edge_workers_done == 2):
+        ) or (self.experiment_type == "Room Corner" and self.edge_workers_done == 2)
+
+        if all_done:
+            self._write_pending_edge_results()
             self.enable_analysis_controls()
+
+    def _write_pending_edge_results(self) -> None:
+        """Write all buffered edge results to HDF5 at once (all workers are done reading)."""
+        with h5py.File(self.experiment.h5_path, "a") as f:
+            for side, result_array in self._pending_edge_results.items():
+                group_key = "edge_results" if side == "lfs" else f"edge_results_{side}"
+                group = f.require_group(group_key)
+                if "data" in group:
+                    del group["data"]
+                group.create_dataset("data", data=result_array)
+                if side == "lfs" and hasattr(self, "worker"):
+                    flame_dir = getattr(self.worker, "flame_direction", None)
+                    if flame_dir in ["left_to_right", "right_to_left"]:
+                        group.attrs["flame_direction"] = flame_dir
+        self._pending_edge_results = {}
 
     def enable_analysis_controls(self) -> None:
         """Enable UI controls after edge detection is complete."""
