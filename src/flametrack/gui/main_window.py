@@ -5,7 +5,7 @@ from typing import Optional
 import h5py
 import numpy as np
 import progressbar
-from PySide6.QtCore import QThread
+from PySide6.QtCore import Qt, QThread
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -637,6 +637,8 @@ class MainWindow(QMainWindow):
         self.ui.button_find_edge.setEnabled(False)
         self.ui.comboBox_experiment_type.setEnabled(False)
         self.ui.checkBox_mulithread.setEnabled(False)
+        self.ui.slider_analysis_y.setEnabled(False)
+        self.ui.comboBox_flame_direction.setEnabled(False)
 
     def _create_progress_bar(
         self, label: str, max_value: int
@@ -658,7 +660,10 @@ class MainWindow(QMainWindow):
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
         worker.progress.connect(getattr(self, f"update_edge_progress_{side}"))
-        worker.finished.connect(lambda result, _: self.handle_edge_result(result, side))
+        worker.finished.connect(
+            lambda result, _: self.handle_edge_result(result, side),
+            Qt.ConnectionType.QueuedConnection,
+        )
         worker.finished.connect(thread.quit)
         worker.finished.connect(worker.deleteLater)
         thread.finished.connect(thread.deleteLater)
@@ -718,6 +723,8 @@ class MainWindow(QMainWindow):
         self.ui.button_find_edge.setEnabled(True)
         self.ui.comboBox_experiment_type.setEnabled(True)
         self.ui.checkBox_mulithread.setEnabled(True)
+        self.ui.slider_analysis_y.setEnabled(True)
+        self.ui.comboBox_flame_direction.setEnabled(True)
         self.edge_workers_done = 0
         y_cutoff = self.ui.slider_analysis_y.value() / 100
         self.ui.plot_analysis.plot_edge_results(self.experiment, y_cutoff=y_cutoff)
