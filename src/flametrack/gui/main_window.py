@@ -62,6 +62,7 @@ class MainWindow(QMainWindow):
         self.console_bar_started: bool = False
         self.console_bar_left: Optional[progressbar.ProgressBar] = None
         self.console_bar_right: Optional[progressbar.ProgressBar] = None
+        self.console_bar_right_started: bool = False
         self.thread: Optional[QThread] = None
         self.worker: Optional[EdgeDetectionWorker] = None
         self.thread_left: Optional[QThread] = None
@@ -585,13 +586,9 @@ class MainWindow(QMainWindow):
         self.console_bar_right = self._create_progress_bar(
             "Edge Right: ", max_value=frame_count
         )
-        if not hasattr(self, "console_bar_right") or self.console_bar_right is None:
-            self.console_bar_right = self._create_progress_bar(
-                "Edge Right: ", max_value=frame_count
-            )
+        self.console_bar_right_started = False
 
         self.console_bar_left.start()
-        self.console_bar_right.start()
 
         self.ui.progress_edge_finding_plate1.setRange(0, 100)
         self.ui.progress_edge_finding_plate1.setValue(0)
@@ -693,6 +690,12 @@ class MainWindow(QMainWindow):
         logging.info("Edge detection finished for %s side.", side.upper())
 
         self.edge_workers_done += 1
+        print(
+            f"[DEBUG] handle_edge_result side={side}, "
+            f"edge_workers_done={self.edge_workers_done}, "
+            f"experiment_type={self.experiment_type}",
+            flush=True,
+        )
         all_done = (
             self.experiment_type == "Lateral Flame Spread"
             and self.edge_workers_done == 1
@@ -704,21 +707,29 @@ class MainWindow(QMainWindow):
 
     def _write_pending_edge_results(self) -> None:
         """Write all buffered edge results to HDF5 at once (all workers are done reading)."""
-        with h5py.File(self.experiment.h5_path, "a") as f:
-            for side, result_array in self._pending_edge_results.items():
-                group_key = "edge_results" if side == "lfs" else f"edge_results_{side}"
-                group = f.require_group(group_key)
-                if "data" in group:
-                    del group["data"]
-                group.create_dataset("data", data=result_array)
-                if side == "lfs" and hasattr(self, "worker"):
-                    flame_dir = getattr(self.worker, "flame_direction", None)
-                    if flame_dir in ["left_to_right", "right_to_left"]:
-                        group.attrs["flame_direction"] = flame_dir
+        try:
+            with h5py.File(self.experiment.h5_path, "a") as f:
+                for side, result_array in self._pending_edge_results.items():
+                    group_key = (
+                        "edge_results" if side == "lfs" else f"edge_results_{side}"
+                    )
+                    group = f.require_group(group_key)
+                    if "data" in group:
+                        del group["data"]
+                    group.create_dataset("data", data=result_array)
+                    if side == "lfs" and hasattr(self, "worker"):
+                        flame_dir = getattr(self.worker, "flame_direction", None)
+                        if flame_dir in ["left_to_right", "right_to_left"]:
+                            group.attrs["flame_direction"] = flame_dir
+            print("[DEBUG] _write_pending_edge_results done", flush=True)
+        except Exception as exc:  # pylint: disable=broad-except
+            print(f"[DEBUG] _write_pending_edge_results FAILED: {exc}", flush=True)
+            logging.exception("Failed to write edge results to HDF5")
         self._pending_edge_results = {}
 
     def enable_analysis_controls(self) -> None:
         """Enable UI controls after edge detection is complete."""
+        print("[DEBUG] enable_analysis_controls called", flush=True)
         self.ui.button_open_folder.setEnabled(True)
         self.ui.button_find_edge.setEnabled(True)
         self.ui.comboBox_experiment_type.setEnabled(True)
@@ -748,6 +759,9 @@ class MainWindow(QMainWindow):
     def update_edge_progress_right(self, value: int) -> None:
         self.ui.progress_edge_finding_plate2.setValue(value)
         if hasattr(self, "console_bar_right") and self.console_bar_right:
+            if not getattr(self, "console_bar_right_started", False):
+                self.console_bar_right.start()
+                self.console_bar_right_started = True
             self.console_bar_right.update(value)
 
     def update_edge_preview(self) -> None:

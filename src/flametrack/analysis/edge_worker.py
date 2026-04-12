@@ -65,6 +65,9 @@ class EdgeDetectionWorker(QObject):
         with h5py.File(self.h5_path, "r") as f:
             data = f[self.dataset_key]
             total_frames = data.shape[-1]
+            print(
+                f"[WORKER {self.dataset_key}] total_frames={total_frames}", flush=True
+            )
             method = self.method
 
             for i in range(total_frames):
@@ -78,7 +81,14 @@ class EdgeDetectionWorker(QObject):
 
                 result.append(edge[0])  # only one frame processed
                 self.progress.emit(i + 1)
+
+        print(
+            f"[WORKER {self.dataset_key}] loop done, stacking {len(result)} results",
+            flush=True,
+        )
         result_array = np.stack(result, axis=0)
 
+        print(f"[WORKER {self.dataset_key}] emitting finished", flush=True)
         logging.info("[EDGE WORKER] Finished processing %d frames.", total_frames)
         self.finished.emit(result_array, self.result_key)
+        print(f"[WORKER {self.dataset_key}] finished emitted", flush=True)
