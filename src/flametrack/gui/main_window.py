@@ -630,9 +630,6 @@ class MainWindow(QMainWindow):
             self.worker_left.finished.connect(self.thread_right.start)
             self.thread_left.start()
 
-        y_cutoff = self.ui.slider_analysis_y.value() / 100
-        self.ui.plot_analysis.plot_edge_results(self.experiment, y_cutoff=y_cutoff)
-
     def _disable_ui_while_edge_detecting(self) -> None:
         """Disable UI elements during edge detection to avoid user interference."""
         self.ui.button_open_folder.setEnabled(False)
@@ -707,6 +704,8 @@ class MainWindow(QMainWindow):
         self.ui.comboBox_experiment_type.setEnabled(True)
         self.ui.checkBox_mulithread.setEnabled(True)
         self.edge_workers_done = 0
+        y_cutoff = self.ui.slider_analysis_y.value() / 100
+        self.ui.plot_analysis.plot_edge_results(self.experiment, y_cutoff=y_cutoff)
 
     def update_edge_progress_lfs(self, value: int) -> None:
         # import threading
