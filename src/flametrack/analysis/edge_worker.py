@@ -83,16 +83,5 @@ class EdgeDetectionWorker(QObject):
                 # print(f"[EDGE WORKER] Progress emit: {progress_value}% (frame {i + 1}/{total_frames})")
         result_array = np.stack(result, axis=0)
 
-        # 🔧 Write edge result and optional flame direction
-        with h5py.File(self.h5_path, "a") as f:
-            group = f.require_group(self.result_key)
-
-            if "data" in group:
-                del group["data"]
-            group.create_dataset("data", data=result_array)
-
-            if self.flame_direction in ["left_to_right", "right_to_left"]:
-                group.attrs["flame_direction"] = self.flame_direction
-
         logging.info("[EDGE WORKER] Finished processing %d frames.", total_frames)
         self.finished.emit(result_array, self.result_key)

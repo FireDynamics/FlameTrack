@@ -688,6 +688,11 @@ class MainWindow(QMainWindow):
                 del group["data"]
             group.create_dataset("data", data=result_array)
 
+            if side == "lfs" and hasattr(self, "worker"):
+                flame_dir = getattr(self.worker, "flame_direction", None)
+                if flame_dir in ["left_to_right", "right_to_left"]:
+                    group.attrs["flame_direction"] = flame_dir
+
         logging.info("Edge detection finished for %s side.", side.upper())
 
         self.edge_workers_done += 1
