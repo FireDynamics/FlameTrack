@@ -5,7 +5,7 @@ from typing import Optional
 import h5py
 import numpy as np
 import progressbar
-from PySide6.QtCore import Qt, QThread
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -40,6 +40,10 @@ EXPERIMENT_CONFIG = {
 
 
 class MainWindow(QMainWindow):
+    # Relay signal so handle_edge_result always runs on the main thread,
+    # regardless of which worker thread emits it.
+    _edge_result_ready = Signal(object, str)
+
     def __init__(self) -> None:
         super().__init__()
         self.ui = Ui_MainWindow()
@@ -123,6 +127,7 @@ class MainWindow(QMainWindow):
         self.ui.button_dewarp.clicked.connect(self.on_dewarp_clicked)
         self.ui.button_find_edge.clicked.connect(self.start_edge_detection)
         self.ui.slider_analysis_y.valueChanged.connect(self.update_analysis_plot)
+        self._edge_result_ready.connect(self.handle_edge_result)
 
     def _initialize_defaults(self) -> None:
         """Set initial values for UI elements and internal parameters."""
@@ -658,8 +663,7 @@ class MainWindow(QMainWindow):
         thread.started.connect(worker.run)
         worker.progress.connect(getattr(self, f"update_edge_progress_{side}"))
         worker.finished.connect(
-            lambda result, _: self.handle_edge_result(result, side),
-            Qt.ConnectionType.QueuedConnection,
+            lambda result, _: self._edge_result_ready.emit(result, side)
         )
         worker.finished.connect(thread.quit)
         worker.finished.connect(worker.deleteLater)
