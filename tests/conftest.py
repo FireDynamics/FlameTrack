@@ -1,11 +1,16 @@
 # tests/conftest.py
+import os
 import sys
+from pathlib import Path
+
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import matplotlib.pyplot as plt
 import pytest
 from PySide6.QtWidgets import QApplication
 
 from flametrack.gui.main_window import MainWindow
+from tests.utils.plot_helpers import save_dewarp_comparison_figure
 
 
 @pytest.fixture
@@ -26,14 +31,6 @@ def mainwindow(app):
     return MainWindow()
 
 
-import os
-from pathlib import Path
-
-import pytest
-
-from tests.utils.plot_helpers import save_dewarp_comparison_figure
-
-
 @pytest.fixture
 def save_comparison_image(request):
     test_name = request.node.name
@@ -46,7 +43,6 @@ def save_comparison_image(request):
         save_dewarp_comparison_figure(
             grad_left, grad_right, left_data, right_data, file_path
         )
-        print(f"[INFO] Vergleichsbild gespeichert unter: {file_path}")
 
     return _save
 
@@ -61,7 +57,6 @@ def save_test_plot(request):
     def _save(fig, suffix="plot"):
         file_path = output_dir / f"{test_name}_{suffix}.png"
         fig.savefig(file_path, dpi=150)
-        print(f"[INFO] Vergleichsplot gespeichert unter: {file_path}")
         plt.close(fig)
 
     return _save

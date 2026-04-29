@@ -8,9 +8,6 @@ from flametrack.gui.main_window import MainWindow
 logging.basicConfig(level=logging.WARNING)
 
 
-# logging.basicConfig(level=logging.DEBUG)
-
-
 def main():
     # Create the application object
     app = QApplication(sys.argv)

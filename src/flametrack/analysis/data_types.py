@@ -50,6 +50,14 @@ class DataClass(ABC):
         h, w = self.get_frame(0, 0).shape[:2]
         return int(h), int(w)
 
+    def get_raw_frame(self, framenr: int) -> NDArray[Any]:
+        """
+        Return a single frame without any rotation applied.
+        Default implementation delegates to get_frame(..., rotation_index=0).
+        Subclasses may override for efficiency.
+        """
+        return self.get_frame(framenr, 0)
+
 
 class VideoData(DataClass):
     """
@@ -235,12 +243,17 @@ class RceExperiment:
         raise ValueError(f"Unknown data type: {data_type}")
 
     def get_ir_data(self) -> IrData:
-        """Lazily load IR data from exported_data folder."""
+        """Lazily load IR data.
+
+        Looks first in <folder>/exported_data/ (production layout),
+        then falls back to <folder>/ itself (e.g. single-file test datasets).
+        """
         exported_dir = os.path.join(self.folder_path, "exported_data")
-        if not os.path.exists(exported_dir):
-            raise FileNotFoundError("No exported data found")
+        data_dir = exported_dir if os.path.exists(exported_dir) else self.folder_path
         if self.ir_data is None:
-            self.ir_data = IrData(exported_dir)
+            self.ir_data = IrData(data_dir)
+        if not self.ir_data.files:
+            raise FileNotFoundError(f"No CSV files found in '{data_dir}'")
         return self.ir_data
 
     def _get_video_data(self) -> VideoData:
@@ -254,11 +267,24 @@ class RceExperiment:
         return VideoData(file_list[0])
 
     def _get_picture_data(self) -> ImageData:
-        """Lazily load image data from images folder."""
-        image_dir = os.path.join(self.folder_path, "images")
-        if not os.path.exists(image_dir):
-            raise FileNotFoundError("No image data found")
-        return ImageData(image_dir)
+        """Lazily load image data.
+
+        Checks (in order): <folder>/images/, <folder>/exported_data/, <folder>/.
+        Uses the first directory that contains image files.
+        """
+        candidates = [
+            os.path.join(self.folder_path, "images"),
+            os.path.join(self.folder_path, "exported_data"),
+            self.folder_path,
+        ]
+        for candidate in candidates:
+            if os.path.isdir(candidate):
+                data = ImageData(candidate)
+                if data.files:
+                    return data
+        raise FileNotFoundError(
+            f"No image files (PNG/JPG) found in '{self.folder_path}' or its subdirectories."
+        )
 
     def _get_processed_data(self) -> IrData:
         """Lazily load processed IR data from processed_data folder."""

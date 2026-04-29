@@ -1,3 +1,4 @@
+import glob
 import logging
 import os
 from typing import Optional
@@ -17,9 +18,13 @@ from PySide6.QtWidgets import (
 from flametrack.analysis.data_types import RceExperiment
 from flametrack.analysis.edge_worker import EdgeDetectionWorker
 from flametrack.analysis.flamespread import (
+    EDGE_METHOD_CATALOG,
+    EdgeMethodSpec,
     calculate_edge_data,
     calculate_edge_results_for_exp_name,
+    left_edge_of_rightmost_cluster,
     left_most_point_over_threshold,
+    right_edge_of_leftmost_cluster,
     right_most_point_over_threshold,
 )
 from flametrack.processing.dewarping import (
@@ -30,8 +35,6 @@ from flametrack.processing.dewarping import (
 from flametrack.utils.math_utils import compute_target_ratio
 
 from .ui_form import Ui_MainWindow
-
-DATATYPE = "IR"
 
 EXPERIMENT_CONFIG = {
     "Room Corner": {"required_points": 6},
@@ -50,6 +53,7 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         self.experiment: Optional[RceExperiment] = None
+        self.datatype: str = "IR"
         self.experiment_type: str = "Lateral Flame Spread"
         self.required_points: int = 4
         self.rotation_index: int = 0
@@ -58,6 +62,11 @@ class MainWindow(QMainWindow):
         self.target_pixels_height: Optional[int] = None
         self.edge_workers_done: int = 0
         self._pending_edge_results: dict = {}
+        # Active edge method key (short_id from EDGE_METHOD_CATALOG).
+        # Currently the "correct" key for the flame direction is chosen automatically
+        # in _edge_spec_for(); this attribute exists so a future UI combo box can
+        # override it without changing any other code.
+        self.edge_method_key: Optional[str] = None  # None → auto-select per direction
 
         # Initialize values
         self.plate_width_m: Optional[float] = None
@@ -278,9 +287,87 @@ class MainWindow(QMainWindow):
         self.ui.slider_frame.setDisabled(False)
         self.ui.slider_scale_min.setDisabled(False)
         self.ui.slider_scale_max.setDisabled(False)
-        frame_count = self.experiment.get_data(DATATYPE).get_frame_count()
+        frame_count = self.experiment.get_data(self.datatype).get_frame_count()
         self.ui.slider_frame.setMinimum(0)
         self.ui.slider_frame.setMaximum(frame_count)
+
+    @staticmethod
+    def _detect_datatype(folder: str) -> str:
+        """
+        Infer the primary data type by scanning *folder* and all immediate
+        subdirectories (one level deep).
+
+        Rules (first match wins):
+          *.csv              → "IR"
+          *.mp4              → "video"
+          *.png / *.jpg / *.jpeg  → "picture"
+          fallback           → "IR"
+        """
+        search_dirs = [folder] + [
+            os.path.join(folder, d)
+            for d in os.listdir(folder)
+            if os.path.isdir(os.path.join(folder, d))
+        ]
+
+        def _find(*exts: str) -> bool:
+            return any(
+                glob.glob(os.path.join(d, f"*.{ext}"))
+                for d in search_dirs
+                for ext in exts
+            )
+
+        if _find("csv", "CSV"):
+            return "IR"
+        if _find("mp4", "MP4"):
+            return "video"
+        if _find("png", "PNG", "jpg", "JPG", "jpeg", "JPEG"):
+            return "picture"
+        return "IR"
+
+    def _edge_threshold(self) -> float:
+        """
+        Return the default intensity threshold for the active EdgeMethodSpec.
+
+        Falls back to data-type defaults when no explicit method key is set.
+        """
+        spec = self._edge_spec_for(
+            "right_to_left"
+        )  # threshold is direction-independent
+        if self.datatype == "IR":
+            return spec.default_threshold_ir
+        return spec.default_threshold_image
+
+    def _edge_spec_for(self, direction: str) -> EdgeMethodSpec:
+        """
+        Return the EdgeMethodSpec for the given flame direction.
+
+        If ``self.edge_method_key`` is set (e.g. by a future UI combo box), that
+        entry from EDGE_METHOD_CATALOG is returned directly.  Otherwise the
+        appropriate default is chosen based on direction:
+            right_to_left  → ``leftmost_threshold``
+            left_to_right  → ``rightmost_threshold``
+
+        Args:
+            direction: ``"left_to_right"`` or ``"right_to_left"``
+        """
+        if self.edge_method_key is not None:
+            return EDGE_METHOD_CATALOG[self.edge_method_key]
+        key = (
+            "leftmost_threshold"
+            if direction == "right_to_left"
+            else "rightmost_threshold"
+        )
+        return EDGE_METHOD_CATALOG[key]
+
+    def _edge_method_for(self, direction: str):
+        """Convenience wrapper — returns the ready EdgeFn for the given direction."""
+        spec = self._edge_spec_for(direction)
+        thr = (
+            spec.default_threshold_ir
+            if self.datatype == "IR"
+            else spec.default_threshold_image
+        )
+        return spec.make_fn(thr)
 
     def load_file(self) -> None:
         """Open directory dialog, load experiment data, set UI elements."""
@@ -288,9 +375,11 @@ class MainWindow(QMainWindow):
         if not folder:
             return
 
+        self.datatype = self._detect_datatype(folder)
+        logging.info("Detected data type: %s", self.datatype)
         self.experiment = RceExperiment(folder)
         try:
-            _ = self.experiment.get_data(DATATYPE)  # force load
+            _ = self.experiment.get_data(self.datatype)  # force load
             h5 = self.experiment.h5_file
             self.experiment.h5_path = h5.filename
 
@@ -388,7 +477,7 @@ class MainWindow(QMainWindow):
             cmax,
         )
 
-        img = self.experiment.get_data(DATATYPE).get_frame(frame, rotation_factor)
+        img = self.experiment.get_data(self.datatype).get_frame(frame, rotation_factor)
         self.ui.plot_dewarping.plot(img, cmin, cmax)
 
     def calculate_edge_results(self) -> None:
@@ -448,6 +537,14 @@ class MainWindow(QMainWindow):
         plate_width_mm = self.ui.doubleSpinBox_plate_width.value()
         plate_height_mm = self.ui.doubleSpinBox_plate_height.value()
 
+        frame_shape = self.experiment.get_data(self.datatype).get_frame(0, 0).shape
+        logging.debug(
+            "[DEWARP] rotation_index=%d, original_frame_shape=%s, points_in_rotated_coords=%s",
+            rotation_index,
+            frame_shape,
+            points,
+        )
+
         cfg = DewarpConfig(
             target_ratio=self.target_ratio or 1.0,
             target_pixels_width=self.target_pixels_width or 100,
@@ -455,9 +552,10 @@ class MainWindow(QMainWindow):
             plate_width_mm=plate_width_mm,
             plate_height_mm=plate_height_mm,
             rotation_index=rotation_index,
-            filename=None,  # optional; du kannst hier auch einen Pfad setzen
+            filename=None,
             frequency=1,
             testing=False,
+            datatype=self.datatype,
         )
 
         try:
@@ -482,8 +580,9 @@ class MainWindow(QMainWindow):
                 return
 
             self.ui.button_dewarp.setDisabled(True)
-            frame_count = self.experiment.get_data(DATATYPE).get_frame_count()
-            self.ui.progress_dewarping.setRange(0, frame_count - 1)
+            frame_count = self.experiment.get_data(self.datatype).get_frame_count()
+            # Range 0..frame_count so setValue(i+1) reaches 100% for any count ≥ 1
+            self.ui.progress_dewarping.setRange(0, frame_count)
 
             console_bar = progressbar.ProgressBar(
                 max_value=frame_count,
@@ -496,12 +595,15 @@ class MainWindow(QMainWindow):
                     progressbar.ETA(),
                 ],
             )
+            console_bar.start()
 
             for progress in dewarp_generator:
-                self.ui.progress_dewarping.setValue(progress)
-                console_bar.update(progress)
+                self.ui.progress_dewarping.setValue(progress + 1)
+                if frame_count > 1:
+                    console_bar.update(progress)
                 QApplication.processEvents()
 
+            self.ui.progress_dewarping.setValue(frame_count)
             console_bar.finish()
             self.ui.button_dewarp.setDisabled(False)
 
@@ -532,12 +634,12 @@ class MainWindow(QMainWindow):
 
         self._disable_ui_while_edge_detecting()
 
-        frame_count = self.experiment.get_data(DATATYPE).get_frame_count()
+        frame_count = self.experiment.get_data(self.datatype).get_frame_count()
 
         if self.experiment_type == "Lateral Flame Spread":
             if not hasattr(self, "console_bar") or self.console_bar is None:
-                frame_count = self.experiment.get_data(DATATYPE).get_frame_count()
-                print(frame_count)
+                frame_count = self.experiment.get_data(self.datatype).get_frame_count()
+                logging.debug("Edge detection frame count: %d", frame_count)
                 if frame_count <= 0:
                     logging.error("Frame count is 0 – cannot start edge detection.")
                     QMessageBox.critical(
@@ -549,8 +651,8 @@ class MainWindow(QMainWindow):
                     "Edge Finding: ", max_value=frame_count
                 )
                 self.console_bar_started = False
-                print(
-                    f"[DEBUG] Created progress bar with max_value={self.console_bar.max_value}"
+                logging.debug(
+                    "Created progress bar with max_value=%d", self.console_bar.max_value
                 )
 
             self.ui.progress_edge_finding_plate1.setRange(0, 100)
@@ -558,23 +660,19 @@ class MainWindow(QMainWindow):
 
             self.thread = QThread()
             flame_dir = self.ui.comboBox_flame_direction.currentText()
-            method_fn = (
-                left_most_point_over_threshold
-                if flame_dir == "Right -> Left"
-                else right_most_point_over_threshold
-            )
-
             flame_dir_key = (
                 "right_to_left" if flame_dir == "Right -> Left" else "left_to_right"
             )
 
+            _spec_lfs = self._edge_spec_for(flame_dir_key)
             self.worker = EdgeDetectionWorker(
                 h5_path=self.experiment.h5_path,
                 dataset_key="dewarped_data/data",
                 result_key="edge_results",
-                threshold=280,
-                method=lambda y, params=None: method_fn(y, threshold=280),
+                threshold=self._edge_threshold(),
+                method=_spec_lfs.make_fn(self._edge_threshold()),
                 flame_direction=flame_dir_key,
+                use_otsu_masking=_spec_lfs.use_otsu_masking,
             )
             self._setup_edge_worker(self.thread, self.worker, "lfs")
             self.thread.start()
@@ -582,7 +680,7 @@ class MainWindow(QMainWindow):
 
         # Room Corner: separate threads for left and right
         if not hasattr(self, "console_bar_left") or self.console_bar_left is None:
-            frame_count = self.experiment.get_data(DATATYPE).get_frame_count()
+            frame_count = self.experiment.get_data(self.datatype).get_frame_count()
 
             self.console_bar_left = self._create_progress_bar(
                 "Edge Left: ", max_value=frame_count
@@ -601,28 +699,30 @@ class MainWindow(QMainWindow):
         self.ui.progress_edge_finding_plate2.setValue(0)
 
         # Left worker/thread
+        # RCE: left plate flame spreads right→left (away from corner on right side)
+        #      right plate flame spreads left→right (away from corner on left side)
         self.thread_left = QThread()
+        _spec_left = self._edge_spec_for("right_to_left")
         self.worker_left = EdgeDetectionWorker(
             h5_path=self.experiment.h5_path,
             dataset_key="dewarped_data_left/data",
             result_key="edge_results_left/data",
-            threshold=280,
-            method=lambda y, params=None: left_most_point_over_threshold(
-                y, threshold=280
-            ),
+            threshold=self._edge_threshold(),
+            method=_spec_left.make_fn(self._edge_threshold()),
+            use_otsu_masking=_spec_left.use_otsu_masking,
         )
         self._setup_edge_worker(self.thread_left, self.worker_left, "left")
 
         # Right worker/thread
         self.thread_right = QThread()
+        _spec_right = self._edge_spec_for("left_to_right")
         self.worker_right = EdgeDetectionWorker(
             h5_path=self.experiment.h5_path,
             dataset_key="dewarped_data_right/data",
             result_key="edge_results_right/data",
-            threshold=280,
-            method=lambda y, params=None: right_most_point_over_threshold(
-                y, threshold=280
-            ),
+            threshold=self._edge_threshold(),
+            method=_spec_right.make_fn(self._edge_threshold()),
+            use_otsu_masking=_spec_right.use_otsu_masking,
         )
         self._setup_edge_worker(self.thread_right, self.worker_right, "right")
 
@@ -694,11 +794,11 @@ class MainWindow(QMainWindow):
         logging.info("Edge detection finished for %s side.", side.upper())
 
         self.edge_workers_done += 1
-        print(
-            f"[DEBUG] handle_edge_result side={side}, "
-            f"edge_workers_done={self.edge_workers_done}, "
-            f"experiment_type={self.experiment_type}",
-            flush=True,
+        logging.debug(
+            "handle_edge_result side=%s, edge_workers_done=%d, experiment_type=%s",
+            side,
+            self.edge_workers_done,
+            self.experiment_type,
         )
         all_done = (
             self.experiment_type == "Lateral Flame Spread"
@@ -725,15 +825,14 @@ class MainWindow(QMainWindow):
                         flame_dir = getattr(self.worker, "flame_direction", None)
                         if flame_dir in ["left_to_right", "right_to_left"]:
                             group.attrs["flame_direction"] = flame_dir
-            print("[DEBUG] _write_pending_edge_results done", flush=True)
-        except Exception as exc:  # pylint: disable=broad-except
-            print(f"[DEBUG] _write_pending_edge_results FAILED: {exc}", flush=True)
+            logging.debug("_write_pending_edge_results done")
+        except Exception:  # pylint: disable=broad-except
             logging.exception("Failed to write edge results to HDF5")
         self._pending_edge_results = {}
 
     def enable_analysis_controls(self) -> None:
         """Enable UI controls after edge detection is complete."""
-        print("[DEBUG] enable_analysis_controls called", flush=True)
+        logging.debug("enable_analysis_controls called")
         self.ui.button_open_folder.setEnabled(True)
         self.ui.button_find_edge.setEnabled(True)
         self.ui.comboBox_experiment_type.setEnabled(True)
@@ -745,14 +844,11 @@ class MainWindow(QMainWindow):
         self.ui.plot_analysis.plot_edge_results(self.experiment, y_cutoff=y_cutoff)
 
     def update_edge_progress_lfs(self, value: int) -> None:
-        # import threading
-        # print(f"[{threading.current_thread().name}] update_edge_progress_lfs CALLED WITH VALUE:", value)
         self.ui.progress_edge_finding_plate1.setValue(value)
         if hasattr(self, "console_bar") and self.console_bar:
             if not getattr(self, "console_bar_started", False):
                 self.console_bar.start()
                 self.console_bar_started = True
-            # print(f"Console bar max: {self.console_bar.max_value}, value: {value}")
             self.console_bar.update(value)
 
     def update_edge_progress_left(self, value: int) -> None:
@@ -774,7 +870,7 @@ class MainWindow(QMainWindow):
             return
 
         try:
-            frame_count = self.experiment.get_data(DATATYPE).get_frame_count()
+            frame_count = self.experiment.get_data(self.datatype).get_frame_count()
             frame_index = frame_count // 2
             h5 = self.experiment.h5_file
 
@@ -798,30 +894,22 @@ class MainWindow(QMainWindow):
 
             frame = dataset[:, :, frame_index]
 
-            threshold = 280  # Default threshold
-
-            def edge_left(y, params=None):
-                return left_most_point_over_threshold(y, threshold=threshold)
-
-            def edge_right(y, params=None):
-                return right_most_point_over_threshold(y, threshold=threshold)
-
-            def identity_filter(x):
-                return x
-
             if self.experiment_type == "Lateral Flame Spread":
                 flame_dir = self.ui.comboBox_flame_direction.currentText()
-                if flame_dir == "Right -> Left":
-                    edge_method = edge_left
-                else:
-                    edge_method = edge_right
+                dir_key = (
+                    "right_to_left" if flame_dir == "Right -> Left" else "left_to_right"
+                )
             else:
-                edge_method = edge_left
+                # Room Corner preview always shows left plate (flame right→left)
+                dir_key = "right_to_left"
 
+            _spec_preview = self._edge_spec_for(dir_key)
+            _thr_preview = self._edge_threshold()
             edge = calculate_edge_data(
                 data=dataset[:, :, frame_index : frame_index + 1],
-                find_edge_point=edge_method,
-                custom_filter=identity_filter,
+                find_edge_point=_spec_preview.make_fn(_thr_preview),
+                custom_filter=lambda x: x,
+                use_otsu_masking=_spec_preview.use_otsu_masking,
             )[0]
 
             self.ui.plot_edge_preview.plot_with_edge(frame, edge, cmin=0.0, cmax=1.0)

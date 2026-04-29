@@ -34,20 +34,20 @@ class SelectableImshowCanvas(ImshowCanvas):
 
     def on_click(self, event) -> None:
         """Behandelt Mausklicks im Plotbereich zum Setzen neuer Punkte."""
-        logging.debug("[DEBUG] Mouse click received")
+        logging.debug("Mouse click received")
 
         if self.data is None:
-            logging.debug("[DEBUG] No data available – click ignored")
+            logging.debug("No data available – click ignored")
             return
 
         if self.lines is None:
-            logging.debug("[DEBUG] Creating lines object")
+            logging.debug("Creating lines object")
             self.lines = pg.PlotDataItem(pen="r")
             self.plot_widget.addItem(self.lines)
 
         if event.button() == Qt.MouseButton.LeftButton:
             logging.debug(
-                "[DEBUG] Left click – current point count: %d",
+                "Left click – current point count: %d",
                 len(self.draggable_points),
             )
 
@@ -58,15 +58,12 @@ class SelectableImshowCanvas(ImshowCanvas):
                 else 6
             )
             if len(self.draggable_points) >= required_points:
-                print(
-                    f"[INFO] Already {required_points} points set – ignoring further clicks."
-                )
                 return
 
             # Mausposition in Datenkoordinaten konvertieren
             mouse_point = self.plot_widget.plotItem.vb.mapSceneToView(event.scenePos())
             x, y = mouse_point.x(), mouse_point.y()
-            logging.debug("[DEBUG] Adding point at (%.2f, %.2f)", x, y)
+            logging.debug("Adding point at (%.2f, %.2f)", x, y)
 
             # Neuen draggable Punkt erzeugen und hinzufügen
             point = DraggablePoint(x, y, parent=self)
@@ -164,7 +161,7 @@ class SelectableImshowCanvas(ImshowCanvas):
             vb.addItem(self.lines)
             self.update_lines()
         else:
-            logging.debug("[DEBUG] No lines instance present")
+            logging.debug("No lines instance present")
 
     def clear_points(self) -> None:
         """Löscht alle gesetzten Punkte und die Linien."""

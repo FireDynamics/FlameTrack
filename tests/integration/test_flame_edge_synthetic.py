@@ -60,9 +60,6 @@ def test_flame_edge_tracking_on_synthetic_data(save_test_plot):
     detected_edges = [frame[middle_row] for frame in results]
     error = np.abs(np.array(detected_edges) - np.array(expected_edges))
 
-    # print("Expected edges:", expected_edges)
-    # print("Detected edges:", detected_edges)
-
     # === Plot using contourf and neon green overlay ===
     fig, axes = plt.subplots(3, 3, figsize=(15, 10), constrained_layout=True)
     axes = axes.flatten()

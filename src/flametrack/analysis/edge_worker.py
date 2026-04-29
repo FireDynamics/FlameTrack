@@ -30,6 +30,7 @@ class EdgeDetectionWorker(QObject):
         threshold: int,
         method: EdgeFn,
         flame_direction: Optional[str] = None,
+        use_otsu_masking: bool = True,
     ):
         """
         Initialize the edge detection worker.
@@ -41,6 +42,9 @@ class EdgeDetectionWorker(QObject):
             threshold: Threshold for edge detection.
             method: Callable method for edge calculation. Must accept (line, params).
             flame_direction: Optional flame direction metadata ("left_to_right" or "right_to_left").
+            use_otsu_masking: If True (default), Otsu thresholding is used to narrow
+                the per-row search window before applying the edge method.  Set False
+                to scan the full row with the raw intensity threshold.
         """
         super().__init__()
         self.h5_path = h5_path
@@ -49,6 +53,7 @@ class EdgeDetectionWorker(QObject):
         self.threshold = threshold
         self.method: EdgeFn = method
         self.flame_direction = flame_direction
+        self.use_otsu_masking = use_otsu_masking
 
     def run(self) -> None:
         """
@@ -65,9 +70,6 @@ class EdgeDetectionWorker(QObject):
         with h5py.File(self.h5_path, "r") as f:
             data = f[self.dataset_key]
             total_frames = data.shape[-1]
-            print(
-                f"[WORKER {self.dataset_key}] total_frames={total_frames}", flush=True
-            )
             method = self.method
 
             for i in range(total_frames):
@@ -77,18 +79,13 @@ class EdgeDetectionWorker(QObject):
                 edge = calculate_edge_data(
                     np.expand_dims(frame, axis=-1),
                     method,
-                )
+                    use_otsu_masking=self.use_otsu_masking,
+                )[0]
 
-                result.append(edge[0])  # only one frame processed
+                result.append(edge)
                 self.progress.emit(i + 1)
 
-        print(
-            f"[WORKER {self.dataset_key}] loop done, stacking {len(result)} results",
-            flush=True,
-        )
         result_array = np.stack(result, axis=0)
 
-        print(f"[WORKER {self.dataset_key}] emitting finished", flush=True)
         logging.info("[EDGE WORKER] Finished processing %d frames.", total_frames)
         self.finished.emit(result_array, self.result_key)
-        print(f"[WORKER {self.dataset_key}] finished emitted", flush=True)

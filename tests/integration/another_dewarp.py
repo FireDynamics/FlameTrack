@@ -67,6 +67,3 @@ def test_synthetic_roomcorner_remap_2(tmp_path):
         # Inhalt prüfen
         assert np.allclose(left_result, 100, atol=2)
         assert np.allclose(right_result, 200, atol=2)
-
-    # === 7. Gib Pfad zur Datei aus ===
-    print(f"[TEST] HDF5-Datei gespeichert unter: {h5_path.resolve()}")

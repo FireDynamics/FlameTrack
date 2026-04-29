@@ -1,7 +1,14 @@
+import os
+
 import numpy as np
 import pytest
 
 from flametrack.gui.imshow_canvas import ImshowCanvas
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("QT_QPA_PLATFORM") == "offscreen",
+    reason="PyQtGraph widget tests crash in headless mode on macOS",
+)
 
 
 def test_initialization(qtbot):

@@ -33,38 +33,43 @@ def sort_corner_points(
         if len(points) != 4:
             raise ValueError("Lateral flame spread expects exactly 4 points.")
 
-        pts = np.array(points)
-        center = np.mean(pts, axis=0)
-        angles = np.arctan2(pts[:, 1] - center[1], pts[:, 0] - center[0])
+        pts = np.array(points, dtype=np.float64)
 
-        sort_order = (
-            np.argsort(-angles) if direction == "clockwise" else np.argsort(angles)
-        )
+        # Robust ordering that works for any tilt and aspect ratio:
+        # Split along the dominant axis (wider → left/right pairs;
+        # taller → top/bottom pairs), then sort each pair along the
+        # cross-axis to assign TL/BL (or TL/TR).
+        #
+        # Angle-based methods fail for highly elongated plates where the
+        # two "top" corners are nearly collinear with the two "bottom"
+        # corners relative to the centroid.  Sum/diff methods fail for
+        # plates tilted close to 45°.  This split-on-dominant-axis
+        # approach is robust for both.
+        x_span = pts[:, 0].max() - pts[:, 0].min()
+        y_span = pts[:, 1].max() - pts[:, 1].min()
 
-        return [tuple(pts[i]) for i in sort_order]
+        if x_span >= y_span:
+            # Wider (or square) plate: split into left pair and right pair
+            order = np.argsort(pts[:, 0])
+            left = pts[order[:2]]
+            right = pts[order[2:]]
+            tl = left[np.argmin(left[:, 1])]
+            bl = left[np.argmax(left[:, 1])]
+            tr = right[np.argmin(right[:, 1])]
+            br = right[np.argmax(right[:, 1])]
+        else:
+            # Taller plate: split into top pair and bottom pair
+            order = np.argsort(pts[:, 1])
+            top = pts[order[:2]]
+            bot = pts[order[2:]]
+            tl = top[np.argmin(top[:, 0])]
+            tr = top[np.argmax(top[:, 0])]
+            bl = bot[np.argmin(bot[:, 0])]
+            br = bot[np.argmax(bot[:, 0])]
+
+        return [tuple(tl), tuple(tr), tuple(br), tuple(bl)]
 
     raise ValueError(f"Unknown experiment type: {experiment_type}")
-
-
-# import numpy as np
-#
-# def sort_corner_points(points, direction: str = "clockwise") -> list:
-#     if len(points) != 6:
-#         raise ValueError("Expected exactly 6 points.")
-#
-#     pts = np.array(points)
-#     center = np.mean(pts, axis=0)
-#     angles = np.arctan2(pts[:, 1] - center[1], pts[:, 0] - center[0])
-#     sort_order = np.argsort(angles)
-#     if direction == "clockwise":
-#         sort_order = sort_order[::-1]
-#     sorted_pts = pts[sort_order]
-#
-#     # Startpunkt = niedrigster X (links), dann Y (oben)
-#     top_idx = np.lexsort((sorted_pts[:, 1], sorted_pts[:, 0]))[0]
-#     sorted_pts = np.roll(sorted_pts, -top_idx, axis=0)
-#
-#     return [tuple(pt) for pt in sorted_pts]
 
 
 def rotate_points(points, image_shape, rotation_index):
@@ -91,4 +96,5 @@ def rotate_points(points, image_shape, rotation_index):
     else:  # 270° CCW (= 90° CW): inverse is x = ry, y = H-1-rx
         x_out, y_out = ry, img_h - 1 - rx
 
-    return np.stack([x_out, y_out], axis=1).tolist()
+    result = np.stack([x_out, y_out], axis=1).tolist()
+    return result

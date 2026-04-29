@@ -43,9 +43,6 @@ def test_dewarp_room_corner_with_real_image(mainwindow, tmp_path):
 
     assert csv_path.exists(), "CSV file was not created"
 
-    print("CSV preview:")
-    print(read_ir_data(csv_path)[:3, :3])
-
     # 5. Dewarp durchführen
     mainwindow.on_dewarp_clicked()
 
@@ -54,19 +51,8 @@ def test_dewarp_room_corner_with_real_image(mainwindow, tmp_path):
     assert h5_path.exists(), "HDF5 file was not created"
 
     with h5py.File(h5_path, "r") as f:
-        print(list(f.keys()))
         left_data = f["dewarped_data_left"]["data"][:, :, 0]
-        print(left_data.shape)
         right_data = f["dewarped_data_right"]["data"][:]
-
-    # fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-    # axs[0].imshow(left_data, cmap='gray')
-    # axs[0].set_title("Dewarped Left")
-    # axs[1].imshow(right_data, cmap='gray')
-    # axs[1].set_title("Dewarped Right")
-    # for ax in axs: ax.axis("off")
-    # plt.tight_layout()
-    # plt.show()
 
     with h5py.File(h5_path, "r") as h5f:
         assert "dewarped_data_left" in h5f

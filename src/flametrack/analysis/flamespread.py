@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, Tuple
 
 import cv2
@@ -23,6 +24,31 @@ from .dataset_handler import get_dewarped_data, save_edge_results
 
 class EdgeFn(Protocol):
     def __call__(self, y: np.ndarray, params: Optional[Dict] = ...) -> int: ...
+
+
+@dataclass
+class EdgeMethodSpec:
+    """Descriptor for a named edge-detection method variant.
+
+    Attributes:
+        short_id: Machine-readable key (used as dict key in EDGE_METHOD_CATALOG).
+        display_name: Human-readable name shown in dropdowns / notebooks.
+        description: One-sentence explanation.
+        make_fn: Factory that accepts a threshold float and returns a ready EdgeFn.
+        default_threshold_ir: Recommended threshold for IR (°C) data.
+        default_threshold_image: Recommended threshold for image / video (0-255) data.
+        use_otsu_masking: If True, calculate_edge_data applies Otsu to narrow the
+            per-row search region before calling the EdgeFn.  Set False to scan the
+            full row with the raw intensity threshold.
+    """
+
+    short_id: str
+    display_name: str
+    description: str
+    make_fn: Callable[[float], EdgeFn]
+    default_threshold_ir: float
+    default_threshold_image: float
+    use_otsu_masking: bool = True
 
 
 def find_peaks_in_gradient(
@@ -52,6 +78,54 @@ def find_peaks_in_gradient(
         kwargs["width"] = float(min_width)
     peaks, _ = find_peaks(g, **kwargs)
     return peaks
+
+
+def left_edge_of_rightmost_cluster(
+    y: np.ndarray, threshold: float = 128, params: Optional[Dict] = None
+) -> int:
+    """
+    Find the leftmost pixel of the rightmost contiguous cluster above threshold.
+
+    This is the correct edge function for a flame spreading right-to-left in
+    image/video data (0–255 range).  Unlike ``left_most_point_over_threshold``,
+    it ignores isolated bright artefacts (reflections, glare) that are not part
+    of the main hot region.
+
+    Algorithm:
+      1. Find the rightmost pixel above *threshold*.
+      2. Walk left while still above *threshold*.
+      3. Return the index one step past the last hot pixel (= leftmost edge).
+
+    Returns ``len(y)`` when no pixel exceeds the threshold.
+    """
+    mask = y > threshold
+    if not mask.any():
+        return len(y)
+    rightmost = int(np.where(mask)[0][-1])
+    pos = rightmost
+    while pos >= 0 and mask[pos]:
+        pos -= 1
+    return pos + 1
+
+
+def right_edge_of_leftmost_cluster(
+    y: np.ndarray, threshold: float = 128, params: Optional[Dict] = None
+) -> int:
+    """
+    Find the rightmost pixel of the leftmost contiguous cluster above threshold.
+
+    Mirror of ``left_edge_of_rightmost_cluster`` for flames spreading left-to-right.
+
+    Returns 0 when no pixel exceeds the threshold.
+    """
+    mask = y > threshold
+    if not mask.any():
+        return 0
+    leftmost = int(np.where(mask)[0][0])
+    pos = leftmost
+    while pos < len(y) and mask[pos]:
+        pos += 1
+    return pos - 1
 
 
 def right_most_point_over_threshold(
@@ -180,48 +254,54 @@ def calculate_edge_data(
     data: np.ndarray,
     find_edge_point: EdgeFn,
     custom_filter: Callable[[np.ndarray], np.ndarray] = lambda x: x,
+    use_otsu_masking: bool = True,
 ) -> list[list[int]]:
     """
     Calculates the edge position for each row of each frame.
 
     Args:
-        data (np.ndarray): 3D array of shape (homography, W, T).
+        data (np.ndarray): 3D array of shape (H, W, T).
         find_edge_point (Callable): Method to find edge in 1D data.
         custom_filter (Callable): Optional filter to apply to each frame.
+        use_otsu_masking (bool): If True (default), apply Otsu thresholding and
+            morphological dilation to restrict the per-row search window.  Set
+            False to scan the full row without any masking (useful when a fixed
+            intensity threshold alone is sufficient and Otsu would over-shrink the
+            window, e.g. with a deliberately low threshold such as 117).
 
     Returns:
         list[list[int]]: Edge coordinates per frame.
     """
     result: list[list[int]] = []
-    # bar = progressbar.ProgressBar()
-    # for n in bar(range(data.shape[-1])):
     for n in range(data.shape[-1]):
-        logging.debug("[DEBUG] Processing frame %d/%d", n + 1, data.shape[-1])
-        frame = data[:, :, n].astype(np.float32)  # float32 behalten
+        logging.debug("Processing frame %d/%d", n + 1, data.shape[-1])
+        frame = data[:, :, n].astype(np.float32)
         background_frame = data[:, :, max(n - 1, 0)].astype(np.float32)
 
         filtered_frame = custom_filter(frame.copy())
         frame = filtered_frame - custom_filter(background_frame)
 
-        # Nur für Binärmaske → 0..1 float → u8
-        minv = float(filtered_frame.min())
-        maxv = float(filtered_frame.max())
-        if maxv > minv:
-            normed = (filtered_frame - minv) / (maxv - minv)
-        else:
-            normed = np.zeros_like(filtered_frame, dtype=np.float32)
+        # --- Otsu masking (optional) ---
+        thresh: Optional[np.ndarray] = None
+        if use_otsu_masking:
+            minv = float(filtered_frame.min())
+            maxv = float(filtered_frame.max())
+            if maxv > minv:
+                normed = (filtered_frame - minv) / (maxv - minv)
+            else:
+                normed = np.zeros_like(filtered_frame, dtype=np.float32)
 
-        mask_u8 = (normed * 255.0).astype(np.uint8)
-
-        # Otsu + Morphologie auf u8
-        _, thresh = cv2.threshold(mask_u8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        kernel = np.ones((3, 3), dtype=np.uint8)
-        thresh = cv2.dilate(thresh, kernel, iterations=10)
+            mask_u8 = (normed * 255.0).astype(np.uint8)
+            _, thresh = cv2.threshold(
+                mask_u8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+            )
+            kernel = np.ones((3, 3), dtype=np.uint8)
+            thresh = cv2.dilate(thresh, kernel, iterations=10)
 
         frame_result: list[int] = []
         for i in range(frame.shape[0]):
             start, end = 0, -1
-            if n < 150:
+            if use_otsu_masking and thresh is not None and n < 150:
                 idx = np.where(thresh[i, :] > 0)[0]
                 if idx.size:
                     start, end = int(idx[0]), int(idx[-1]) + 10
@@ -232,7 +312,6 @@ def calculate_edge_data(
                 params["previous_peak"] = result[-1][i]
                 params["previous_velocity"] = result[-1][i] - result[-2][i]
 
-            # beide Signaturen erlauben
             peak = find_edge_point(y, params=params)
 
             if peak > 0:
@@ -241,6 +320,110 @@ def calculate_edge_data(
         result.append(frame_result)
 
     return result
+
+
+# =====================================================================================
+# EDGE METHOD CATALOG
+# =====================================================================================
+# A registry of all available edge-detection variants.  The app and the notebook both
+# import this dict so method descriptions and defaults stay in one place.
+#
+# Keys are short_id strings; values are EdgeMethodSpec instances.
+# In the future the UI can expose a method-selection combo box populated from here.
+
+EDGE_METHOD_CATALOG: Dict[str, EdgeMethodSpec] = {
+    # ── Otsu-masked variants (recommended, use calculate_edge_data with masking) ──
+    "leftmost_threshold": EdgeMethodSpec(
+        short_id="leftmost_threshold",
+        display_name="Leftmost ≥ threshold  (Otsu region, R→L)",
+        description=(
+            "Finds the first (leftmost) pixel above the threshold inside the "
+            "Otsu-narrowed search window.  Tam's original method for R→L flames."
+        ),
+        make_fn=lambda t: (
+            lambda y, params=None, _t=t: left_most_point_over_threshold(y, threshold=_t)
+        ),
+        default_threshold_ir=280.0,
+        default_threshold_image=155.0,
+        use_otsu_masking=True,
+    ),
+    "rightmost_threshold": EdgeMethodSpec(
+        short_id="rightmost_threshold",
+        display_name="Rightmost ≥ threshold  (Otsu region, L→R)",
+        description=(
+            "Finds the last (rightmost) pixel above the threshold inside the "
+            "Otsu-narrowed search window.  L→R flame counterpart."
+        ),
+        make_fn=lambda t: (
+            lambda y, params=None, _t=t: right_most_point_over_threshold(
+                y, threshold=_t
+            )
+        ),
+        default_threshold_ir=280.0,
+        default_threshold_image=155.0,
+        use_otsu_masking=True,
+    ),
+    "left_edge_rightmost_cluster": EdgeMethodSpec(
+        short_id="left_edge_rightmost_cluster",
+        display_name="Left edge of rightmost cluster  (Otsu region, R→L)",
+        description=(
+            "Finds the leftmost pixel of the rightmost contiguous bright cluster.  "
+            "More robust than plain threshold for R→L flames with artefacts."
+        ),
+        make_fn=lambda t: (
+            lambda y, params=None, _t=t: left_edge_of_rightmost_cluster(y, threshold=_t)
+        ),
+        default_threshold_ir=280.0,
+        default_threshold_image=155.0,
+        use_otsu_masking=True,
+    ),
+    "right_edge_leftmost_cluster": EdgeMethodSpec(
+        short_id="right_edge_leftmost_cluster",
+        display_name="Right edge of leftmost cluster  (Otsu region, L→R)",
+        description=(
+            "Finds the rightmost pixel of the leftmost contiguous bright cluster.  "
+            "More robust than plain threshold for L→R flames with artefacts."
+        ),
+        make_fn=lambda t: (
+            lambda y, params=None, _t=t: right_edge_of_leftmost_cluster(y, threshold=_t)
+        ),
+        default_threshold_ir=280.0,
+        default_threshold_image=155.0,
+        use_otsu_masking=True,
+    ),
+    # ── Raw / no-Otsu variants (full row, fixed threshold) ──────────────────────
+    "leftmost_threshold_no_otsu": EdgeMethodSpec(
+        short_id="leftmost_threshold_no_otsu",
+        display_name="Leftmost ≥ threshold  (no Otsu, full row, R→L)",
+        description=(
+            "Same as leftmost_threshold but scans the full row without Otsu masking.  "
+            "Useful for verifying results or when Otsu shrinks the window too aggressively.  "
+            "Default threshold 117 works well for 0-255 image data."
+        ),
+        make_fn=lambda t: (
+            lambda y, params=None, _t=t: left_most_point_over_threshold(y, threshold=_t)
+        ),
+        default_threshold_ir=280.0,
+        default_threshold_image=117.0,
+        use_otsu_masking=False,
+    ),
+    "rightmost_threshold_no_otsu": EdgeMethodSpec(
+        short_id="rightmost_threshold_no_otsu",
+        display_name="Rightmost ≥ threshold  (no Otsu, full row, L→R)",
+        description=(
+            "Same as rightmost_threshold but scans the full row without Otsu masking.  "
+            "L→R counterpart of leftmost_threshold_no_otsu."
+        ),
+        make_fn=lambda t: (
+            lambda y, params=None, _t=t: right_most_point_over_threshold(
+                y, threshold=_t
+            )
+        ),
+        default_threshold_ir=280.0,
+        default_threshold_image=117.0,
+        use_otsu_masking=False,
+    ),
+}
 
 
 def calculate_edge_results_for_exp_name(
@@ -412,97 +595,3 @@ def show_flame_spread_velocity(
     ax.set_xlabel("Frame")
     ax.set_ylabel("Velocity [px/frame]")
     return fig, ax
-
-
-# =====================================================================================
-# ARCHIVED / NOT RECOMMENDED FOR CURRENT USE
-# =====================================================================================
-
-# def plot_3D(frame):
-#     """
-#     Plot 3D data
-#     :param frame: 3D data to plot
-#     """
-#     fig = plt.figure()
-#     ax = fig.add_subplot(111, projection="3d")
-#     x = np.arange(0, frame.shape[1], 1)
-#     y = np.arange(0, frame.shape[0], 1)
-#     X, Y = np.meshgrid(x, y)
-#     ax.plot_surface(X, Y, frame, cmap="hot")
-#     ax.set_xlabel("X")
-#     ax.set_ylabel("Y")
-#     ax.set_zlabel("Z")
-#     plt.show()
-#
-# def plot_imshow(frame):
-#     """
-#     Plot 2D data
-#     :param frame: 2D data to plot
-#     """
-#     plt.imshow(frame, cmap="hot")
-#     plt.show()
-#
-# def plot_1D(frame, slice):
-#     """
-#     Plot 1D data
-#     :param frame: 1D data to plot
-#     """
-#     fig, ax = plt.subplots()
-#     y = frame[slice, :]
-#     x = np.arange(0, frame.shape[1], 1)
-#     ax.plot(x, y)
-#     ax.set_title("Temp at y = {}".format(slice))
-#     ax.set_ylabel("Temperature")
-#     ax.set_xlabel("X")
-#
-#     return fig, ax
-#
-# def plot_gradient(frame, slice):
-#     """
-#     Plot gradient of 1D data
-#     :param frame: 1D data to plot
-#     """
-#     y = frame[slice, :]
-#     x = np.arange(0, frame.shape[1], 1)
-#     gradient = np.gradient(y)
-#     fig, ax = plt.subplots()
-#     ax.plot(x, gradient)
-#     ax.set_title("Gradient at y = {}".format(slice))
-#     ax.set_xlabel("X")
-#     ax.set_ylabel("Gradient")
-#     return fig, ax
-#
-# def get_frame(data, frame_number):
-#     return data[:, :, frame_number]
-#
-# def show_frame(data, frame_number):
-#     fig, ax = plt.subplots()
-#     ax.imshow(get_frame(data, frame_number), cmap="hot")
-#     ax.set_title(f"Frame {frame_number}")
-#     # ax.invert_yaxis()
-#     return fig, ax
-#
-# def show_flame_spread_plotly(edge_results, y_coord):
-#     y_coord = -y_coord - 1
-#     fig = px.line(x=range(len(edge_results)), y=edge_results.T[y_coord])
-#     fig.update_layout(
-#         title="Flame spread at y = {}".format(y_coord),
-#         xaxis_title="Frame",
-#         yaxis_title="X coordinate",
-#     )
-#     return fig
-#
-# def show_flame_contour_plotly(data, edge_results, frame):
-#     fig = go.Figure()
-#     fig.add_trace(go.Heatmap(z=data[:, :, frame], colorscale="hot", showscale=False))
-#     fig.add_trace(
-#         go.Scatter(
-#             x=edge_results[frame][::-1],
-#             y=list(range(len(edge_results[frame]) - 1, -1, -1)),
-#             mode="lines",
-#         )
-#     )
-#     fig.update_layout(
-#         title=f"Flame contour at frame {frame}", yaxis=dict(autorange="reversed")
-#     )
-#     return fig

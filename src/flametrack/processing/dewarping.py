@@ -33,6 +33,7 @@ class DewarpConfig:
     frequency: int = 1
     testing: bool = False
     filename: Optional[str] = None  # optional override output path
+    datatype: str = "IR"  # data source: "IR", "video", "picture"
 
 
 @dataclass(frozen=True)
@@ -114,7 +115,7 @@ def _store_remap(
     group.create_dataset("src_y", data=src_y)
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals,too-many-statements
 def dewarp_room_corner_remap(
     experiment: Any,
     points: NDArray[np.float32] | Sequence[Tuple[float, float]],
@@ -130,7 +131,7 @@ def dewarp_room_corner_remap(
         raise ValueError("Target image size too small for meaningful dewarping.")
 
     # linke/rechte 4er‑Ecken aufteilen + optional rotieren
-    frame_shape = experiment.get_data(DATATYPE).get_frame(0, 0).shape
+    frame_shape = experiment.get_data(config.datatype).get_frame(0, 0).shape
     pts_left = pts[[0, 1, 4, 5]]
     pts_right = pts[[1, 2, 3, 4]]
     sel_left = rotate_points(pts_left, frame_shape, config.rotation_index)
@@ -151,9 +152,14 @@ def dewarp_room_corner_remap(
 
     out_path = _ensure_output_path(experiment, config.filename)
 
-    # Falls Datei existiert: Benutzerfluss wie gehabt – aber gezielt OSError/FileExistsError behandeln
-    if os.path.exists(out_path):
-        raise FileExistsError(out_path)
+    # Nur blockieren, wenn die Datei bereits sinnvolle Dewarping-Daten enthält.
+    # Eine leere oder unvollständige Datei vom letzten Lauf wird stillschweigend überschrieben.
+    try:
+        with h5py.File(out_path, "r") as h5f:
+            if "dewarped_data_left" in h5f or "dewarped_data_right" in h5f:
+                raise FileExistsError(out_path)
+    except OSError:
+        pass
     if experiment.h5_file is not None:
         experiment.h5_file.close()
 
@@ -175,7 +181,10 @@ def dewarp_room_corner_remap(
                     "target_pixels_height": params["target_pixels_height"],
                     "target_ratio": params["target_ratio"],
                     "selected_points": sel,
-                    "frame_range": [0, experiment.get_data(DATATYPE).get_frame_count()],
+                    "frame_range": [
+                        0,
+                        experiment.get_data(config.datatype).get_frame_count(),
+                    ],
                     "points_selection_date": datetime.now().strftime(
                         "%Y-%m-%d %H:%M:%S"
                     ),
@@ -212,7 +221,7 @@ def dewarp_room_corner_remap(
             _store_remap(grp, src_x, src_y)
 
         # Frames schleifen
-        data = experiment.get_data(DATATYPE)
+        data = experiment.get_data(config.datatype)
         frames = data.data_numbers
         start, end = (
             (len(frames) // 2 - 1, len(frames) // 2 + 1)
@@ -241,16 +250,17 @@ def dewarp_room_corner_remap(
 
                 src_x = np.asarray(src_x_dset[()], dtype=np.float32)
                 src_y = np.asarray(src_y_dset[()], dtype=np.float32)
-                map_x, map_y = cv2.convertMaps(
-                    src_x.astype(np.float32), src_y.astype(np.float32), cv2.CV_16SC2
-                )
 
-                # Grenzen clippen, um cv2.remap sicher zu füttern
+                # Clip x and y maps separately before remapping.
+                # NOTE: do NOT use cv2.convertMaps here — it produces a 2-channel
+                # CV_16SC2 map, and np.clip on that array would clip BOTH the x and
+                # y channels to the same bound, incorrectly clamping y-coordinates
+                # when the raw frame is non-square (e.g. after camera rotation).
                 h_in, w_in = raw.shape[:2]
                 remapped = cv2.remap(
                     raw,
-                    np.clip(map_x, 0, w_in - 1),
-                    np.clip(map_y, 0, h_in - 1),
+                    np.clip(src_x, 0, w_in - 1),
+                    np.clip(src_y, 0, h_in - 1),
                     interpolation=cv2.INTER_LINEAR,
                 )
 
@@ -280,7 +290,13 @@ def dewarp_lateral_flame_spread(
     if len(points) != 4:
         raise ValueError("Exactly 4 corner points are required for LFS dewarping.")
 
-    sorted_pts = sort_corner_points(points, experiment_type="Lateral Flame Spread")
+    # "anticlockwise" → argsort(angles) ascending → [TL, TR, BR, BL] in image
+    # coordinates (y-down), which is what get_dewarp_parameters expects.
+    # The name is confusing because math angles increase CCW, but in image
+    # coords (y-down) ascending angles traverse CW: TL→TR→BR→BL.
+    sorted_pts = sort_corner_points(
+        points, experiment_type="Lateral Flame Spread", direction="anticlockwise"
+    )
     params = get_dewarp_parameters(
         sorted_pts,
         target_pixels_width=config.target_pixels_width,
@@ -307,13 +323,7 @@ def dewarp_lateral_flame_spread(
             h5f, config.plate_width_mm, config.plate_height_mm, room_corner=False
         )
 
-        if "dewarped_data" in h5f:
-            del h5f["dewarped_data"]
-        if "edge_results" in h5f:
-            del h5f["edge_results"]
-
-        grp = h5f.create_group("dewarped_data")
-        h5f.create_group("edge_results")
+        grp = h5f.require_group("dewarped_data")
 
         grp.attrs.update(
             {
@@ -322,7 +332,10 @@ def dewarp_lateral_flame_spread(
                 "target_pixels_height": int(params["target_pixels_height"]),
                 "target_ratio": float(params["target_ratio"]),
                 "selected_points": np.asarray(sorted_pts, dtype=np.float32),
-                "frame_range": [0, experiment.get_data(DATATYPE).get_frame_count()],
+                "frame_range": [
+                    0,
+                    experiment.get_data(config.datatype).get_frame_count(),
+                ],
                 "points_selection_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "plate_width_mm": config.plate_width_mm,
                 "plate_height_mm": config.plate_height_mm,
@@ -345,7 +358,7 @@ def dewarp_lateral_flame_spread(
         w_out = int(params["target_pixels_width"])
         dset = _ensure_dataset(grp, (h_out, w_out))
 
-        data = experiment.get_data(DATATYPE)
+        data = experiment.get_data(config.datatype)
         frames = data.data_numbers
         start, end = (
             (len(frames) // 2 - 1, len(frames) // 2 + 1)
@@ -394,103 +407,3 @@ def rotate_image_and_points(
     points_h = np.hstack([points, np.ones((points.shape[0], 1), dtype=points.dtype)])
     rotated_pts = (rotation_matrix @ points_h.T).T.astype(np.float32)
     return rotated_img.astype(np.float32, copy=False), rotated_pts
-
-
-# ==============================================================================
-# ARCHIVED FUNCTION — no longer used in GUI (replaced by dewarp_room_corner_remap)
-# ==============================================================================
-
-# def dewarp_room_corner(...):  # ← original legacy code here
-#
-# def dewarp_room_corner(
-#     experiment,
-#     points,
-#     target_ratio,
-#     target_pixels_width=None,
-#     target_pixels_height=None,
-#     rotation_index=0,
-#     filename=None,
-#     frequency=1,
-#     testing=False,
-# ):
-#     logging.info("[DEWARP] Starting room corner dewarping")
-#
-#     if len(points) != 6:
-#         raise ValueError("Expected 6 points for room corner dewarping")
-#
-#     points = np.array(points)
-#     selected_points_left = points[[0, 1, 4, 5]]
-#     selected_points_right = points[[1, 2, 3, 4]]
-#
-#     dewarp_params_left = get_dewarp_parameters(
-#         selected_points_left,
-#         target_pixels_width=target_pixels_width,
-#         target_pixels_height=target_pixels_height,
-#         target_ratio=target_ratio,
-#     )
-#     dewarp_params_right = get_dewarp_parameters(
-#         selected_points_right,
-#         target_pixels_width=target_pixels_width,
-#         target_pixels_height=target_pixels_height,
-#         target_ratio=target_ratio,
-#     )
-#
-#     if filename is None:
-#         processed_folder = os.path.join(experiment.folder_path, "processed_data")
-#         os.makedirs(processed_folder, exist_ok=True)
-#         filename = os.path.join(
-#             processed_folder, f"{experiment.exp_name}_results_RCE.h5"
-#         )
-#
-#     if os.path.exists(filename):
-#         raise FileExistsError(filename)
-#
-#     if experiment.h5_file is not None:
-#         experiment.h5_file.close()
-#
-#     with create_h5_file(filename=filename) as h5_file:
-#         h5_file.create_group("dewarped_data_left")
-#         h5_file.create_group("dewarped_data_right")
-#         h5_file.create_group("edge_results_left")
-#         h5_file.create_group("edge_results_right")
-#
-#         for grp_name, dewarp_params, selected_pts in zip(
-#             ["dewarped_data_left", "dewarped_data_right"],
-#             [dewarp_params_left, dewarp_params_right],
-#             [selected_points_left, selected_points_right],
-#         ):
-#             grp = h5_file[grp_name]
-#             grp.attrs["transformation_matrix"] = dewarp_params["transformation_matrix"]
-#             grp.attrs["target_pixels_width"] = dewarp_params["target_pixels_width"]
-#             grp.attrs["target_pixels_height"] = dewarp_params["target_pixels_height"]
-#             grp.attrs["target_ratio"] = dewarp_params["target_ratio"]
-#             grp.attrs["selected_points"] = selected_pts
-#             grp.attrs["frame_range"] = [
-#                 0,
-#                 experiment.get_data(DATATYPE).get_frame_count(),
-#             ]
-#             grp.attrs["points_selection_date"] = datetime.now().strftime(
-#                 "%Y-%m-%d %homography:%M:%S"
-#             )
-#
-#             dset_h = dewarp_params["target_pixels_height"]
-#             dset_w = dewarp_params["target_pixels_width"]
-#
-#             grp.create_dataset(
-#                 "data",
-#                 (dset_h, dset_w, 1),
-#                 maxshape=(dset_h, dset_w, None),
-#                 chunks=(dset_h, dset_w, 1),
-#                 dtype=np.float32,
-#             )
-#
-#         for progress in dewarp_RCE_exp(
-#             experiment,
-#             rotation_index,
-#             testing=testing,
-#             frequency=frequency,
-#             data_type=DATATYPE,
-#         ):
-#             yield progress
-#
-#     experiment.h5_file = h5py.File(filename, "r+")
