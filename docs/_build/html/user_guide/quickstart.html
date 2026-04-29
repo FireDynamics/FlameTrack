@@ -1,0 +1,266 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quickstart &mdash; FlameTrack 1.0.1b2.post5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=228cd8fb"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Workflows" href="workflows.html" />
+    <link rel="prev" title="Configuration" href="configuration.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../index.html" class="icon icon-home">
+            FlameTrack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Quickstart</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#launch-flametrack">1. Launch FlameTrack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#select-experiment-type">2. Select Experiment Type</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#set-camera-rotation">3. Set Camera Rotation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#load-data">4. Load Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#place-calibration-points">5. Place Calibration Points</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#enter-plate-dimensions">6. Enter Plate Dimensions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-dewarping">7. Run Dewarping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-edge-detection">8. Run Edge Detection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#inspect-results">9. Inspect Results</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="workflows.html">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">FlameTrack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">User Guide</a></li>
+      <li class="breadcrumb-item active">Quickstart</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/user_guide/quickstart.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <section id="quickstart">
+<h1>Quickstart<a class="headerlink" href="#quickstart" title="Link to this heading"></a></h1>
+<p>This guide walks through a complete FlameTrack session from loading data to
+saving results.</p>
+<p>Before you start, make sure your experiment folder follows the expected
+structure — see <a class="reference internal" href="configuration.html"><span class="doc">Configuration</span></a>.</p>
+<section id="launch-flametrack">
+<h2>1. Launch FlameTrack<a class="headerlink" href="#launch-flametrack" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">flametrack</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>TODO screenshot</strong> — docs/source/_static/screenshots/01_main_window_empty.png
+The application on first launch: empty image area on the left, control
+panel on the right with the Experiment type dropdown, Rotation dropdown,
+plate dimension inputs, and the Dewarp / Find Edge buttons.</p>
+</div>
+</section>
+<section id="select-experiment-type">
+<h2>2. Select Experiment Type<a class="headerlink" href="#select-experiment-type" title="Link to this heading"></a></h2>
+<p>Use the <strong>Experiment type</strong> dropdown:</p>
+<ul class="simple">
+<li><p><strong>Lateral Flame Spread (LFS)</strong> — single panel, 4 calibration points</p></li>
+<li><p><strong>Room Corner</strong> — two perpendicular panels, 6 calibration points</p></li>
+</ul>
+</section>
+<section id="set-camera-rotation">
+<h2>3. Set Camera Rotation<a class="headerlink" href="#set-camera-rotation" title="Link to this heading"></a></h2>
+<p>If the camera was mounted sideways, choose the matching angle from the
+<strong>Rotation</strong> dropdown <em>before</em> placing calibration points. The image rotates
+immediately so you can work in the correct orientation.</p>
+</section>
+<section id="load-data">
+<h2>4. Load Data<a class="headerlink" href="#load-data" title="Link to this heading"></a></h2>
+<p>Click <strong>Open Folder</strong> and select your experiment. FlameTrack loads the first
+frame and displays it.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>TODO screenshot</strong> — docs/source/_static/screenshots/02_frame_loaded.png
+After opening a folder: a thermal IR frame fills the image area. The
+frame slider at the bottom is active. No calibration points placed yet.</p>
+</div>
+</section>
+<section id="place-calibration-points">
+<h2>5. Place Calibration Points<a class="headerlink" href="#place-calibration-points" title="Link to this heading"></a></h2>
+<p>Click on the four (or six) corners of the specimen plate. The <strong>click order
+does not matter</strong> — FlameTrack sorts the points automatically.</p>
+<p><strong>Lateral Flame Spread — 4 points</strong></p>
+<p>Click the four corners of the plate:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>TL ─────────────── TR
+│                   │
+│   specimen plate  │
+│                   │
+BL ─────────────── BR
+
+TL = top-left   TR = top-right
+BL = bottom-left  BR = bottom-right
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>TODO screenshot</strong> — docs/source/_static/screenshots/03_calibration_points_lfs.png
+Four coloured draggable markers placed on the four corners of the specimen
+plate. The plate edges should visually connect the four points. Use a
+Lateral Flame Spread experiment for this screenshot.</p>
+</div>
+<p><strong>Room Corner — 6 points</strong></p>
+<p>Click the three corners of the left panel and the three corners of the right
+panel (the inner vertical edge is shared):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>L-TL      L-TR / R-TL      R-TR
+  │    left  │    right  │
+  │  panel   │   panel   │
+L-BL      L-BR / R-BL      R-BR
+
+Place one point at each marked corner (6 total).
+The two panels share the inner vertical edge.
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>TODO screenshot</strong> — docs/source/_static/screenshots/04_calibration_points_roomcorner.png
+Six markers placed on a Room Corner frame: three on the left panel
+(top-left, bottom-left, bottom-right of left panel) and three on the right
+panel, meeting at the inner vertical edge where the two walls join.</p>
+</div>
+<p><strong>Keyboard shortcuts while placing points</strong></p>
+<ul class="simple">
+<li><p><strong>D</strong> — delete the point nearest to the cursor</p></li>
+<li><p><strong>C</strong> — clear all points</p></li>
+</ul>
+</section>
+<section id="enter-plate-dimensions">
+<h2>6. Enter Plate Dimensions<a class="headerlink" href="#enter-plate-dimensions" title="Link to this heading"></a></h2>
+<p>Enter the physical width and height of the specimen in <strong>millimetres</strong>.
+FlameTrack uses these values to compute the output image resolution.</p>
+</section>
+<section id="run-dewarping">
+<h2>7. Run Dewarping<a class="headerlink" href="#run-dewarping" title="Link to this heading"></a></h2>
+<p>Click <strong>Dewarp</strong>. FlameTrack corrects perspective distortion for every frame
+and saves the result to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">processed_data</span><span class="o">/&lt;</span><span class="n">experiment_name</span><span class="o">&gt;</span><span class="n">_results_RCE</span><span class="o">.</span><span class="n">h5</span>
+</pre></div>
+</div>
+<p>A progress bar shows how many frames have been processed.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>TODO screenshot</strong> — docs/source/_static/screenshots/05_dewarped_result.png
+The image area now shows the dewarped frame: the specimen plate fills the
+entire image, perspective distortion is corrected, and the plate appears
+as a straight rectangle.</p>
+</div>
+</section>
+<section id="run-edge-detection">
+<h2>8. Run Edge Detection<a class="headerlink" href="#run-edge-detection" title="Link to this heading"></a></h2>
+<p>Select the flame direction (<strong>left → right</strong> or <strong>right → left</strong>) from the
+<strong>Flame direction</strong> dropdown, then click <strong>Find Edge</strong>.</p>
+<p>For a Room Corner experiment both panels are processed simultaneously in
+separate threads.</p>
+</section>
+<section id="inspect-results">
+<h2>9. Inspect Results<a class="headerlink" href="#inspect-results" title="Link to this heading"></a></h2>
+<p>Use the <strong>Analysis Y</strong> slider to select a horizontal row. The lower plot shows
+the detected flame-edge position at that height over time.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>TODO screenshot</strong> — docs/source/_static/screenshots/06_edge_result.png
+Final state: dewarped frame with the detected flame edge overlaid as a
+line or marker column. The lower analysis plot shows edge x-position vs.
+time for the selected row (Analysis Y slider). The edge curve should show
+a clear progression indicating flame spread.</p>
+</div>
+<p>The full result array is stored in the HDF5 file under <code class="docutils literal notranslate"><span class="pre">edge_results</span></code>
+(LFS) or <code class="docutils literal notranslate"><span class="pre">edge_results_left</span></code> / <code class="docutils literal notranslate"><span class="pre">edge_results_right</span></code> (Room Corner).
+See <a class="reference internal" href="workflows.html"><span class="doc">Workflows</span></a> for the complete output format.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="configuration.html" class="btn btn-neutral float-left" title="Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="workflows.html" class="btn btn-neutral float-right" title="Workflows" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Minh Tam Würzburger, Marc Fehr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,1096 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>flametrack.gui.main_window &mdash; FlameTrack 1.0.1b2.post5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=228cd8fb"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            FlameTrack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/index.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer_guide/index.html">Developer Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">FlameTrack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">flametrack.gui.main_window</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for flametrack.gui.main_window</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">progressbar</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QThread</span><span class="p">,</span> <span class="n">Signal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">QApplication</span><span class="p">,</span>
+    <span class="n">QFileDialog</span><span class="p">,</span>
+    <span class="n">QMainWindow</span><span class="p">,</span>
+    <span class="n">QMessageBox</span><span class="p">,</span>
+    <span class="n">QSlider</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">flametrack.analysis.data_types</span><span class="w"> </span><span class="kn">import</span> <span class="n">RceExperiment</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flametrack.analysis.edge_worker</span><span class="w"> </span><span class="kn">import</span> <span class="n">EdgeDetectionWorker</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flametrack.analysis.flamespread</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">EDGE_METHOD_CATALOG</span><span class="p">,</span>
+    <span class="n">EdgeMethodSpec</span><span class="p">,</span>
+    <span class="n">calculate_edge_data</span><span class="p">,</span>
+    <span class="n">calculate_edge_results_for_exp_name</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flametrack.processing.dewarping</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DewarpConfig</span><span class="p">,</span>
+    <span class="n">dewarp_lateral_flame_spread</span><span class="p">,</span>
+    <span class="n">dewarp_room_corner_remap</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flametrack.utils.math_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_target_ratio</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.ui_form</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ui_MainWindow</span>
+
+<span class="n">EXPERIMENT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;Room Corner&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required_points&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">},</span>
+    <span class="s2">&quot;Lateral Flame Spread&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required_points&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">},</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="MainWindow">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MainWindow</span><span class="p">(</span><span class="n">QMainWindow</span><span class="p">):</span>
+    <span class="c1"># Relay signal so handle_edge_result always runs on the main thread,</span>
+    <span class="c1"># regardless of which worker thread emits it.</span>
+    <span class="n">_edge_result_ready</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span> <span class="o">=</span> <span class="n">Ui_MainWindow</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">:</span> <span class="n">RceExperiment</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;IR&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Lateral Flame Spread&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">required_points</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rotation_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_pixels_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_pixels_height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edge_workers_done</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pending_edge_results</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Active edge method key (short_id from EDGE_METHOD_CATALOG).</span>
+        <span class="c1"># Currently the &quot;correct&quot; key for the flame direction is chosen automatically</span>
+        <span class="c1"># in _edge_spec_for(); this attribute exists so a future UI combo box can</span>
+        <span class="c1"># override it without changing any other code.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edge_method_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># None → auto-select per direction</span>
+
+        <span class="c1"># Initialize values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plate_width_m</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plate_height_m</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">console_bar</span><span class="p">:</span> <span class="n">progressbar</span><span class="o">.</span><span class="n">ProgressBar</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_started</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_left</span><span class="p">:</span> <span class="n">progressbar</span><span class="o">.</span><span class="n">ProgressBar</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_right</span><span class="p">:</span> <span class="n">progressbar</span><span class="o">.</span><span class="n">ProgressBar</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_right_started</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="p">:</span> <span class="n">QThread</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="p">:</span> <span class="n">EdgeDetectionWorker</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_left</span><span class="p">:</span> <span class="n">QThread</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_left</span><span class="p">:</span> <span class="n">EdgeDetectionWorker</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_right</span><span class="p">:</span> <span class="n">QThread</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_right</span><span class="p">:</span> <span class="n">EdgeDetectionWorker</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_ui</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_connections</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_defaults</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_setup_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initial UI setup: titles, visibility, and default states.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;Flamespread Analysis Tool&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">plot_dewarping</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate2</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">checkBox_mulithread</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_analysis_y</span><span class="o">.</span><span class="n">setMinimum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_analysis_y</span><span class="o">.</span><span class="n">setMaximum</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_analysis_y</span><span class="o">.</span><span class="n">setTickPosition</span><span class="p">(</span><span class="n">QSlider</span><span class="o">.</span><span class="n">TicksBothSides</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_analysis_y</span><span class="o">.</span><span class="n">setTickInterval</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_setup_connections</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Connect UI signals to their corresponding slots.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">button_open_folder</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">combo_rotation</span><span class="o">.</span><span class="n">currentIndexChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_rotation_index</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">doubleSpinBox_plate_width</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update_target_ratio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">doubleSpinBox_plate_height</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_target_ratio</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_experiment_type</span><span class="o">.</span><span class="n">currentTextChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_experiment_type</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_experiment_type</span><span class="o">.</span><span class="n">currentTextChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_flame_direction_visibility</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_flame_direction</span><span class="o">.</span><span class="n">currentTextChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_edge_preview</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_frame</span><span class="o">.</span><span class="n">sliderReleased</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_plot</span><span class="p">(</span>
+                <span class="n">framenr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_frame</span><span class="o">.</span><span class="n">value</span><span class="p">(),</span>
+                <span class="n">rotation_factor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rotation_index</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_scale_min</span><span class="o">.</span><span class="n">sliderReleased</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_plot</span><span class="p">(</span>
+                <span class="n">cmin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_scale_min</span><span class="o">.</span><span class="n">value</span><span class="p">(),</span>
+                <span class="n">rotation_factor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rotation_index</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_scale_max</span><span class="o">.</span><span class="n">sliderReleased</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_plot</span><span class="p">(</span>
+                <span class="n">cmax</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_scale_max</span><span class="o">.</span><span class="n">value</span><span class="p">(),</span>
+                <span class="n">rotation_factor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rotation_index</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">button_dewarp</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">on_dewarp_clicked</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">button_find_edge</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_edge_detection</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_analysis_y</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update_analysis_plot</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_edge_result_ready</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">handle_edge_result</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initialize_defaults</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set initial values for UI elements and internal parameters.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">combo_rotation</span><span class="o">.</span><span class="n">setCurrentIndex</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_target_ratio</span><span class="p">()</span>
+        <span class="n">initial_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_experiment_type</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_experiment_type</span><span class="p">(</span><span class="n">initial_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_flame_direction_visibility</span><span class="p">()</span>
+
+<div class="viewcode-block" id="MainWindow.set_rotation_index">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.set_rotation_index">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_rotation_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rotation_index</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_plot</span><span class="p">(</span><span class="n">framenr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_frame</span><span class="o">.</span><span class="n">value</span><span class="p">(),</span> <span class="n">rotation_factor</span><span class="o">=</span><span class="n">index</span><span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_read_plate_mm_from_h5_root_first</span><span class="p">(</span>
+        <span class="n">h5</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Liefert (width_mm, height_mm).</span>
+<span class="sd">        Reihenfolge:</span>
+<span class="sd">          1) Room-Corner Root: plate_width_mm_left/right, plate_height_mm_left/right</span>
+<span class="sd">          2) Gruppen: dewarped_data_left/right</span>
+<span class="sd">          3) LFS Root: plate_width_mm, plate_height_mm</span>
+<span class="sd">          4) Gruppe: dewarped_data</span>
+<span class="sd">        Nimmt für die GUI (ein Paar Spinboxes) bevorzugt &#39;left&#39;, fällt sonst auf &#39;right&#39; zurück.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># 1) Room-Corner Root (left preferred, fallback right)</span>
+        <span class="n">w_l</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_width_mm_left&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">h_l</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_height_mm_left&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">w_r</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_width_mm_right&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">h_r</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_height_mm_right&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">w_l</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">h_l</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">w_r</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">h_r</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">w_l</span> <span class="k">if</span> <span class="n">w_l</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">w_r</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">h_l</span> <span class="k">if</span> <span class="n">h_l</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">h_r</span>
+            <span class="k">return</span> <span class="n">_f</span><span class="p">(</span><span class="n">w</span><span class="p">),</span> <span class="n">_f</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+
+        <span class="c1"># 2) Gruppen (Room-Corner)</span>
+        <span class="k">if</span> <span class="s2">&quot;dewarped_data_left&quot;</span> <span class="ow">in</span> <span class="n">h5</span> <span class="ow">or</span> <span class="s2">&quot;dewarped_data_right&quot;</span> <span class="ow">in</span> <span class="n">h5</span><span class="p">:</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">h</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="s2">&quot;dewarped_data_left&quot;</span> <span class="ow">in</span> <span class="n">h5</span><span class="p">:</span>
+                <span class="n">g</span> <span class="o">=</span> <span class="n">h5</span><span class="p">[</span><span class="s2">&quot;dewarped_data_left&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+                <span class="n">w</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_width_mm&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">h</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_height_mm&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">w</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">h</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;dewarped_data_right&quot;</span> <span class="ow">in</span> <span class="n">h5</span><span class="p">:</span>
+                <span class="n">g</span> <span class="o">=</span> <span class="n">h5</span><span class="p">[</span><span class="s2">&quot;dewarped_data_right&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+                <span class="n">w</span> <span class="o">=</span> <span class="n">w</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_width_mm&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">h</span> <span class="o">=</span> <span class="n">h</span> <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_height_mm&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">_f</span><span class="p">(</span><span class="n">w</span><span class="p">),</span> <span class="n">_f</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+
+        <span class="c1"># 3) LFS Root (einheitliche Platte)</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_width_mm&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_height_mm&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">h</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_f</span><span class="p">(</span><span class="n">w</span><span class="p">),</span> <span class="n">_f</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+
+        <span class="c1"># 4) Gruppe dewarped_data (LFS)</span>
+        <span class="k">if</span> <span class="s2">&quot;dewarped_data&quot;</span> <span class="ow">in</span> <span class="n">h5</span><span class="p">:</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">h5</span><span class="p">[</span><span class="s2">&quot;dewarped_data&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_width_mm&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_height_mm&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">_f</span><span class="p">(</span><span class="n">w</span><span class="p">),</span> <span class="n">_f</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="c1"># ---- Helper inside MainWindow ------------------------------------------------</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_detect_experiment_type_from_h5</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Setzt experiment_type und ComboBox anhand der HDF5-Gruppen.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;dewarped_data_left&quot;</span> <span class="ow">in</span> <span class="n">h5</span> <span class="ow">and</span> <span class="s2">&quot;dewarped_data_right&quot;</span> <span class="ow">in</span> <span class="n">h5</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span> <span class="o">=</span> <span class="s2">&quot;Room Corner&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_experiment_type</span><span class="o">.</span><span class="n">setCurrentText</span><span class="p">(</span><span class="s2">&quot;Room Corner&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s2">&quot;dewarped_data&quot;</span> <span class="ow">in</span> <span class="n">h5</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span> <span class="o">=</span> <span class="s2">&quot;Lateral Flame Spread&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_experiment_type</span><span class="o">.</span><span class="n">setCurrentText</span><span class="p">(</span><span class="s2">&quot;Lateral Flame Spread&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No dewarped data found in HDF5 - type unchanged.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_read_plate_mm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Liest Plattenmaße (mm) – Root bevorzugt, dann Gruppen (Room Corner/LFS).&quot;&quot;&quot;</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Room-Corner: Root (left/right)</span>
+        <span class="n">w_mm</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_width_mm_left&quot;</span><span class="p">)</span>
+        <span class="n">h_mm</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_height_mm_left&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">w_mm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">w_mm</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_width_mm_right&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">h_mm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">h_mm</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_height_mm_right&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">w_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">h_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_f</span><span class="p">(</span><span class="n">w_mm</span><span class="p">),</span> <span class="n">_f</span><span class="p">(</span><span class="n">h_mm</span><span class="p">)</span>
+
+        <span class="c1"># Room-Corner: Gruppen</span>
+        <span class="k">if</span> <span class="s2">&quot;dewarped_data_left&quot;</span> <span class="ow">in</span> <span class="n">h5</span><span class="p">:</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">h5</span><span class="p">[</span><span class="s2">&quot;dewarped_data_left&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+            <span class="n">w_mm</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_width_mm&quot;</span><span class="p">)</span>
+            <span class="n">h_mm</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_height_mm&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">w_mm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">h_mm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;dewarped_data_right&quot;</span> <span class="ow">in</span> <span class="n">h5</span><span class="p">:</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">h5</span><span class="p">[</span><span class="s2">&quot;dewarped_data_right&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+            <span class="n">w_mm</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_width_mm&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">w_mm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">w_mm</span>
+            <span class="n">h_mm</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_height_mm&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">h_mm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">h_mm</span>
+        <span class="k">if</span> <span class="n">w_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">h_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_f</span><span class="p">(</span><span class="n">w_mm</span><span class="p">),</span> <span class="n">_f</span><span class="p">(</span><span class="n">h_mm</span><span class="p">)</span>
+
+        <span class="c1"># LFS: Root</span>
+        <span class="n">w_mm</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_width_mm&quot;</span><span class="p">)</span>
+        <span class="n">h_mm</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_height_mm&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">w_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">h_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_f</span><span class="p">(</span><span class="n">w_mm</span><span class="p">),</span> <span class="n">_f</span><span class="p">(</span><span class="n">h_mm</span><span class="p">)</span>
+
+        <span class="c1"># LFS: Gruppe</span>
+        <span class="k">if</span> <span class="s2">&quot;dewarped_data&quot;</span> <span class="ow">in</span> <span class="n">h5</span><span class="p">:</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">h5</span><span class="p">[</span><span class="s2">&quot;dewarped_data&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+            <span class="k">return</span> <span class="n">_f</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_width_mm&quot;</span><span class="p">)),</span> <span class="n">_f</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plate_height_mm&quot;</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_plate_mm_to_spinboxes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">w_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">h_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Schreibt (falls vorhanden) die Plattenmaße in die SpinBoxes und aktualisiert Ratio.&quot;&quot;&quot;</span>
+        <span class="n">wrote_any</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">w_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">doubleSpinBox_plate_width</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">w_mm</span><span class="p">)</span>
+            <span class="n">wrote_any</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">h_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">doubleSpinBox_plate_height</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">h_mm</span><span class="p">)</span>
+            <span class="n">wrote_any</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">wrote_any</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_target_ratio</span><span class="p">()</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Loaded plate size (mm): </span><span class="si">%s</span><span class="s2"> x </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">w_mm</span><span class="p">,</span> <span class="n">h_mm</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Plate size (mm) not found in HDF5 (root or groups).&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_enable_controls_after_load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Aktiviert Slider/Controls nach erfolgreichem Laden und setzt Bereiche.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_frame</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_scale_min</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_scale_max</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">frame_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span><span class="o">.</span><span class="n">get_frame_count</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_frame</span><span class="o">.</span><span class="n">setMinimum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_frame</span><span class="o">.</span><span class="n">setMaximum</span><span class="p">(</span><span class="n">frame_count</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_detect_datatype</span><span class="p">(</span><span class="n">folder</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Infer the primary data type by scanning *folder* and all immediate</span>
+<span class="sd">        subdirectories (one level deep).</span>
+
+<span class="sd">        Rules (first match wins):</span>
+<span class="sd">          *.csv              → &quot;IR&quot;</span>
+<span class="sd">          *.mp4              → &quot;video&quot;</span>
+<span class="sd">          *.png / *.jpg / *.jpeg  → &quot;picture&quot;</span>
+<span class="sd">          fallback           → &quot;IR&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">search_dirs</span> <span class="o">=</span> <span class="p">[</span><span class="n">folder</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">folder</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span>
+        <span class="p">]</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_find</span><span class="p">(</span><span class="o">*</span><span class="n">exts</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">any</span><span class="p">(</span>
+                <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;*.</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">search_dirs</span>
+                <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">exts</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">_find</span><span class="p">(</span><span class="s2">&quot;csv&quot;</span><span class="p">,</span> <span class="s2">&quot;CSV&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">&quot;IR&quot;</span>
+        <span class="k">if</span> <span class="n">_find</span><span class="p">(</span><span class="s2">&quot;mp4&quot;</span><span class="p">,</span> <span class="s2">&quot;MP4&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">&quot;video&quot;</span>
+        <span class="k">if</span> <span class="n">_find</span><span class="p">(</span><span class="s2">&quot;png&quot;</span><span class="p">,</span> <span class="s2">&quot;PNG&quot;</span><span class="p">,</span> <span class="s2">&quot;jpg&quot;</span><span class="p">,</span> <span class="s2">&quot;JPG&quot;</span><span class="p">,</span> <span class="s2">&quot;jpeg&quot;</span><span class="p">,</span> <span class="s2">&quot;JPEG&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">&quot;picture&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;IR&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_edge_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the default intensity threshold for the active EdgeMethodSpec.</span>
+
+<span class="sd">        Falls back to data-type defaults when no explicit method key is set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_spec_for</span><span class="p">(</span>
+            <span class="s2">&quot;right_to_left&quot;</span>
+        <span class="p">)</span>  <span class="c1"># threshold is direction-independent</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;IR&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">spec</span><span class="o">.</span><span class="n">default_threshold_ir</span>
+        <span class="k">return</span> <span class="n">spec</span><span class="o">.</span><span class="n">default_threshold_image</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_edge_spec_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EdgeMethodSpec</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the EdgeMethodSpec for the given flame direction.</span>
+
+<span class="sd">        If ``self.edge_method_key`` is set (e.g. by a future UI combo box), that</span>
+<span class="sd">        entry from EDGE_METHOD_CATALOG is returned directly.  Otherwise the</span>
+<span class="sd">        appropriate default is chosen based on direction:</span>
+<span class="sd">            right_to_left  → ``leftmost_threshold``</span>
+<span class="sd">            left_to_right  → ``rightmost_threshold``</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            direction: ``&quot;left_to_right&quot;`` or ``&quot;right_to_left&quot;``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_method_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">EDGE_METHOD_CATALOG</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">edge_method_key</span><span class="p">]</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;leftmost_threshold&quot;</span>
+            <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;right_to_left&quot;</span>
+            <span class="k">else</span> <span class="s2">&quot;rightmost_threshold&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">EDGE_METHOD_CATALOG</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_edge_method_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience wrapper — returns the ready EdgeFn for the given direction.&quot;&quot;&quot;</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_spec_for</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span>
+        <span class="n">thr</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">spec</span><span class="o">.</span><span class="n">default_threshold_ir</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;IR&quot;</span>
+            <span class="k">else</span> <span class="n">spec</span><span class="o">.</span><span class="n">default_threshold_image</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">spec</span><span class="o">.</span><span class="n">make_fn</span><span class="p">(</span><span class="n">thr</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MainWindow.load_file">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.load_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_file</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Open directory dialog, load experiment data, set UI elements.&quot;&quot;&quot;</span>
+        <span class="n">folder</span> <span class="o">=</span> <span class="n">QFileDialog</span><span class="o">.</span><span class="n">getExistingDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Select Directory&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">folder</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">datatype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detect_datatype</span><span class="p">(</span><span class="n">folder</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Detected data type: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span> <span class="o">=</span> <span class="n">RceExperiment</span><span class="p">(</span><span class="n">folder</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span>  <span class="c1"># force load</span>
+            <span class="n">h5</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_path</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">filename</span>
+
+            <span class="c1"># Experiment-Typ &amp; Plattenmaße ermitteln</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_detect_experiment_type_from_h5</span><span class="p">(</span><span class="n">h5</span><span class="p">)</span>
+            <span class="n">w_mm</span><span class="p">,</span> <span class="n">h_mm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_plate_mm</span><span class="p">(</span><span class="n">h5</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_apply_plate_mm_to_spinboxes</span><span class="p">(</span><span class="n">w_mm</span><span class="p">,</span> <span class="n">h_mm</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Error reading experiment type from HDF5: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+
+        <span class="c1"># UI &amp; Plots aktualisieren</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_plot</span><span class="p">(</span><span class="n">framenr</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enable_controls_after_load</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">experiment_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_edge_preview</span><span class="p">()</span>
+
+        <span class="n">y_cutoff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_analysis_y</span><span class="o">.</span><span class="n">value</span><span class="p">()</span> <span class="o">/</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">plot_analysis</span><span class="o">.</span><span class="n">plot_edge_results</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">,</span> <span class="n">y_cutoff</span><span class="o">=</span><span class="n">y_cutoff</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.update_target_ratio">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.update_target_ratio">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_target_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute and update target pixel size and ratio based on plate dimensions.&quot;&quot;&quot;</span>
+        <span class="n">width_mm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">doubleSpinBox_plate_width</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+        <span class="n">height_mm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">doubleSpinBox_plate_height</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_ratio</span> <span class="o">=</span> <span class="n">compute_target_ratio</span><span class="p">(</span><span class="n">width_mm</span><span class="p">,</span> <span class="n">height_mm</span><span class="p">)</span>
+
+        <span class="n">mm_per_pixel</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_pixels_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">width_mm</span> <span class="o">/</span> <span class="n">mm_per_pixel</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_pixels_height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">height_mm</span> <span class="o">/</span> <span class="n">mm_per_pixel</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">plate_width_m</span> <span class="o">=</span> <span class="n">width_mm</span> <span class="o">/</span> <span class="mf">1000.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plate_height_m</span> <span class="o">=</span> <span class="n">height_mm</span> <span class="o">/</span> <span class="mf">1000.0</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;target_ratio: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_ratio</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;target_pixels_width: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_pixels_width</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;target_pixels_height: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_pixels_height</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.set_experiment_type">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.set_experiment_type">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_experiment_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">experiment_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set experiment type and adjust UI visibility and required points.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span> <span class="o">=</span> <span class="n">experiment_type</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">experiment_type</span> <span class="o">=</span> <span class="n">experiment_type</span>
+
+        <span class="k">if</span> <span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Room Corner&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">required_points</span> <span class="o">=</span> <span class="mi">6</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate1</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate2</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">checkBox_mulithread</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Lateral Flame Spread&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">required_points</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate1</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate2</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">checkBox_mulithread</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="p">,</span> <span class="s2">&quot;plot_dewarping&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">plot_dewarping</span><span class="o">.</span><span class="n">clear_points</span><span class="p">()</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;Set experiment type to </span><span class="si">%s</span><span class="s2"> - expecting </span><span class="si">%s</span><span class="s2"> points&quot;</span><span class="p">,</span>
+            <span class="n">experiment_type</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">required_points</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.update_plot">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.update_plot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_plot</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">framenr</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rotation_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">cmin</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">cmax</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update image plot according to frame, rotation and color scaling.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">rotation_factor</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">rotation_factor</span>
+            <span class="k">if</span> <span class="n">rotation_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">combo_rotation</span><span class="o">.</span><span class="n">currentIndex</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">framenr</span> <span class="k">if</span> <span class="n">framenr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_frame</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+        <span class="n">cmin</span> <span class="o">=</span> <span class="n">cmin</span> <span class="k">if</span> <span class="n">cmin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_scale_min</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+        <span class="n">cmax</span> <span class="o">=</span> <span class="n">cmax</span> <span class="k">if</span> <span class="n">cmax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_scale_max</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+
+        <span class="c1"># Ensure cmin &lt;= cmax and normalize to 0..1 range</span>
+        <span class="n">cmin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">cmin</span><span class="p">,</span> <span class="n">cmax</span><span class="p">)</span> <span class="o">/</span> <span class="mi">100</span>
+        <span class="n">cmax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">cmin</span><span class="p">,</span> <span class="n">cmax</span><span class="p">)</span> <span class="o">/</span> <span class="mi">100</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;update_plot: frame=</span><span class="si">%s</span><span class="s2">, rotation=</span><span class="si">%s</span><span class="s2">, cmin=</span><span class="si">%s</span><span class="s2">, cmax=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">frame</span><span class="p">,</span>
+            <span class="n">rotation_factor</span><span class="p">,</span>
+            <span class="n">cmin</span><span class="p">,</span>
+            <span class="n">cmax</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span><span class="o">.</span><span class="n">get_frame</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">rotation_factor</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">plot_dewarping</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">cmin</span><span class="p">,</span> <span class="n">cmax</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.calculate_edge_results">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.calculate_edge_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_edge_results</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate edge detection results and write to HDF5 datasets.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span><span class="p">:</span>
+            <span class="n">QMessageBox</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;No file loaded&quot;</span><span class="p">,</span> <span class="s2">&quot;Please load a file first and dewarp it&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Left plate edge</span>
+        <span class="n">dewarped_data_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span><span class="p">[</span><span class="s2">&quot;dewarped_data_left&quot;</span><span class="p">][</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+        <span class="n">results_left</span> <span class="o">=</span> <span class="n">calculate_edge_results_for_exp_name</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">exp_name</span><span class="p">,</span>
+            <span class="n">left</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">dewarped_data</span><span class="o">=</span><span class="n">dewarped_data_left</span><span class="p">,</span>
+            <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">grp_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span><span class="p">[</span><span class="s2">&quot;edge_results_left&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;data&quot;</span> <span class="ow">in</span> <span class="n">grp_left</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">grp_left</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+        <span class="n">grp_left</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">results_left</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Finished LEFT edge calculation&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Right plate edge</span>
+        <span class="n">dewarped_data_right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span><span class="p">[</span><span class="s2">&quot;dewarped_data_right&quot;</span><span class="p">][</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+        <span class="n">results_right</span> <span class="o">=</span> <span class="n">calculate_edge_results_for_exp_name</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">exp_name</span><span class="p">,</span>
+            <span class="n">left</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">dewarped_data</span><span class="o">=</span><span class="n">dewarped_data_right</span><span class="p">,</span>
+            <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">grp_right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span><span class="p">[</span><span class="s2">&quot;edge_results_right&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;data&quot;</span> <span class="ow">in</span> <span class="n">grp_right</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">grp_right</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+        <span class="n">grp_right</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">results_right</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Finished RIGHT edge calculation&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">button_dewarp</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.on_dewarp_clicked">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.on_dewarp_clicked">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_dewarp_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Trigger dewarping based on user-set points and experiment type.&quot;&quot;&quot;</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">scatter_points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">(),</span> <span class="n">p</span><span class="o">.</span><span class="n">scatter_points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">plot_dewarping</span><span class="o">.</span><span class="n">draggable_points</span>
+        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">):</span>
+            <span class="n">QMessageBox</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Invalid point count&quot;</span><span class="p">,</span> <span class="s2">&quot;Please set exactly 4 or 6 points.&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">experiment_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span>
+        <span class="n">rotation_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">combo_rotation</span><span class="o">.</span><span class="n">currentIndex</span><span class="p">()</span>
+        <span class="n">plate_width_mm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">doubleSpinBox_plate_width</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+        <span class="n">plate_height_mm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">doubleSpinBox_plate_height</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+
+        <span class="n">frame_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span><span class="o">.</span><span class="n">get_frame</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;[DEWARP] rotation_index=</span><span class="si">%d</span><span class="s2">, original_frame_shape=</span><span class="si">%s</span><span class="s2">, points_in_rotated_coords=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">rotation_index</span><span class="p">,</span>
+            <span class="n">frame_shape</span><span class="p">,</span>
+            <span class="n">points</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">cfg</span> <span class="o">=</span> <span class="n">DewarpConfig</span><span class="p">(</span>
+            <span class="n">target_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">target_ratio</span> <span class="ow">or</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="n">target_pixels_width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">target_pixels_width</span> <span class="ow">or</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="n">target_pixels_height</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">target_pixels_height</span> <span class="ow">or</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="n">plate_width_mm</span><span class="o">=</span><span class="n">plate_width_mm</span><span class="p">,</span>
+            <span class="n">plate_height_mm</span><span class="o">=</span><span class="n">plate_height_mm</span><span class="p">,</span>
+            <span class="n">rotation_index</span><span class="o">=</span><span class="n">rotation_index</span><span class="p">,</span>
+            <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">frequency</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">testing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">datatype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Room Corner&quot;</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+                <span class="n">dewarp_generator</span> <span class="o">=</span> <span class="n">dewarp_room_corner_remap</span><span class="p">(</span>
+                    <span class="n">experiment</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">,</span>
+                    <span class="n">points</span><span class="o">=</span><span class="n">points</span><span class="p">,</span>
+                    <span class="n">config</span><span class="o">=</span><span class="n">cfg</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Lateral Flame Spread&quot;</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                <span class="n">dewarp_generator</span> <span class="o">=</span> <span class="n">dewarp_lateral_flame_spread</span><span class="p">(</span>
+                    <span class="n">experiment</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">,</span>
+                    <span class="n">points</span><span class="o">=</span><span class="n">points</span><span class="p">,</span>
+                    <span class="n">config</span><span class="o">=</span><span class="n">cfg</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">QMessageBox</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="p">,</span>
+                    <span class="s2">&quot;Invalid experiment type or point count&quot;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">experiment_type</span><span class="si">}</span><span class="s2"> requires exactly 4 or 6 points.&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">button_dewarp</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">frame_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span><span class="o">.</span><span class="n">get_frame_count</span><span class="p">()</span>
+            <span class="c1"># Range 0..frame_count so setValue(i+1) reaches 100% for any count ≥ 1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_dewarping</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">frame_count</span><span class="p">)</span>
+
+            <span class="n">console_bar</span> <span class="o">=</span> <span class="n">progressbar</span><span class="o">.</span><span class="n">ProgressBar</span><span class="p">(</span>
+                <span class="n">max_value</span><span class="o">=</span><span class="n">frame_count</span><span class="p">,</span>
+                <span class="n">widgets</span><span class="o">=</span><span class="p">[</span>
+                    <span class="s2">&quot;Dewarping: &quot;</span><span class="p">,</span>
+                    <span class="n">progressbar</span><span class="o">.</span><span class="n">Percentage</span><span class="p">(),</span>
+                    <span class="s2">&quot; &quot;</span><span class="p">,</span>
+                    <span class="n">progressbar</span><span class="o">.</span><span class="n">Bar</span><span class="p">(</span><span class="n">marker</span><span class="o">=</span><span class="s2">&quot;█&quot;</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="s2">&quot;[&quot;</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="s2">&quot;]&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot; &quot;</span><span class="p">,</span>
+                    <span class="n">progressbar</span><span class="o">.</span><span class="n">ETA</span><span class="p">(),</span>
+                <span class="p">],</span>
+            <span class="p">)</span>
+            <span class="n">console_bar</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">progress</span> <span class="ow">in</span> <span class="n">dewarp_generator</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_dewarping</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">progress</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">frame_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">console_bar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">progress</span><span class="p">)</span>
+                <span class="n">QApplication</span><span class="o">.</span><span class="n">processEvents</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_dewarping</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">frame_count</span><span class="p">)</span>
+            <span class="n">console_bar</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">button_dewarp</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">,</span> <span class="s2">&quot;h5_file&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span><span class="o">.</span><span class="n">filename</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_edge_preview</span><span class="p">()</span>
+
+        <span class="k">except</span> <span class="ne">FileExistsError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">choice</span> <span class="o">=</span> <span class="n">QMessageBox</span><span class="o">.</span><span class="n">question</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span>
+                <span class="s2">&quot;File exists&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">err</span><span class="si">}</span><span class="se">\n</span><span class="s2">Overwrite?&quot;</span><span class="p">,</span>
+                <span class="n">QMessageBox</span><span class="o">.</span><span class="n">Yes</span> <span class="o">|</span> <span class="n">QMessageBox</span><span class="o">.</span><span class="n">No</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">choice</span> <span class="o">==</span> <span class="n">QMessageBox</span><span class="o">.</span><span class="n">Yes</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">on_dewarp_clicked</span><span class="p">()</span>
+            <span class="k">return</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">)</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Unexpected error during dewarping: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">button_dewarp</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">QMessageBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;An unexpected error occurred:</span><span class="se">\n</span><span class="si">{</span><span class="n">err</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.start_edge_detection">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.start_edge_detection">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start_edge_detection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start edge detection with multi-threading support.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_disable_ui_while_edge_detecting</span><span class="p">()</span>
+
+        <span class="n">frame_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span><span class="o">.</span><span class="n">get_frame_count</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Lateral Flame Spread&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;console_bar&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">console_bar</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">frame_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span><span class="o">.</span><span class="n">get_frame_count</span><span class="p">()</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Edge detection frame count: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">frame_count</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">frame_count</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Frame count is 0 – cannot start edge detection.&quot;</span><span class="p">)</span>
+                    <span class="n">QMessageBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="s2">&quot;No frames found for edge detection.&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">return</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">console_bar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_progress_bar</span><span class="p">(</span>
+                    <span class="s2">&quot;Edge Finding: &quot;</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="n">frame_count</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_started</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="s2">&quot;Created progress bar with max_value=</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">console_bar</span><span class="o">.</span><span class="n">max_value</span>
+                <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate1</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate1</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">QThread</span><span class="p">()</span>
+            <span class="n">flame_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_flame_direction</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span>
+            <span class="n">flame_dir_key</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;right_to_left&quot;</span> <span class="k">if</span> <span class="n">flame_dir</span> <span class="o">==</span> <span class="s2">&quot;Right -&gt; Left&quot;</span> <span class="k">else</span> <span class="s2">&quot;left_to_right&quot;</span>
+            <span class="p">)</span>
+
+            <span class="n">_spec_lfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_spec_for</span><span class="p">(</span><span class="n">flame_dir_key</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="n">EdgeDetectionWorker</span><span class="p">(</span>
+                <span class="n">h5_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_path</span><span class="p">,</span>
+                <span class="n">dataset_key</span><span class="o">=</span><span class="s2">&quot;dewarped_data/data&quot;</span><span class="p">,</span>
+                <span class="n">result_key</span><span class="o">=</span><span class="s2">&quot;edge_results&quot;</span><span class="p">,</span>
+                <span class="n">threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_threshold</span><span class="p">(),</span>
+                <span class="n">method</span><span class="o">=</span><span class="n">_spec_lfs</span><span class="o">.</span><span class="n">make_fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_threshold</span><span class="p">()),</span>
+                <span class="n">flame_direction</span><span class="o">=</span><span class="n">flame_dir_key</span><span class="p">,</span>
+                <span class="n">use_otsu_masking</span><span class="o">=</span><span class="n">_spec_lfs</span><span class="o">.</span><span class="n">use_otsu_masking</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setup_edge_worker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="p">,</span> <span class="s2">&quot;lfs&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Room Corner: separate threads for left and right</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;console_bar_left&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_left</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">frame_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span><span class="o">.</span><span class="n">get_frame_count</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_progress_bar</span><span class="p">(</span>
+                <span class="s2">&quot;Edge Left: &quot;</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="n">frame_count</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_progress_bar</span><span class="p">(</span>
+            <span class="s2">&quot;Edge Right: &quot;</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="n">frame_count</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_right_started</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_left</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate1</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate1</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate2</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate2</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Left worker/thread</span>
+        <span class="c1"># RCE: left plate flame spreads right→left (away from corner on right side)</span>
+        <span class="c1">#      right plate flame spreads left→right (away from corner on left side)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_left</span> <span class="o">=</span> <span class="n">QThread</span><span class="p">()</span>
+        <span class="n">_spec_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_spec_for</span><span class="p">(</span><span class="s2">&quot;right_to_left&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_left</span> <span class="o">=</span> <span class="n">EdgeDetectionWorker</span><span class="p">(</span>
+            <span class="n">h5_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_path</span><span class="p">,</span>
+            <span class="n">dataset_key</span><span class="o">=</span><span class="s2">&quot;dewarped_data_left/data&quot;</span><span class="p">,</span>
+            <span class="n">result_key</span><span class="o">=</span><span class="s2">&quot;edge_results_left/data&quot;</span><span class="p">,</span>
+            <span class="n">threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_threshold</span><span class="p">(),</span>
+            <span class="n">method</span><span class="o">=</span><span class="n">_spec_left</span><span class="o">.</span><span class="n">make_fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_threshold</span><span class="p">()),</span>
+            <span class="n">use_otsu_masking</span><span class="o">=</span><span class="n">_spec_left</span><span class="o">.</span><span class="n">use_otsu_masking</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_edge_worker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thread_left</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_left</span><span class="p">,</span> <span class="s2">&quot;left&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Right worker/thread</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_right</span> <span class="o">=</span> <span class="n">QThread</span><span class="p">()</span>
+        <span class="n">_spec_right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_spec_for</span><span class="p">(</span><span class="s2">&quot;left_to_right&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_right</span> <span class="o">=</span> <span class="n">EdgeDetectionWorker</span><span class="p">(</span>
+            <span class="n">h5_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_path</span><span class="p">,</span>
+            <span class="n">dataset_key</span><span class="o">=</span><span class="s2">&quot;dewarped_data_right/data&quot;</span><span class="p">,</span>
+            <span class="n">result_key</span><span class="o">=</span><span class="s2">&quot;edge_results_right/data&quot;</span><span class="p">,</span>
+            <span class="n">threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_threshold</span><span class="p">(),</span>
+            <span class="n">method</span><span class="o">=</span><span class="n">_spec_right</span><span class="o">.</span><span class="n">make_fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_threshold</span><span class="p">()),</span>
+            <span class="n">use_otsu_masking</span><span class="o">=</span><span class="n">_spec_right</span><span class="o">.</span><span class="n">use_otsu_masking</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_edge_worker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thread_right</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_right</span><span class="p">,</span> <span class="s2">&quot;right&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">checkBox_mulithread</span><span class="o">.</span><span class="n">isChecked</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread_left</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread_right</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">worker_left</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thread_right</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread_left</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_disable_ui_while_edge_detecting</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Disable UI elements during edge detection to avoid user interference.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">button_open_folder</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">button_find_edge</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_experiment_type</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">checkBox_mulithread</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_analysis_y</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_flame_direction</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_progress_bar</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_value</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">progressbar</span><span class="o">.</span><span class="n">ProgressBar</span><span class="p">:</span>
+        <span class="n">widgets</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">label</span><span class="p">,</span>
+            <span class="n">progressbar</span><span class="o">.</span><span class="n">Percentage</span><span class="p">(),</span>
+            <span class="s2">&quot; &quot;</span><span class="p">,</span>
+            <span class="n">progressbar</span><span class="o">.</span><span class="n">Bar</span><span class="p">(</span><span class="n">marker</span><span class="o">=</span><span class="s2">&quot;█&quot;</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="s2">&quot;[&quot;</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="s2">&quot;]&quot;</span><span class="p">),</span>
+            <span class="s2">&quot; &quot;</span><span class="p">,</span>
+            <span class="n">progressbar</span><span class="o">.</span><span class="n">ETA</span><span class="p">(),</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">progressbar</span><span class="o">.</span><span class="n">ProgressBar</span><span class="p">(</span><span class="n">max_value</span><span class="o">=</span><span class="n">max_value</span><span class="p">,</span> <span class="n">widgets</span><span class="o">=</span><span class="n">widgets</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_setup_edge_worker</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">thread</span><span class="p">:</span> <span class="n">QThread</span><span class="p">,</span> <span class="n">worker</span><span class="p">:</span> <span class="n">EdgeDetectionWorker</span><span class="p">,</span> <span class="n">side</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper to set up worker-thread connections for edge detection.&quot;&quot;&quot;</span>
+        <span class="n">worker</span><span class="o">.</span><span class="n">moveToThread</span><span class="p">(</span><span class="n">thread</span><span class="p">)</span>
+        <span class="n">thread</span><span class="o">.</span><span class="n">started</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">worker</span><span class="o">.</span><span class="n">run</span><span class="p">)</span>
+        <span class="n">worker</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;update_edge_progress_</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+        <span class="n">worker</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">result</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_result_ready</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">side</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">worker</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">thread</span><span class="o">.</span><span class="n">quit</span><span class="p">)</span>
+        <span class="n">worker</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">worker</span><span class="o">.</span><span class="n">deleteLater</span><span class="p">)</span>
+        <span class="n">thread</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">thread</span><span class="o">.</span><span class="n">deleteLater</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MainWindow.handle_edge_result">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.handle_edge_result">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle_edge_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result_array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">side</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Buffer edge result and update UI; write to HDF5 only when all workers are done.&quot;&quot;&quot;</span>
+        <span class="c1"># Update progress UI</span>
+        <span class="k">if</span> <span class="n">side</span> <span class="o">==</span> <span class="s2">&quot;lfs&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">console_bar</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">console_bar</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">console_bar</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_started</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate1</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">side</span> <span class="o">==</span> <span class="s2">&quot;left&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_left</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_left</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_left</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate1</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">side</span> <span class="o">==</span> <span class="s2">&quot;right&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_right</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_right</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_right</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate2</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+
+        <span class="c1"># Buffer result – do NOT write to h5 yet (other workers may still be reading)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pending_edge_results</span><span class="p">[</span><span class="n">side</span><span class="p">]</span> <span class="o">=</span> <span class="n">result_array</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Edge detection finished for </span><span class="si">%s</span><span class="s2"> side.&quot;</span><span class="p">,</span> <span class="n">side</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">edge_workers_done</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;handle_edge_result side=</span><span class="si">%s</span><span class="s2">, edge_workers_done=</span><span class="si">%d</span><span class="s2">, experiment_type=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">side</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">edge_workers_done</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">all_done</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Lateral Flame Spread&quot;</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_workers_done</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Room Corner&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_workers_done</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">all_done</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_pending_edge_results</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enable_analysis_controls</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_pending_edge_results</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write all buffered edge results to HDF5 at once (all workers are done reading).&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_path</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">side</span><span class="p">,</span> <span class="n">result_array</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_edge_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">group_key</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="s2">&quot;edge_results&quot;</span> <span class="k">if</span> <span class="n">side</span> <span class="o">==</span> <span class="s2">&quot;lfs&quot;</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;edge_results_</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">group</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">require_group</span><span class="p">(</span><span class="n">group_key</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="s2">&quot;data&quot;</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
+                        <span class="k">del</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+                    <span class="n">group</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">result_array</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">side</span> <span class="o">==</span> <span class="s2">&quot;lfs&quot;</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">):</span>
+                        <span class="n">flame_dir</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="p">,</span> <span class="s2">&quot;flame_direction&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">flame_dir</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;left_to_right&quot;</span><span class="p">,</span> <span class="s2">&quot;right_to_left&quot;</span><span class="p">]:</span>
+                            <span class="n">group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;flame_direction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flame_dir</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;_write_pending_edge_results done&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># pylint: disable=broad-except</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to write edge results to HDF5&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pending_edge_results</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="MainWindow.enable_analysis_controls">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.enable_analysis_controls">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enable_analysis_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enable UI controls after edge detection is complete.&quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;enable_analysis_controls called&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">button_open_folder</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">button_find_edge</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_experiment_type</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">checkBox_mulithread</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_analysis_y</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_flame_direction</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edge_workers_done</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">y_cutoff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_analysis_y</span><span class="o">.</span><span class="n">value</span><span class="p">()</span> <span class="o">/</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">plot_analysis</span><span class="o">.</span><span class="n">plot_edge_results</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">,</span> <span class="n">y_cutoff</span><span class="o">=</span><span class="n">y_cutoff</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.update_edge_progress_lfs">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.update_edge_progress_lfs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_edge_progress_lfs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate1</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;console_bar&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">console_bar</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;console_bar_started&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">console_bar</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_started</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">console_bar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.update_edge_progress_left">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.update_edge_progress_left">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_edge_progress_left</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate1</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;console_bar_left&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_left</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_left</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.update_edge_progress_right">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.update_edge_progress_right">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_edge_progress_right</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">progress_edge_finding_plate2</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;console_bar_right&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_right</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;console_bar_right_started&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_right</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_right_started</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">console_bar_right</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.update_edge_preview">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.update_edge_preview">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_edge_preview</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update edge preview plot for current experiment and settings.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">frame_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span><span class="o">.</span><span class="n">get_frame_count</span><span class="p">()</span>
+            <span class="n">frame_index</span> <span class="o">=</span> <span class="n">frame_count</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="n">h5</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Lateral Flame Spread&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;dewarped_data&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">h5</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No dewarped_data for LFS - skipping preview.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span>
+                <span class="n">dataset</span> <span class="o">=</span> <span class="n">h5</span><span class="p">[</span><span class="s2">&quot;dewarped_data&quot;</span><span class="p">][</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+                <span class="n">is_left</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Room Corner&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;dewarped_data_left&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">h5</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="s2">&quot;No dewarped_data_left for Room Corner - skipping preview.&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">return</span>
+                <span class="n">dataset</span> <span class="o">=</span> <span class="n">h5</span><span class="p">[</span><span class="s2">&quot;dewarped_data_left&quot;</span><span class="p">][</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+                <span class="n">is_left</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Unknown experiment type: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="n">frame</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">frame_index</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Lateral Flame Spread&quot;</span><span class="p">:</span>
+                <span class="n">flame_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_flame_direction</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span>
+                <span class="n">dir_key</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="s2">&quot;right_to_left&quot;</span> <span class="k">if</span> <span class="n">flame_dir</span> <span class="o">==</span> <span class="s2">&quot;Right -&gt; Left&quot;</span> <span class="k">else</span> <span class="s2">&quot;left_to_right&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Room Corner preview always shows left plate (flame right→left)</span>
+                <span class="n">dir_key</span> <span class="o">=</span> <span class="s2">&quot;right_to_left&quot;</span>
+
+            <span class="n">_spec_preview</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_spec_for</span><span class="p">(</span><span class="n">dir_key</span><span class="p">)</span>
+            <span class="n">_thr_preview</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_threshold</span><span class="p">()</span>
+            <span class="n">edge</span> <span class="o">=</span> <span class="n">calculate_edge_data</span><span class="p">(</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">dataset</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">frame_index</span> <span class="p">:</span> <span class="n">frame_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="n">find_edge_point</span><span class="o">=</span><span class="n">_spec_preview</span><span class="o">.</span><span class="n">make_fn</span><span class="p">(</span><span class="n">_thr_preview</span><span class="p">),</span>
+                <span class="n">custom_filter</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+                <span class="n">use_otsu_masking</span><span class="o">=</span><span class="n">_spec_preview</span><span class="o">.</span><span class="n">use_otsu_masking</span><span class="p">,</span>
+            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">plot_edge_preview</span><span class="o">.</span><span class="n">plot_with_edge</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">edge</span><span class="p">,</span> <span class="n">cmin</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">cmax</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Showing dataset shape: </span><span class="si">%s</span><span class="s2">, from: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                <span class="s2">&quot;dewarped_data_left&quot;</span> <span class="k">if</span> <span class="n">is_left</span> <span class="k">else</span> <span class="s2">&quot;dewarped_data&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">except</span> <span class="p">(</span>
+            <span class="ne">KeyError</span><span class="p">,</span>
+            <span class="ne">IndexError</span><span class="p">,</span>
+            <span class="ne">AttributeError</span><span class="p">,</span>
+            <span class="ne">TypeError</span><span class="p">,</span>
+            <span class="ne">ValueError</span><span class="p">,</span>
+            <span class="ne">OSError</span><span class="p">,</span>
+        <span class="p">)</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="c1"># HDF5-Schlüssel fehlt, Frameindex out-of-range, falsche Typen/Werte, IO</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Could not load edge preview: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.update_flame_direction_visibility">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.update_flame_direction_visibility">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_flame_direction_visibility</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Show or hide flame direction controls based on experiment type.&quot;&quot;&quot;</span>
+        <span class="n">is_lfs</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_experiment_type</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Lateral Flame Spread&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">comboBox_flame_direction</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="n">is_lfs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.update_analysis_plot">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.main_window.MainWindow.update_analysis_plot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_analysis_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">y_cutoff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">slider_analysis_y</span><span class="o">.</span><span class="n">value</span><span class="p">()</span> <span class="o">/</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">plot_analysis</span><span class="o">.</span><span class="n">plot_edge_results</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">,</span> <span class="n">y_cutoff</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Minh Tam Würzburger, Marc Fehr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,954 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module Reference &mdash; FlameTrack 1.0.1b2.post5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=228cd8fb"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="Architecture Overview" href="architecture.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../index.html" class="icon icon-home">
+            FlameTrack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Developer Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="architecture.html">Architecture Overview</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Module Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-flametrack.analysis.flamespread">Analysis</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.EdgeFn"><code class="docutils literal notranslate"><span class="pre">EdgeFn</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.EdgeMethodSpec"><code class="docutils literal notranslate"><span class="pre">EdgeMethodSpec</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.band_filter"><code class="docutils literal notranslate"><span class="pre">band_filter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.calculate_edge_data"><code class="docutils literal notranslate"><span class="pre">calculate_edge_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.calculate_edge_results_for_exp_name"><code class="docutils literal notranslate"><span class="pre">calculate_edge_results_for_exp_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.find_peaks_in_gradient"><code class="docutils literal notranslate"><span class="pre">find_peaks_in_gradient()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.highest_peak"><code class="docutils literal notranslate"><span class="pre">highest_peak()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.highest_peak_to_lowest_value"><code class="docutils literal notranslate"><span class="pre">highest_peak_to_lowest_value()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.left_edge_of_rightmost_cluster"><code class="docutils literal notranslate"><span class="pre">left_edge_of_rightmost_cluster()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.left_most_point_over_threshold"><code class="docutils literal notranslate"><span class="pre">left_most_point_over_threshold()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.plot_edge"><code class="docutils literal notranslate"><span class="pre">plot_edge()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.right_edge_of_leftmost_cluster"><code class="docutils literal notranslate"><span class="pre">right_edge_of_leftmost_cluster()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.right_most_peak"><code class="docutils literal notranslate"><span class="pre">right_most_peak()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.right_most_point_over_threshold"><code class="docutils literal notranslate"><span class="pre">right_most_point_over_threshold()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.show_flame_contour"><code class="docutils literal notranslate"><span class="pre">show_flame_contour()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.show_flame_spread"><code class="docutils literal notranslate"><span class="pre">show_flame_spread()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.flamespread.show_flame_spread_velocity"><code class="docutils literal notranslate"><span class="pre">show_flame_spread_velocity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.dataset_handler.assert_h5_schema"><code class="docutils literal notranslate"><span class="pre">assert_h5_schema()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.dataset_handler.close_file"><code class="docutils literal notranslate"><span class="pre">close_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.dataset_handler.create_h5_file"><code class="docutils literal notranslate"><span class="pre">create_h5_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.dataset_handler.get_data"><code class="docutils literal notranslate"><span class="pre">get_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.dataset_handler.get_dewarped_data"><code class="docutils literal notranslate"><span class="pre">get_dewarped_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.dataset_handler.get_dewarped_metadata"><code class="docutils literal notranslate"><span class="pre">get_dewarped_metadata()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.dataset_handler.get_edge_results"><code class="docutils literal notranslate"><span class="pre">get_edge_results()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.dataset_handler.get_file"><code class="docutils literal notranslate"><span class="pre">get_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.dataset_handler.get_h5_file_path"><code class="docutils literal notranslate"><span class="pre">get_h5_file_path()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.dataset_handler.init_h5_for_experiment"><code class="docutils literal notranslate"><span class="pre">init_h5_for_experiment()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.dataset_handler.save_edge_results"><code class="docutils literal notranslate"><span class="pre">save_edge_results()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.ir_analysis.compute_remap_from_homography"><code class="docutils literal notranslate"><span class="pre">compute_remap_from_homography()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.ir_analysis.get_dewarp_parameters"><code class="docutils literal notranslate"><span class="pre">get_dewarp_parameters()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.analysis.ir_analysis.read_ir_data"><code class="docutils literal notranslate"><span class="pre">read_ir_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-flametrack.gui.main_window">GUI</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.gui.main_window.MainWindow"><code class="docutils literal notranslate"><span class="pre">MainWindow</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.gui.plotting_utils.rotate_points"><code class="docutils literal notranslate"><span class="pre">rotate_points()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.gui.plotting_utils.sort_corner_points"><code class="docutils literal notranslate"><span class="pre">sort_corner_points()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-flametrack.processing.dewarping">Processing</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.processing.dewarping.CornerSets"><code class="docutils literal notranslate"><span class="pre">CornerSets</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.processing.dewarping.DewarpConfig"><code class="docutils literal notranslate"><span class="pre">DewarpConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.processing.dewarping.dewarp_lateral_flame_spread"><code class="docutils literal notranslate"><span class="pre">dewarp_lateral_flame_spread()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.processing.dewarping.dewarp_room_corner_remap"><code class="docutils literal notranslate"><span class="pre">dewarp_room_corner_remap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.processing.dewarping.rotate_image_and_points"><code class="docutils literal notranslate"><span class="pre">rotate_image_and_points()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-flametrack.utils.math_utils">Utils</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.utils.math_utils.compute_target_ratio"><code class="docutils literal notranslate"><span class="pre">compute_target_ratio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flametrack.utils.math_utils.estimate_resolution_from_points"><code class="docutils literal notranslate"><span class="pre">estimate_resolution_from_points()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">FlameTrack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Developer Guide</a></li>
+      <li class="breadcrumb-item active">Module Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/developer_guide/modules.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <section id="module-reference">
+<h1>Module Reference<a class="headerlink" href="#module-reference" title="Link to this heading"></a></h1>
+<section id="module-flametrack.analysis.flamespread">
+<span id="analysis"></span><h2>Analysis<a class="headerlink" href="#module-flametrack.analysis.flamespread" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.EdgeFn">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">EdgeFn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#EdgeFn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.EdgeFn" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.EdgeMethodSpec">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">EdgeMethodSpec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">short_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">make_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#flametrack.analysis.flamespread.EdgeFn" title="flametrack.analysis.flamespread.EdgeFn"><span class="pre">EdgeFn</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_threshold_ir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_threshold_image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_otsu_masking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#EdgeMethodSpec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.EdgeMethodSpec" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Descriptor for a named edge-detection method variant.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.EdgeMethodSpec.default_threshold_image">
+<span class="sig-name descname"><span class="pre">default_threshold_image</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#flametrack.analysis.flamespread.EdgeMethodSpec.default_threshold_image" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.EdgeMethodSpec.default_threshold_ir">
+<span class="sig-name descname"><span class="pre">default_threshold_ir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#flametrack.analysis.flamespread.EdgeMethodSpec.default_threshold_ir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.EdgeMethodSpec.description">
+<span class="sig-name descname"><span class="pre">description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#flametrack.analysis.flamespread.EdgeMethodSpec.description" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.EdgeMethodSpec.display_name">
+<span class="sig-name descname"><span class="pre">display_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#flametrack.analysis.flamespread.EdgeMethodSpec.display_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.EdgeMethodSpec.make_fn">
+<span class="sig-name descname"><span class="pre">make_fn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#flametrack.analysis.flamespread.EdgeFn" title="flametrack.analysis.flamespread.EdgeFn"><span class="pre">EdgeFn</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#flametrack.analysis.flamespread.EdgeMethodSpec.make_fn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.EdgeMethodSpec.short_id">
+<span class="sig-name descname"><span class="pre">short_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#flametrack.analysis.flamespread.EdgeMethodSpec.short_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.EdgeMethodSpec.use_otsu_masking">
+<span class="sig-name descname"><span class="pre">use_otsu_masking</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#flametrack.analysis.flamespread.EdgeMethodSpec.use_otsu_masking" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.band_filter">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">band_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#band_filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.band_filter" title="Link to this definition"></a></dt>
+<dd><p>Clip intensity values between low and high threshold.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>frame</strong> (<em>np.ndarray</em>) – Input image.</p></li>
+<li><p><strong>low</strong> (<em>float</em>) – Lower clipping limit.</p></li>
+<li><p><strong>high</strong> (<em>float</em>) – Upper clipping limit.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Filtered image.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.calculate_edge_data">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">calculate_edge_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">data:</span> <span class="pre">~numpy.ndarray,</span> <span class="pre">find_edge_point:</span> <span class="pre">~flametrack.analysis.flamespread.EdgeFn,</span> <span class="pre">custom_filter:</span> <span class="pre">~collections.abc.Callable[[~numpy.ndarray],</span> <span class="pre">~numpy.ndarray]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">&lt;lambda&gt;&gt;,</span> <span class="pre">use_otsu_masking:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#calculate_edge_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.calculate_edge_data" title="Link to this definition"></a></dt>
+<dd><p>Calculates the edge position for each row of each frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>np.ndarray</em>) – 3D array of shape (H, W, T).</p></li>
+<li><p><strong>find_edge_point</strong> (<em>Callable</em>) – Method to find edge in 1D data.</p></li>
+<li><p><strong>custom_filter</strong> (<em>Callable</em>) – Optional filter to apply to each frame.</p></li>
+<li><p><strong>use_otsu_masking</strong> (<em>bool</em>) – If True (default), apply Otsu thresholding and
+morphological dilation to restrict the per-row search window.  Set
+False to scan the full row without any masking (useful when a fixed
+intensity threshold alone is sufficient and Otsu would over-shrink the
+window, e.g. with a deliberately low threshold such as 117).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Edge coordinates per frame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[list[int]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.calculate_edge_results_for_exp_name">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">calculate_edge_results_for_exp_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dewarped_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#calculate_edge_results_for_exp_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.calculate_edge_results_for_exp_name" title="Link to this definition"></a></dt>
+<dd><p>Run full edge detection pipeline for a given experiment name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>exp_name</strong> (<em>str</em>) – Experiment identifier.</p></li>
+<li><p><strong>left</strong> (<em>bool</em>) – Whether to process left side.</p></li>
+<li><p><strong>dewarped_data</strong> (<em>np.ndarray</em>) – Optional preloaded data.</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – Whether to write result to HDF5.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Edge data (if save=False).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.find_peaks_in_gradient">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">find_peaks_in_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#find_peaks_in_gradient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.find_peaks_in_gradient" title="Link to this definition"></a></dt>
+<dd><p>Find peaks in the negative gradient of a 1D signal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y</strong> (<em>np.ndarray</em>) – 1D signal.</p></li>
+<li><p><strong>min_distance</strong> (<em>int</em>) – Minimum distance between peaks.</p></li>
+<li><p><strong>min_height</strong> (<em>float</em>) – Minimum peak height.</p></li>
+<li><p><strong>min_width</strong> (<em>float</em>) – Minimum peak width.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Indices of detected peaks.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.highest_peak">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">highest_peak</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#highest_peak"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.highest_peak" title="Link to this definition"></a></dt>
+<dd><p>Return the index of the peak with the highest gradient.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Index of the highest peak, or 0.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.highest_peak_to_lowest_value">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">highest_peak_to_lowest_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ambient_weighting</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10000000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction_weighting</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_peak</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_velocity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#highest_peak_to_lowest_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.highest_peak_to_lowest_value" title="Link to this definition"></a></dt>
+<dd><p>Find the most plausible flame front peak using gradient + ambient suppression + direction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Index of selected edge point.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.left_edge_of_rightmost_cluster">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">left_edge_of_rightmost_cluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#left_edge_of_rightmost_cluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.left_edge_of_rightmost_cluster" title="Link to this definition"></a></dt>
+<dd><p>Find the leftmost pixel of the rightmost contiguous cluster above threshold.</p>
+<p>This is the correct edge function for a flame spreading right-to-left in
+image/video data (0–255 range).  Unlike <code class="docutils literal notranslate"><span class="pre">left_most_point_over_threshold</span></code>,
+it ignores isolated bright artefacts (reflections, glare) that are not part
+of the main hot region.</p>
+<dl class="simple">
+<dt>Algorithm:</dt><dd><ol class="arabic simple">
+<li><p>Find the rightmost pixel above <em>threshold</em>.</p></li>
+<li><p>Walk left while still above <em>threshold</em>.</p></li>
+<li><p>Return the index one step past the last hot pixel (= leftmost edge).</p></li>
+</ol>
+</dd>
+</dl>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">len(y)</span></code> when no pixel exceeds the threshold.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.left_most_point_over_threshold">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">left_most_point_over_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#left_most_point_over_threshold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.left_most_point_over_threshold" title="Link to this definition"></a></dt>
+<dd><p>Find the first point in the signal above the given threshold.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y</strong> (<em>np.ndarray</em>) – 1D signal.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Threshold value.</p></li>
+<li><p><strong>params</strong> – Unused; kept for compatibility.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Index of the first point above threshold, or len(y).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.plot_edge">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">plot_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">frame:</span> <span class="pre">~numpy.ndarray,</span> <span class="pre">find_edge_point:</span> <span class="pre">~collections.abc.Callable[[~numpy.ndarray],</span> <span class="pre">int]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">right_most_peak&gt;</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#plot_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.plot_edge" title="Link to this definition"></a></dt>
+<dd><p>Plot detected edge for each line in the frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>frame</strong> (<em>np.ndarray</em>) – 2D thermal frame.</p></li>
+<li><p><strong>find_edge_point</strong> (<em>Callable</em>) – Edge detection function.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.right_edge_of_leftmost_cluster">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">right_edge_of_leftmost_cluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#right_edge_of_leftmost_cluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.right_edge_of_leftmost_cluster" title="Link to this definition"></a></dt>
+<dd><p>Find the rightmost pixel of the leftmost contiguous cluster above threshold.</p>
+<p>Mirror of <code class="docutils literal notranslate"><span class="pre">left_edge_of_rightmost_cluster</span></code> for flames spreading left-to-right.</p>
+<p>Returns 0 when no pixel exceeds the threshold.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.right_most_peak">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">right_most_peak</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#right_most_peak"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.right_most_peak" title="Link to this definition"></a></dt>
+<dd><p>Return the right-most peak in the gradient of the signal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Index of last detected peak, or 0.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.right_most_point_over_threshold">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">right_most_point_over_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#right_most_point_over_threshold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.right_most_point_over_threshold" title="Link to this definition"></a></dt>
+<dd><p>Find the last point in the signal above the given threshold.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y</strong> (<em>np.ndarray</em>) – 1D signal.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Threshold value.</p></li>
+<li><p><strong>params</strong> – Unused; kept for compatibility.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Index of the last point above threshold, or 0.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.show_flame_contour">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">show_flame_contour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Figure</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Axes</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#show_flame_contour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.show_flame_contour" title="Link to this definition"></a></dt>
+<dd><p>Overlay detected edge on thermal image for a given frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>np.ndarray</em>) – 3D image data.</p></li>
+<li><p><strong>edge_results</strong> (<em>np.ndarray</em>) – Edge matrix.</p></li>
+<li><p><strong>frame</strong> (<em>int</em>) – Frame index.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Matplotlib figure and axis.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>fig, ax</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.show_flame_spread">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">show_flame_spread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_coord</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Figure</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Axes</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#show_flame_spread"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.show_flame_spread" title="Link to this definition"></a></dt>
+<dd><p>Plot flame front x-coordinate over time at a given y-line.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>edge_results</strong> (<em>np.ndarray</em>) – Edge matrix.</p></li>
+<li><p><strong>y_coord</strong> (<em>int</em>) – Line index from bottom.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Matplotlib figure and axis.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>fig, ax</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.flamespread.show_flame_spread_velocity">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.flamespread.</span></span><span class="sig-name descname"><span class="pre">show_flame_spread_velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_coord</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rolling_window</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Figure</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Axes</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/flamespread.html#show_flame_spread_velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.flamespread.show_flame_spread_velocity" title="Link to this definition"></a></dt>
+<dd><p>Plot local velocity of flame front at a fixed y-line.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>edge_results</strong> (<em>np.ndarray</em>) – Edge data.</p></li>
+<li><p><strong>y_coord</strong> (<em>int</em>) – Line index.</p></li>
+<li><p><strong>rolling_window</strong> (<em>int</em>) – Smoothing window size.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Matplotlib figure and axis.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>fig, ax</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function" id="module-flametrack.analysis.dataset_handler">
+<dt class="sig sig-object py" id="flametrack.analysis.dataset_handler.assert_h5_schema">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.dataset_handler.</span></span><span class="sig-name descname"><span class="pre">assert_h5_schema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h5</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">File</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experiment_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/dataset_handler.html#assert_h5_schema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.dataset_handler.assert_h5_schema" title="Link to this definition"></a></dt>
+<dd><p>Verifiziere, dass die nötigen Gruppen existieren.
+Praktisch für frühe, klare Fehlermeldungen.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.dataset_handler.close_file">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.dataset_handler.</span></span><span class="sig-name descname"><span class="pre">close_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/dataset_handler.html#close_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.dataset_handler.close_file" title="Link to this definition"></a></dt>
+<dd><p>Close the currently opened HDF5 file, if any.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.dataset_handler.create_h5_file">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.dataset_handler.</span></span><span class="sig-name descname"><span class="pre">create_h5_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">File</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/dataset_handler.html#create_h5_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.dataset_handler.create_h5_file" title="Link to this definition"></a></dt>
+<dd><p>Create a new HDF5 file.
+Diese Funktion erzeugt KEINE experiment-spezifischen Gruppen.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.dataset_handler.get_data">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.dataset_handler.</span></span><span class="sig-name descname"><span class="pre">get_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/dataset_handler.html#get_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.dataset_handler.get_data" title="Link to this definition"></a></dt>
+<dd><p>Retrieve dataset for given experiment and group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>exp_name</strong> – Experiment name.</p></li>
+<li><p><strong>group_name</strong> – Group name in HDF5 file (‘dewarped_data’ or ‘edge_results’).</p></li>
+<li><p><strong>left</strong> – Use left variant if True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dataset object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>h5py.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.dataset_handler.get_dewarped_data">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.dataset_handler.</span></span><span class="sig-name descname"><span class="pre">get_dewarped_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/dataset_handler.html#get_dewarped_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.dataset_handler.get_dewarped_data" title="Link to this definition"></a></dt>
+<dd><p>Get dewarped data dataset from the experiment file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.dataset_handler.get_dewarped_metadata">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.dataset_handler.</span></span><span class="sig-name descname"><span class="pre">get_dewarped_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/dataset_handler.html#get_dewarped_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.dataset_handler.get_dewarped_metadata" title="Link to this definition"></a></dt>
+<dd><p>Get metadata attributes from dewarped_data group.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.dataset_handler.get_edge_results">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.dataset_handler.</span></span><span class="sig-name descname"><span class="pre">get_edge_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/dataset_handler.html#get_edge_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.dataset_handler.get_edge_results" title="Link to this definition"></a></dt>
+<dd><p>Get edge results dataset from the experiment file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.dataset_handler.get_file">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.dataset_handler.</span></span><span class="sig-name descname"><span class="pre">get_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'r'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'a'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'r'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">File</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/dataset_handler.html#get_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.dataset_handler.get_file" title="Link to this definition"></a></dt>
+<dd><p>Open or reuse HDF5 file for the experiment.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.dataset_handler.get_h5_file_path">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.dataset_handler.</span></span><span class="sig-name descname"><span class="pre">get_h5_file_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/dataset_handler.html#get_h5_file_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.dataset_handler.get_h5_file_path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.dataset_handler.init_h5_for_experiment">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.dataset_handler.</span></span><span class="sig-name descname"><span class="pre">init_h5_for_experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h5</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">File</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experiment_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/dataset_handler.html#init_h5_for_experiment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.dataset_handler.init_h5_for_experiment" title="Link to this definition"></a></dt>
+<dd><p>Lege die nötigen Gruppen je Experimenttyp an.
+Kann z. B. direkt nach create_h5_file(…) aufgerufen werden.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.dataset_handler.save_edge_results">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.dataset_handler.</span></span><span class="sig-name descname"><span class="pre">save_edge_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">floating</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">integer</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/dataset_handler.html#save_edge_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.dataset_handler.save_edge_results" title="Link to this definition"></a></dt>
+<dd><p>Save edge results array to the experiment’s HDF5 file.</p>
+<p>Opens a fresh file handle just for this write (no global handle usage).</p>
+</dd></dl>
+
+<dl class="py function" id="module-flametrack.analysis.ir_analysis">
+<dt class="sig sig-object py" id="flametrack.analysis.ir_analysis.compute_remap_from_homography">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.ir_analysis.</span></span><span class="sig-name descname"><span class="pre">compute_remap_from_homography</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">homography</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/ir_analysis.html#compute_remap_from_homography"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.ir_analysis.compute_remap_from_homography" title="Link to this definition"></a></dt>
+<dd><p>Compute pixelwise remap grids from a homography.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>homography</strong> (<em>numpy.ndarray</em>) – 3×3 homography mapping output → input coordinates.</p></li>
+<li><p><strong>width</strong> (<em>int</em>) – Target image width in pixels.</p></li>
+<li><p><strong>height</strong> (<em>int</em>) – Target image height in pixels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Two arrays <code class="docutils literal notranslate"><span class="pre">(src_x,</span> <span class="pre">src_y)</span></code> with shape
+<code class="docutils literal notranslate"><span class="pre">(height,</span> <span class="pre">width)</span></code>, dtype <code class="docutils literal notranslate"><span class="pre">float32</span></code> suitable for <code class="docutils literal notranslate"><span class="pre">cv2.remap</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[numpy.ndarray, numpy.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.ir_analysis.get_dewarp_parameters">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.ir_analysis.</span></span><span class="sig-name descname"><span class="pre">get_dewarp_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corners</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_pixels_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_pixels_height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plate_width_m</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plate_height_m</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixels_per_millimeter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/ir_analysis.html#get_dewarp_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.ir_analysis.get_dewarp_parameters" title="Link to this definition"></a></dt>
+<dd><p>Calculate homography and target geometry for dewarping.</p>
+<p>You can either pass physical plate dimensions (<code class="docutils literal notranslate"><span class="pre">plate_width_m</span></code>,
+<code class="docutils literal notranslate"><span class="pre">plate_height_m</span></code>) plus a pixel density, or infer target geometry
+from the selected corners and a desired aspect ratio.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>corners</strong> (<em>numpy.ndarray</em><em> | </em><em>Sequence</em><em>[</em><em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Four corner points
+in pixel coordinates, ordered clockwise starting at top-left.</p></li>
+<li><p><strong>target_pixels_width</strong> (<em>int</em><em>, </em><em>optional</em>) – Target width in pixels. If omitted,
+it will be derived from <code class="docutils literal notranslate"><span class="pre">target_ratio</span></code> and the measured corner distances.</p></li>
+<li><p><strong>target_pixels_height</strong> (<em>int</em><em>, </em><em>optional</em>) – Target height in pixels. If omitted,
+it will be derived from <code class="docutils literal notranslate"><span class="pre">target_ratio</span></code> and the measured corner distances.</p></li>
+<li><p><strong>target_ratio</strong> (<em>float</em><em>, </em><em>optional</em>) – Desired aspect ratio <code class="docutils literal notranslate"><span class="pre">height</span> <span class="pre">/</span> <span class="pre">width</span></code>.
+Required if target size is not specified and no physical plate size is provided.</p></li>
+<li><p><strong>plate_width_m</strong> (<em>float</em><em>, </em><em>optional</em>) – Physical plate width in meters. Used with
+<code class="docutils literal notranslate"><span class="pre">pixels_per_millimeter</span></code> to derive target size if provided with <code class="docutils literal notranslate"><span class="pre">plate_height_m</span></code>.</p></li>
+<li><p><strong>plate_height_m</strong> (<em>float</em><em>, </em><em>optional</em>) – Physical plate height in meters. Used with
+<code class="docutils literal notranslate"><span class="pre">pixels_per_millimeter</span></code> to derive target size if provided with <code class="docutils literal notranslate"><span class="pre">plate_width_m</span></code>.</p></li>
+<li><p><strong>pixels_per_millimeter</strong> (<em>int</em><em>, </em><em>optional</em>) – Pixel density (px/mm) used when physical
+dimensions are given. Default is 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Dictionary with:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">transformation_matrix</span></code> (numpy.ndarray): 3×3 homography (float32).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">target_pixels_width</span></code> (int): Target width in pixels.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">target_pixels_height</span></code> (int): Target height in pixels.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">target_ratio</span></code> (float): <code class="docutils literal notranslate"><span class="pre">height</span> <span class="pre">/</span> <span class="pre">width</span></code> of the target.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, Any]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If neither physical dimensions nor a target ratio are provided.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Current conversion multiplies meter values by <code class="docutils literal notranslate"><span class="pre">pixels_per_millimeter</span></code>.
+For strict unit consistency, consider using millimeters or <code class="docutils literal notranslate"><span class="pre">pixels_per_meter</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.analysis.ir_analysis.read_ir_data">
+<span class="sig-prename descclassname"><span class="pre">flametrack.analysis.ir_analysis.</span></span><span class="sig-name descname"><span class="pre">read_ir_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/flametrack/analysis/ir_analysis.html#read_ir_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.analysis.ir_analysis.read_ir_data" title="Link to this definition"></a></dt>
+<dd><p>Read raw IR data from a CSV-like ASCII export.</p>
+<p>The file is scanned until a line <code class="docutils literal notranslate"><span class="pre">[Data]</span></code> is found; subsequent lines are
+parsed using <code class="docutils literal notranslate"><span class="pre">;</span></code> as delimiter and a comma-to-dot decimal replacement.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – Path to the IR data file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>2D array of IR values (dtype <code class="docutils literal notranslate"><span class="pre">float64</span></code>).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If no <code class="docutils literal notranslate"><span class="pre">[Data]</span></code> section is found in the file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-flametrack.gui.main_window">
+<span id="gui"></span><h2>GUI<a class="headerlink" href="#module-flametrack.gui.main_window" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flametrack.gui.main_window.</span></span><span class="sig-name descname"><span class="pre">MainWindow</span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QMainWindow</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.calculate_edge_results">
+<span class="sig-name descname"><span class="pre">calculate_edge_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.calculate_edge_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.calculate_edge_results" title="Link to this definition"></a></dt>
+<dd><p>Calculate edge detection results and write to HDF5 datasets.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.enable_analysis_controls">
+<span class="sig-name descname"><span class="pre">enable_analysis_controls</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.enable_analysis_controls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.enable_analysis_controls" title="Link to this definition"></a></dt>
+<dd><p>Enable UI controls after edge detection is complete.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.handle_edge_result">
+<span class="sig-name descname"><span class="pre">handle_edge_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result_array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">side</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.handle_edge_result"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.handle_edge_result" title="Link to this definition"></a></dt>
+<dd><p>Buffer edge result and update UI; write to HDF5 only when all workers are done.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.load_file">
+<span class="sig-name descname"><span class="pre">load_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.load_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.load_file" title="Link to this definition"></a></dt>
+<dd><p>Open directory dialog, load experiment data, set UI elements.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.on_dewarp_clicked">
+<span class="sig-name descname"><span class="pre">on_dewarp_clicked</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.on_dewarp_clicked"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.on_dewarp_clicked" title="Link to this definition"></a></dt>
+<dd><p>Trigger dewarping based on user-set points and experiment type.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.set_experiment_type">
+<span class="sig-name descname"><span class="pre">set_experiment_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.set_experiment_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.set_experiment_type" title="Link to this definition"></a></dt>
+<dd><p>Set experiment type and adjust UI visibility and required points.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.set_rotation_index">
+<span class="sig-name descname"><span class="pre">set_rotation_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.set_rotation_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.set_rotation_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.start_edge_detection">
+<span class="sig-name descname"><span class="pre">start_edge_detection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.start_edge_detection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.start_edge_detection" title="Link to this definition"></a></dt>
+<dd><p>Start edge detection with multi-threading support.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.staticMetaObject">
+<span class="sig-name descname"><span class="pre">staticMetaObject</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">PySide6.QtCore.QMetaObject(&quot;MainWindow&quot;</span> <span class="pre">inherits</span> <span class="pre">&quot;QMainWindow&quot;:</span> <span class="pre">Methods:</span>&#160;&#160; <span class="pre">#39</span> <span class="pre">type=Signal,</span> <span class="pre">signature=_edge_result_ready(PyObject,QString),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">QString</span> <span class="pre">)</span></em><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.staticMetaObject" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_analysis_plot">
+<span class="sig-name descname"><span class="pre">update_analysis_plot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_analysis_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_analysis_plot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_edge_preview">
+<span class="sig-name descname"><span class="pre">update_edge_preview</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_edge_preview"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_edge_preview" title="Link to this definition"></a></dt>
+<dd><p>Update edge preview plot for current experiment and settings.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_edge_progress_left">
+<span class="sig-name descname"><span class="pre">update_edge_progress_left</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_edge_progress_left"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_edge_progress_left" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_edge_progress_lfs">
+<span class="sig-name descname"><span class="pre">update_edge_progress_lfs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_edge_progress_lfs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_edge_progress_lfs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_edge_progress_right">
+<span class="sig-name descname"><span class="pre">update_edge_progress_right</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_edge_progress_right"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_edge_progress_right" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_flame_direction_visibility">
+<span class="sig-name descname"><span class="pre">update_flame_direction_visibility</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_flame_direction_visibility"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_flame_direction_visibility" title="Link to this definition"></a></dt>
+<dd><p>Show or hide flame direction controls based on experiment type.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_plot">
+<span class="sig-name descname"><span class="pre">update_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">framenr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_plot" title="Link to this definition"></a></dt>
+<dd><p>Update image plot according to frame, rotation and color scaling.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_target_ratio">
+<span class="sig-name descname"><span class="pre">update_target_ratio</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_target_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_target_ratio" title="Link to this definition"></a></dt>
+<dd><p>Compute and update target pixel size and ratio based on plate dimensions.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function" id="module-flametrack.gui.plotting_utils">
+<dt class="sig sig-object py" id="flametrack.gui.plotting_utils.rotate_points">
+<span class="sig-prename descclassname"><span class="pre">flametrack.gui.plotting_utils.</span></span><span class="sig-name descname"><span class="pre">rotate_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flametrack/gui/plotting_utils.html#rotate_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.plotting_utils.rotate_points" title="Link to this definition"></a></dt>
+<dd><p>Converts points from a np.rot90-rotated display frame back to unrotated image coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> – Liste von (x, y)-Punkten im rotierten Bild</p></li>
+<li><p><strong>image_shape</strong> – Form des UNROTIERTEN Bildes als (Höhe, Breite)</p></li>
+<li><p><strong>rotation_index</strong> – 0 = 0°, 1 = 90° CCW, 2 = 180°, 3 = 270° CCW</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Punkte im unrotierten Bildkoordinatensystem als Liste von (x, y)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.gui.plotting_utils.sort_corner_points">
+<span class="sig-prename descclassname"><span class="pre">flametrack.gui.plotting_utils.</span></span><span class="sig-name descname"><span class="pre">sort_corner_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experiment_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Room</span> <span class="pre">Corner'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'clockwise'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/plotting_utils.html#sort_corner_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.plotting_utils.sort_corner_points" title="Link to this definition"></a></dt>
+<dd><p>Sort corner points depending on experiment type.
+- For ‘room_corner’ (6 points): Sort using angle-based method with defined start point
+- For ‘lateral_flame_spread’ (4 points): Sort using center angle</p>
+</dd></dl>
+
+</section>
+<section id="module-flametrack.processing.dewarping">
+<span id="processing"></span><h2>Processing<a class="headerlink" href="#module-flametrack.processing.dewarping" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.CornerSets">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flametrack.processing.dewarping.</span></span><span class="sig-name descname"><span class="pre">CornerSets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flametrack/processing/dewarping.html#CornerSets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.processing.dewarping.CornerSets" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.CornerSets.left">
+<span class="sig-name descname"><span class="pre">left</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#flametrack.processing.dewarping.CornerSets.left" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.CornerSets.right">
+<span class="sig-name descname"><span class="pre">right</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#flametrack.processing.dewarping.CornerSets.right" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.DewarpConfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flametrack.processing.dewarping.</span></span><span class="sig-name descname"><span class="pre">DewarpConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_pixels_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_pixels_height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plate_width_mm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plate_height_mm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">testing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datatype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'IR'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flametrack/processing/dewarping.html#DewarpConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.processing.dewarping.DewarpConfig" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.DewarpConfig.datatype">
+<span class="sig-name descname"><span class="pre">datatype</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'IR'</span></em><a class="headerlink" href="#flametrack.processing.dewarping.DewarpConfig.datatype" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.DewarpConfig.filename">
+<span class="sig-name descname"><span class="pre">filename</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#flametrack.processing.dewarping.DewarpConfig.filename" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.DewarpConfig.frequency">
+<span class="sig-name descname"><span class="pre">frequency</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#flametrack.processing.dewarping.DewarpConfig.frequency" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.DewarpConfig.plate_height_mm">
+<span class="sig-name descname"><span class="pre">plate_height_mm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#flametrack.processing.dewarping.DewarpConfig.plate_height_mm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.DewarpConfig.plate_width_mm">
+<span class="sig-name descname"><span class="pre">plate_width_mm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#flametrack.processing.dewarping.DewarpConfig.plate_width_mm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.DewarpConfig.rotation_index">
+<span class="sig-name descname"><span class="pre">rotation_index</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#flametrack.processing.dewarping.DewarpConfig.rotation_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.DewarpConfig.target_pixels_height">
+<span class="sig-name descname"><span class="pre">target_pixels_height</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#flametrack.processing.dewarping.DewarpConfig.target_pixels_height" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.DewarpConfig.target_pixels_width">
+<span class="sig-name descname"><span class="pre">target_pixels_width</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#flametrack.processing.dewarping.DewarpConfig.target_pixels_width" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.DewarpConfig.target_ratio">
+<span class="sig-name descname"><span class="pre">target_ratio</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#flametrack.processing.dewarping.DewarpConfig.target_ratio" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.DewarpConfig.testing">
+<span class="sig-name descname"><span class="pre">testing</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#flametrack.processing.dewarping.DewarpConfig.testing" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.dewarp_lateral_flame_spread">
+<span class="sig-prename descclassname"><span class="pre">flametrack.processing.dewarping.</span></span><span class="sig-name descname"><span class="pre">dewarp_lateral_flame_spread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#flametrack.processing.dewarping.DewarpConfig" title="flametrack.processing.dewarping.DewarpConfig"><span class="pre">DewarpConfig</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/flametrack/processing/dewarping.html#dewarp_lateral_flame_spread"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.processing.dewarping.dewarp_lateral_flame_spread" title="Link to this definition"></a></dt>
+<dd><p>Dewarp für Lateral Flame Spread (warpPerspective).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.dewarp_room_corner_remap">
+<span class="sig-prename descclassname"><span class="pre">flametrack.processing.dewarping.</span></span><span class="sig-name descname"><span class="pre">dewarp_room_corner_remap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#flametrack.processing.dewarping.DewarpConfig" title="flametrack.processing.dewarping.DewarpConfig"><span class="pre">DewarpConfig</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/flametrack/processing/dewarping.html#dewarp_room_corner_remap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.processing.dewarping.dewarp_room_corner_remap" title="Link to this definition"></a></dt>
+<dd><p>Dewarp für Room Corner anhand vorberechneter Remap‑Grids.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.processing.dewarping.rotate_image_and_points">
+<span class="sig-prename descclassname"><span class="pre">flametrack.processing.dewarping.</span></span><span class="sig-name descname"><span class="pre">rotate_image_and_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_degrees</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/flametrack/processing/dewarping.html#rotate_image_and_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.processing.dewarping.rotate_image_and_points" title="Link to this definition"></a></dt>
+<dd><p>Rotate both image and corresponding points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> – Input image.</p></li>
+<li><p><strong>points</strong> – Nx2 array of (x, y) points.</p></li>
+<li><p><strong>angle_degrees</strong> – Rotation angle in degrees.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple (rotated_image, rotated_points)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-flametrack.utils.math_utils">
+<span id="utils"></span><h2>Utils<a class="headerlink" href="#module-flametrack.utils.math_utils" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.utils.math_utils.compute_target_ratio">
+<span class="sig-prename descclassname"><span class="pre">flametrack.utils.math_utils.</span></span><span class="sig-name descname"><span class="pre">compute_target_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/flametrack/utils/math_utils.html#compute_target_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.utils.math_utils.compute_target_ratio" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flametrack.utils.math_utils.estimate_resolution_from_points">
+<span class="sig-prename descclassname"><span class="pre">flametrack.utils.math_utils.</span></span><span class="sig-name descname"><span class="pre">estimate_resolution_from_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plate_width_mm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plate_height_mm</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assumed_error_px</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/flametrack/utils/math_utils.html#estimate_resolution_from_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.utils.math_utils.estimate_resolution_from_points" title="Link to this definition"></a></dt>
+<dd><p>Estimate spatial resolution and absolute measurement uncertainty based on manually marked rectangle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p0</strong> (<em>array-like</em>) – Top-left point of rectangle in pixels.</p></li>
+<li><p><strong>p1</strong> (<em>array-like</em>) – Top-right point of rectangle in pixels.</p></li>
+<li><p><strong>p3</strong> (<em>array-like</em>) – Bottom-left point of rectangle in pixels.</p></li>
+<li><p><strong>plate_width_mm</strong> (<em>float</em>) – Real-world width of the physical plate in millimeters.</p></li>
+<li><p><strong>plate_height_mm</strong> (<em>float</em>) – Real-world height of the physical plate in millimeters.</p></li>
+<li><p><strong>assumed_error_px</strong> (<em>float</em><em>, </em><em>optional</em>) – Pixel accuracy assumed for manual point selection (default is ±0.5 px).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with estimated resolution and error terms (all float):
+- mm_per_px_width
+- mm_per_px_height
+- error_mm_width
+- error_mm_height
+- assumed_pixel_error</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="architecture.html" class="btn btn-neutral float-left" title="Architecture Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contributing.html" class="btn btn-neutral float-right" title="Contributing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Minh Tam Würzburger, Marc Fehr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

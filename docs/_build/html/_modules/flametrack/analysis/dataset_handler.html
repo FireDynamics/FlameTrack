@@ -1,0 +1,323 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>flametrack.analysis.dataset_handler &mdash; FlameTrack 1.0.1b2.post5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=228cd8fb"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            FlameTrack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/index.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer_guide/index.html">Developer Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">FlameTrack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">flametrack.analysis.dataset_handler</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for flametrack.analysis.dataset_handler</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">importlib.metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">version</span> <span class="k">as</span> <span class="n">_pkg_version</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">flametrack.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">user_config</span>
+
+<span class="n">HDF_FILE</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">LOADED_FILE_PATH</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="create_h5_file">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.dataset_handler.create_h5_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_h5_file</span><span class="p">(</span>
+    <span class="n">exp_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a new HDF5 file.</span>
+<span class="sd">    Diese Funktion erzeugt KEINE experiment-spezifischen Gruppen.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">HDF_FILE</span><span class="p">,</span> <span class="n">LOADED_FILE_PATH</span>
+
+    <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># -&gt; filename soll aus exp_name abgeleitet werden: exp_name MUSS dann gesetzt sein.</span>
+        <span class="k">if</span> <span class="n">exp_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;exp_name must be provided when filename is None&quot;</span><span class="p">)</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">get_h5_file_path</span><span class="p">(</span><span class="n">exp_name</span><span class="p">)</span>
+
+    <span class="n">foldername</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">foldername</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;file_version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1.0&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;flametrack_version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_pkg_version</span><span class="p">(</span><span class="s2">&quot;FlameTrack&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># noqa: BLE001</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;flametrack_version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>  <span class="c1"># noqa: PLC0415</span>
+
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;flametrack_commit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;git&quot;</span><span class="p">,</span> <span class="s2">&quot;rev-parse&quot;</span><span class="p">,</span> <span class="s2">&quot;--short&quot;</span><span class="p">,</span> <span class="s2">&quot;HEAD&quot;</span><span class="p">],</span>
+            <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">DEVNULL</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># noqa: BLE001</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;flametrack_commit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+
+    <span class="n">HDF_FILE</span> <span class="o">=</span> <span class="n">f</span>
+    <span class="n">LOADED_FILE_PATH</span> <span class="o">=</span> <span class="n">filename</span>
+    <span class="k">return</span> <span class="n">f</span></div>
+
+
+
+<div class="viewcode-block" id="init_h5_for_experiment">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.dataset_handler.init_h5_for_experiment">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_h5_for_experiment</span><span class="p">(</span><span class="n">h5</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">,</span> <span class="n">experiment_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Lege die nötigen Gruppen je Experimenttyp an.</span>
+<span class="sd">    Kann z. B. direkt nach create_h5_file(...) aufgerufen werden.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Lateral Flame Spread&quot;</span><span class="p">:</span>
+        <span class="n">h5</span><span class="o">.</span><span class="n">require_group</span><span class="p">(</span><span class="s2">&quot;dewarped_data&quot;</span><span class="p">)</span>
+        <span class="n">h5</span><span class="o">.</span><span class="n">require_group</span><span class="p">(</span><span class="s2">&quot;edge_results&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Room Corner&quot;</span><span class="p">:</span>
+        <span class="n">h5</span><span class="o">.</span><span class="n">require_group</span><span class="p">(</span><span class="s2">&quot;dewarped_data_left&quot;</span><span class="p">)</span>
+        <span class="n">h5</span><span class="o">.</span><span class="n">require_group</span><span class="p">(</span><span class="s2">&quot;dewarped_data_right&quot;</span><span class="p">)</span>
+        <span class="c1"># edge_results_* werden später beim Schreiben/Erkennen angelegt</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown experiment type: </span><span class="si">{</span><span class="n">experiment_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="assert_h5_schema">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.dataset_handler.assert_h5_schema">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">assert_h5_schema</span><span class="p">(</span><span class="n">h5</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">,</span> <span class="n">experiment_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Verifiziere, dass die nötigen Gruppen existieren.</span>
+<span class="sd">    Praktisch für frühe, klare Fehlermeldungen.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;Lateral Flame Spread&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;dewarped_data&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Room Corner&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;dewarped_data_left&quot;</span><span class="p">,</span> <span class="s2">&quot;dewarped_data_right&quot;</span><span class="p">],</span>
+    <span class="p">}[</span><span class="n">experiment_type</span><span class="p">]</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">g</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">required</span> <span class="k">if</span> <span class="n">g</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">h5</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing groups for </span><span class="si">{</span><span class="n">experiment_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_h5_file_path">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.dataset_handler.get_h5_file_path">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_h5_file_path</span><span class="p">(</span><span class="n">exp_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">left_str</span> <span class="o">=</span> <span class="s2">&quot;_left&quot;</span> <span class="k">if</span> <span class="n">left</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">user_config</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="n">exp_name</span><span class="p">,</span> <span class="s2">&quot;processed_data&quot;</span><span class="p">),</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exp_name</span><span class="si">}</span><span class="s2">_results</span><span class="si">{</span><span class="n">left_str</span><span class="si">}</span><span class="s2">.h5&quot;</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_data">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.dataset_handler.get_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_data</span><span class="p">(</span><span class="n">exp_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">group_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve dataset for given experiment and group.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        exp_name: Experiment name.</span>
+<span class="sd">        group_name: Group name in HDF5 file (&#39;dewarped_data&#39; or &#39;edge_results&#39;).</span>
+<span class="sd">        left: Use left variant if True.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        h5py.Dataset: Dataset object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">get_file</span><span class="p">(</span><span class="n">exp_name</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">group_name</span><span class="p">][</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="get_edge_results">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.dataset_handler.get_edge_results">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_edge_results</span><span class="p">(</span><span class="n">exp_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get edge results dataset from the experiment file.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">get_data</span><span class="p">(</span><span class="n">exp_name</span><span class="p">,</span> <span class="s2">&quot;edge_results&quot;</span><span class="p">,</span> <span class="n">left</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_dewarped_data">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.dataset_handler.get_dewarped_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_dewarped_data</span><span class="p">(</span><span class="n">exp_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get dewarped data dataset from the experiment file.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">get_data</span><span class="p">(</span><span class="n">exp_name</span><span class="p">,</span> <span class="s2">&quot;dewarped_data&quot;</span><span class="p">,</span> <span class="n">left</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_dewarped_metadata">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.dataset_handler.get_dewarped_metadata">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_dewarped_metadata</span><span class="p">(</span><span class="n">exp_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get metadata attributes from dewarped_data group.&quot;&quot;&quot;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">get_file</span><span class="p">(</span><span class="n">exp_name</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;dewarped_data&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_file">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.dataset_handler.get_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_file</span><span class="p">(</span>
+    <span class="n">exp_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Open or reuse HDF5 file for the experiment.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;w&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Use create_h5_file to create a new file&quot;</span><span class="p">)</span>
+
+    <span class="k">global</span> <span class="n">HDF_FILE</span><span class="p">,</span> <span class="n">LOADED_FILE_PATH</span>
+
+    <span class="n">wanted_path</span> <span class="o">=</span> <span class="n">get_h5_file_path</span><span class="p">(</span><span class="n">exp_name</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">)</span>
+
+    <span class="n">need_reopen</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">HDF_FILE</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="ow">or</span> <span class="n">LOADED_FILE_PATH</span> <span class="o">!=</span> <span class="n">wanted_path</span>
+        <span class="ow">or</span> <span class="p">(</span>
+            <span class="nb">hasattr</span><span class="p">(</span><span class="n">HDF_FILE</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">HDF_FILE</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">valid</span>
+        <span class="p">)</span>  <span class="c1"># falls bereits geschlossen</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">need_reopen</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">HDF_FILE</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">HDF_FILE</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">HDF_FILE</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+            <span class="n">HDF_FILE</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">HDF_FILE</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">wanted_path</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="n">LOADED_FILE_PATH</span> <span class="o">=</span> <span class="n">wanted_path</span>
+
+    <span class="k">return</span> <span class="n">HDF_FILE</span></div>
+
+
+
+<div class="viewcode-block" id="close_file">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.dataset_handler.close_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">close_file</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Close the currently opened HDF5 file, if any.&quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">HDF_FILE</span>
+    <span class="k">global</span> <span class="n">LOADED_FILE_PATH</span>
+
+    <span class="k">if</span> <span class="n">HDF_FILE</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">HDF_FILE</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">HDF_FILE</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">LOADED_FILE_PATH</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="save_edge_results">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.dataset_handler.save_edge_results">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_edge_results</span><span class="p">(</span>
+    <span class="n">exp_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">edge_results</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">]</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">],</span>
+    <span class="n">left</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Save edge results array to the experiment&#39;s HDF5 file.</span>
+
+<span class="sd">    Opens a fresh file handle just for this write (no global handle usage).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">get_h5_file_path</span><span class="p">(</span><span class="n">exp_name</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">)</span>
+    <span class="c1"># Ephemeres Handle → kein Einfluss auf globale HDF_FILE/LOADED_FILE_PATH</span>
+    <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">grp</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">require_group</span><span class="p">(</span><span class="s2">&quot;edge_results&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;data&quot;</span> <span class="ow">in</span> <span class="n">grp</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">grp</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+        <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">edge_results</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Minh Tam Würzburger, Marc Fehr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

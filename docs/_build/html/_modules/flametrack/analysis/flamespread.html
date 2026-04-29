@@ -1,0 +1,738 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>flametrack.analysis.flamespread &mdash; FlameTrack 1.0.1b2.post5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=228cd8fb"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            FlameTrack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/index.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer_guide/index.html">Developer Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">FlameTrack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">flametrack.analysis.flamespread</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for flametrack.analysis.flamespread</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Protocol</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">cv2</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.signal</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_peaks</span><span class="p">,</span> <span class="n">medfilt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">skewnorm</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataset_handler</span> <span class="k">as</span> <span class="n">dst_handler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.dataset_handler</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_dewarped_data</span><span class="p">,</span> <span class="n">save_edge_results</span>
+
+<span class="c1"># =====================================================================================</span>
+<span class="c1"># CORE FUNCTIONS: EDGE DETECTION LOGIC</span>
+<span class="c1"># =====================================================================================</span>
+
+
+<div class="viewcode-block" id="EdgeFn">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.EdgeFn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EdgeFn</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="o">...</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="o">...</span></div>
+
+
+
+<div class="viewcode-block" id="EdgeMethodSpec">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.EdgeMethodSpec">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EdgeMethodSpec</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Descriptor for a named edge-detection method variant.&quot;&quot;&quot;</span>
+
+    <span class="n">short_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">display_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">make_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="n">EdgeFn</span><span class="p">]</span>
+    <span class="n">default_threshold_ir</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">default_threshold_image</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">use_otsu_masking</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+
+<div class="viewcode-block" id="find_peaks_in_gradient">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.find_peaks_in_gradient">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_peaks_in_gradient</span><span class="p">(</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">min_distance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">min_height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">min_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find peaks in the negative gradient of a 1D signal.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y (np.ndarray): 1D signal.</span>
+<span class="sd">        min_distance (int): Minimum distance between peaks.</span>
+<span class="sd">        min_height (float): Minimum peak height.</span>
+<span class="sd">        min_width (float): Minimum peak width.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: Indices of detected peaks.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Scipy-Stubs wollen hier eine Sequence/Array – Liste mit float passt:</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">min_height</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;height&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_height</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">min_distance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">min_distance</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">min_width</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;width&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_width</span><span class="p">)</span>
+    <span class="n">peaks</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">find_peaks</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">peaks</span></div>
+
+
+
+<div class="viewcode-block" id="left_edge_of_rightmost_cluster">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.left_edge_of_rightmost_cluster">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">left_edge_of_rightmost_cluster</span><span class="p">(</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the leftmost pixel of the rightmost contiguous cluster above threshold.</span>
+
+<span class="sd">    This is the correct edge function for a flame spreading right-to-left in</span>
+<span class="sd">    image/video data (0–255 range).  Unlike ``left_most_point_over_threshold``,</span>
+<span class="sd">    it ignores isolated bright artefacts (reflections, glare) that are not part</span>
+<span class="sd">    of the main hot region.</span>
+
+<span class="sd">    Algorithm:</span>
+<span class="sd">      1. Find the rightmost pixel above *threshold*.</span>
+<span class="sd">      2. Walk left while still above *threshold*.</span>
+<span class="sd">      3. Return the index one step past the last hot pixel (= leftmost edge).</span>
+
+<span class="sd">    Returns ``len(y)`` when no pixel exceeds the threshold.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="n">threshold</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">rightmost</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">rightmost</span>
+    <span class="k">while</span> <span class="n">pos</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">mask</span><span class="p">[</span><span class="n">pos</span><span class="p">]:</span>
+        <span class="n">pos</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="right_edge_of_leftmost_cluster">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.right_edge_of_leftmost_cluster">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">right_edge_of_leftmost_cluster</span><span class="p">(</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the rightmost pixel of the leftmost contiguous cluster above threshold.</span>
+
+<span class="sd">    Mirror of ``left_edge_of_rightmost_cluster`` for flames spreading left-to-right.</span>
+
+<span class="sd">    Returns 0 when no pixel exceeds the threshold.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="n">threshold</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="n">leftmost</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">leftmost</span>
+    <span class="k">while</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="ow">and</span> <span class="n">mask</span><span class="p">[</span><span class="n">pos</span><span class="p">]:</span>
+        <span class="n">pos</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="right_most_point_over_threshold">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.right_most_point_over_threshold">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">right_most_point_over_threshold</span><span class="p">(</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the last point in the signal above the given threshold.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y (np.ndarray): 1D signal.</span>
+<span class="sd">        threshold (float): Threshold value.</span>
+<span class="sd">        params: Unused; kept for compatibility.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: Index of the last point above threshold, or 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">y</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">peaks</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span></div>
+
+
+
+<div class="viewcode-block" id="left_most_point_over_threshold">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.left_most_point_over_threshold">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">left_most_point_over_threshold</span><span class="p">(</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the first point in the signal above the given threshold.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y (np.ndarray): 1D signal.</span>
+<span class="sd">        threshold (float): Threshold value.</span>
+<span class="sd">        params: Unused; kept for compatibility.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: Index of the first point above threshold, or len(y).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">y</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">peaks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="right_most_peak">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.right_most_peak">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">right_most_peak</span><span class="p">(</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">min_distance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">min_height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">min_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the right-most peak in the gradient of the signal.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: Index of last detected peak, or 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="n">find_peaks_in_gradient</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">min_distance</span><span class="p">,</span> <span class="n">min_height</span><span class="p">,</span> <span class="n">min_width</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">peaks</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span></div>
+
+
+
+<div class="viewcode-block" id="highest_peak">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.highest_peak">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">highest_peak</span><span class="p">(</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">min_distance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">min_height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">min_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the index of the peak with the highest gradient.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: Index of the highest peak, or 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gradient</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="n">find_peaks_in_gradient</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">min_distance</span><span class="p">,</span> <span class="n">min_height</span><span class="p">,</span> <span class="n">min_width</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">peaks</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">gradient</span><span class="p">[</span><span class="n">peaks</span><span class="p">])]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span></div>
+
+
+
+<div class="viewcode-block" id="highest_peak_to_lowest_value">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.highest_peak_to_lowest_value">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">highest_peak_to_lowest_value</span><span class="p">(</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">min_distance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">min_height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">min_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">ambient_weighting</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">high_val</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">low_val</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
+    <span class="n">direction_weighting</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">previous_peak</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">previous_velocity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the most plausible flame front peak using gradient + ambient suppression + direction.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: Index of selected edge point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gradient</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="n">find_peaks_in_gradient</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">min_distance</span><span class="p">,</span> <span class="n">min_height</span><span class="p">,</span> <span class="n">min_width</span><span class="p">)</span>
+
+    <span class="n">y_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="c1"># ❗ nicht zu einer list casten (mypy meckert über Typwechsel).</span>
+    <span class="c1"># Danach wieder ndarray machen:</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">peaks</span>
+            <span class="k">if</span> <span class="n">y</span><span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="n">peak</span> <span class="o">-</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span> <span class="o">&gt;=</span> <span class="n">high_val</span> <span class="ow">and</span> <span class="n">y</span><span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">peak</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">y_len</span><span class="p">)]</span> <span class="o">&lt;=</span> <span class="n">low_val</span>
+        <span class="p">],</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">peaks</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="n">peak_values</span> <span class="o">=</span> <span class="n">gradient</span><span class="p">[</span><span class="n">peaks</span><span class="p">]</span>
+    <span class="n">ambient_values</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">peaks</span><span class="p">]</span>
+    <span class="n">rv</span> <span class="o">=</span> <span class="n">skewnorm</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">mean</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="n">stats</span><span class="p">(</span><span class="n">moments</span><span class="o">=</span><span class="s2">&quot;mvs&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">previous_peak</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">previous_peak</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">previous_velocity</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="n">direction_factor</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span>
+            <span class="p">((</span><span class="n">peaks</span> <span class="o">-</span> <span class="n">previous_peak</span> <span class="o">+</span> <span class="n">previous_velocity</span><span class="p">)</span> <span class="o">/</span> <span class="n">previous_velocity</span><span class="p">)</span> <span class="o">/</span> <span class="mi">10</span>
+            <span class="o">+</span> <span class="n">mean</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">direction_factor</span><span class="p">[</span><span class="n">direction_factor</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="n">peaks</span><span class="p">[</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span>
+                    <span class="n">peak_values</span>
+                    <span class="o">/</span> <span class="p">(</span><span class="n">ambient_values</span><span class="o">**</span><span class="n">ambient_weighting</span><span class="p">)</span>
+                    <span class="o">*</span> <span class="p">(</span><span class="n">direction_factor</span><span class="o">**</span><span class="n">direction_weighting</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">peaks</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">peak_values</span> <span class="o">/</span> <span class="p">(</span><span class="n">ambient_values</span><span class="o">**</span><span class="n">ambient_weighting</span><span class="p">))])</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_edge_data">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.calculate_edge_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_edge_data</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">find_edge_point</span><span class="p">:</span> <span class="n">EdgeFn</span><span class="p">,</span>
+    <span class="n">custom_filter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+    <span class="n">use_otsu_masking</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the edge position for each row of each frame.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (np.ndarray): 3D array of shape (H, W, T).</span>
+<span class="sd">        find_edge_point (Callable): Method to find edge in 1D data.</span>
+<span class="sd">        custom_filter (Callable): Optional filter to apply to each frame.</span>
+<span class="sd">        use_otsu_masking (bool): If True (default), apply Otsu thresholding and</span>
+<span class="sd">            morphological dilation to restrict the per-row search window.  Set</span>
+<span class="sd">            False to scan the full row without any masking (useful when a fixed</span>
+<span class="sd">            intensity threshold alone is sufficient and Otsu would over-shrink the</span>
+<span class="sd">            window, e.g. with a deliberately low threshold such as 117).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[list[int]]: Edge coordinates per frame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Processing frame </span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">background_frame</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="nb">max</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="n">filtered_frame</span> <span class="o">=</span> <span class="n">custom_filter</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">filtered_frame</span> <span class="o">-</span> <span class="n">custom_filter</span><span class="p">(</span><span class="n">background_frame</span><span class="p">)</span>
+
+        <span class="c1"># --- Otsu masking (optional) ---</span>
+        <span class="n">thresh</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">use_otsu_masking</span><span class="p">:</span>
+            <span class="n">minv</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">filtered_frame</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+            <span class="n">maxv</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">filtered_frame</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">maxv</span> <span class="o">&gt;</span> <span class="n">minv</span><span class="p">:</span>
+                <span class="n">normed</span> <span class="o">=</span> <span class="p">(</span><span class="n">filtered_frame</span> <span class="o">-</span> <span class="n">minv</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">maxv</span> <span class="o">-</span> <span class="n">minv</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">normed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">filtered_frame</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+            <span class="n">mask_u8</span> <span class="o">=</span> <span class="p">(</span><span class="n">normed</span> <span class="o">*</span> <span class="mf">255.0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">thresh</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span>
+                <span class="n">mask_u8</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">THRESH_BINARY</span> <span class="o">+</span> <span class="n">cv2</span><span class="o">.</span><span class="n">THRESH_OTSU</span>
+            <span class="p">)</span>
+            <span class="n">kernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+            <span class="n">thresh</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">dilate</span><span class="p">(</span><span class="n">thresh</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+        <span class="n">frame_result</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="n">use_otsu_masking</span> <span class="ow">and</span> <span class="n">thresh</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">150</span><span class="p">:</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">thresh</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">idx</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+                    <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="mi">10</span>
+
+            <span class="n">y</span> <span class="o">=</span> <span class="n">filtered_frame</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;previous_peak&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;previous_velocity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">result</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+
+            <span class="n">peak</span> <span class="o">=</span> <span class="n">find_edge_point</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">peak</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">peak</span> <span class="o">+=</span> <span class="n">start</span>
+            <span class="n">frame_result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">peak</span><span class="p">))</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame_result</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<span class="c1"># =====================================================================================</span>
+<span class="c1"># EDGE METHOD CATALOG</span>
+<span class="c1"># =====================================================================================</span>
+<span class="c1"># A registry of all available edge-detection variants.  The app and the notebook both</span>
+<span class="c1"># import this dict so method descriptions and defaults stay in one place.</span>
+<span class="c1">#</span>
+<span class="c1"># Keys are short_id strings; values are EdgeMethodSpec instances.</span>
+<span class="c1"># In the future the UI can expose a method-selection combo box populated from here.</span>
+
+<span class="n">EDGE_METHOD_CATALOG</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">EdgeMethodSpec</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># ── Otsu-masked variants (recommended, use calculate_edge_data with masking) ──</span>
+    <span class="s2">&quot;leftmost_threshold&quot;</span><span class="p">:</span> <span class="n">EdgeMethodSpec</span><span class="p">(</span>
+        <span class="n">short_id</span><span class="o">=</span><span class="s2">&quot;leftmost_threshold&quot;</span><span class="p">,</span>
+        <span class="n">display_name</span><span class="o">=</span><span class="s2">&quot;Leftmost ≥ threshold  (Otsu region, R→L)&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Finds the first (leftmost) pixel above the threshold inside the &quot;</span>
+            <span class="s2">&quot;Otsu-narrowed search window.  Tam&#39;s original method for R→L flames.&quot;</span>
+        <span class="p">),</span>
+        <span class="n">make_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">y</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_t</span><span class="o">=</span><span class="n">t</span><span class="p">:</span> <span class="n">left_most_point_over_threshold</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">_t</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">default_threshold_ir</span><span class="o">=</span><span class="mf">280.0</span><span class="p">,</span>
+        <span class="n">default_threshold_image</span><span class="o">=</span><span class="mf">155.0</span><span class="p">,</span>
+        <span class="n">use_otsu_masking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;rightmost_threshold&quot;</span><span class="p">:</span> <span class="n">EdgeMethodSpec</span><span class="p">(</span>
+        <span class="n">short_id</span><span class="o">=</span><span class="s2">&quot;rightmost_threshold&quot;</span><span class="p">,</span>
+        <span class="n">display_name</span><span class="o">=</span><span class="s2">&quot;Rightmost ≥ threshold  (Otsu region, L→R)&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Finds the last (rightmost) pixel above the threshold inside the &quot;</span>
+            <span class="s2">&quot;Otsu-narrowed search window.  L→R flame counterpart.&quot;</span>
+        <span class="p">),</span>
+        <span class="n">make_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">y</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_t</span><span class="o">=</span><span class="n">t</span><span class="p">:</span> <span class="n">right_most_point_over_threshold</span><span class="p">(</span>
+                <span class="n">y</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">_t</span>
+            <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">default_threshold_ir</span><span class="o">=</span><span class="mf">280.0</span><span class="p">,</span>
+        <span class="n">default_threshold_image</span><span class="o">=</span><span class="mf">155.0</span><span class="p">,</span>
+        <span class="n">use_otsu_masking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;left_edge_rightmost_cluster&quot;</span><span class="p">:</span> <span class="n">EdgeMethodSpec</span><span class="p">(</span>
+        <span class="n">short_id</span><span class="o">=</span><span class="s2">&quot;left_edge_rightmost_cluster&quot;</span><span class="p">,</span>
+        <span class="n">display_name</span><span class="o">=</span><span class="s2">&quot;Left edge of rightmost cluster  (Otsu region, R→L)&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Finds the leftmost pixel of the rightmost contiguous bright cluster.  &quot;</span>
+            <span class="s2">&quot;More robust than plain threshold for R→L flames with artefacts.&quot;</span>
+        <span class="p">),</span>
+        <span class="n">make_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">y</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_t</span><span class="o">=</span><span class="n">t</span><span class="p">:</span> <span class="n">left_edge_of_rightmost_cluster</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">_t</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">default_threshold_ir</span><span class="o">=</span><span class="mf">280.0</span><span class="p">,</span>
+        <span class="n">default_threshold_image</span><span class="o">=</span><span class="mf">155.0</span><span class="p">,</span>
+        <span class="n">use_otsu_masking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;right_edge_leftmost_cluster&quot;</span><span class="p">:</span> <span class="n">EdgeMethodSpec</span><span class="p">(</span>
+        <span class="n">short_id</span><span class="o">=</span><span class="s2">&quot;right_edge_leftmost_cluster&quot;</span><span class="p">,</span>
+        <span class="n">display_name</span><span class="o">=</span><span class="s2">&quot;Right edge of leftmost cluster  (Otsu region, L→R)&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Finds the rightmost pixel of the leftmost contiguous bright cluster.  &quot;</span>
+            <span class="s2">&quot;More robust than plain threshold for L→R flames with artefacts.&quot;</span>
+        <span class="p">),</span>
+        <span class="n">make_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">y</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_t</span><span class="o">=</span><span class="n">t</span><span class="p">:</span> <span class="n">right_edge_of_leftmost_cluster</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">_t</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">default_threshold_ir</span><span class="o">=</span><span class="mf">280.0</span><span class="p">,</span>
+        <span class="n">default_threshold_image</span><span class="o">=</span><span class="mf">155.0</span><span class="p">,</span>
+        <span class="n">use_otsu_masking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="c1"># ── Raw / no-Otsu variants (full row, fixed threshold) ──────────────────────</span>
+    <span class="s2">&quot;leftmost_threshold_no_otsu&quot;</span><span class="p">:</span> <span class="n">EdgeMethodSpec</span><span class="p">(</span>
+        <span class="n">short_id</span><span class="o">=</span><span class="s2">&quot;leftmost_threshold_no_otsu&quot;</span><span class="p">,</span>
+        <span class="n">display_name</span><span class="o">=</span><span class="s2">&quot;Leftmost ≥ threshold  (no Otsu, full row, R→L)&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Same as leftmost_threshold but scans the full row without Otsu masking.  &quot;</span>
+            <span class="s2">&quot;Useful for verifying results or when Otsu shrinks the window too aggressively.  &quot;</span>
+            <span class="s2">&quot;Default threshold 117 works well for 0-255 image data.&quot;</span>
+        <span class="p">),</span>
+        <span class="n">make_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">y</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_t</span><span class="o">=</span><span class="n">t</span><span class="p">:</span> <span class="n">left_most_point_over_threshold</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">_t</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">default_threshold_ir</span><span class="o">=</span><span class="mf">280.0</span><span class="p">,</span>
+        <span class="n">default_threshold_image</span><span class="o">=</span><span class="mf">117.0</span><span class="p">,</span>
+        <span class="n">use_otsu_masking</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;rightmost_threshold_no_otsu&quot;</span><span class="p">:</span> <span class="n">EdgeMethodSpec</span><span class="p">(</span>
+        <span class="n">short_id</span><span class="o">=</span><span class="s2">&quot;rightmost_threshold_no_otsu&quot;</span><span class="p">,</span>
+        <span class="n">display_name</span><span class="o">=</span><span class="s2">&quot;Rightmost ≥ threshold  (no Otsu, full row, L→R)&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Same as rightmost_threshold but scans the full row without Otsu masking.  &quot;</span>
+            <span class="s2">&quot;L→R counterpart of leftmost_threshold_no_otsu.&quot;</span>
+        <span class="p">),</span>
+        <span class="n">make_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">y</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_t</span><span class="o">=</span><span class="n">t</span><span class="p">:</span> <span class="n">right_most_point_over_threshold</span><span class="p">(</span>
+                <span class="n">y</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">_t</span>
+            <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">default_threshold_ir</span><span class="o">=</span><span class="mf">280.0</span><span class="p">,</span>
+        <span class="n">default_threshold_image</span><span class="o">=</span><span class="mf">117.0</span><span class="p">,</span>
+        <span class="n">use_otsu_masking</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="calculate_edge_results_for_exp_name">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.calculate_edge_results_for_exp_name">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_edge_results_for_exp_name</span><span class="p">(</span>
+    <span class="n">exp_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">left</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">dewarped_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run full edge detection pipeline for a given experiment name.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        exp_name (str): Experiment identifier.</span>
+<span class="sd">        left (bool): Whether to process left side.</span>
+<span class="sd">        dewarped_data (np.ndarray): Optional preloaded data.</span>
+<span class="sd">        save (bool): Whether to write result to HDF5.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: Edge data (if save=False).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">dewarped_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dewarped_data</span> <span class="o">=</span> <span class="n">get_dewarped_data</span><span class="p">(</span><span class="n">exp_name</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;CANON&quot;</span> <span class="ow">in</span> <span class="n">exp_name</span><span class="p">:</span>
+        <span class="n">peak_method</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">:</span> <span class="n">right_most_point_over_threshold</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">125</span>
+        <span class="p">)</span>
+        <span class="n">custom_filter</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+    <span class="k">elif</span> <span class="s2">&quot;RCE&quot;</span> <span class="ow">in</span> <span class="n">exp_name</span><span class="p">:</span>
+        <span class="n">peak_method</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">:</span> <span class="n">right_most_point_over_threshold</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">280</span>
+        <span class="p">)</span>
+        <span class="n">custom_filter</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">band_filter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">low</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">380</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">peak_method</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">:</span> <span class="n">highest_peak_to_lowest_value</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span>
+            <span class="n">min_distance</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+            <span class="n">min_height</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">min_width</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">ambient_weighting</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">high_val</span><span class="o">=</span><span class="mi">320</span><span class="p">,</span>
+            <span class="n">low_val</span><span class="o">=</span><span class="mi">380</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">params</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">custom_filter</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">band_filter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">low</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">calculate_edge_data</span><span class="p">(</span>
+        <span class="n">dewarped_data</span><span class="p">,</span> <span class="n">peak_method</span><span class="p">,</span> <span class="n">custom_filter</span><span class="o">=</span><span class="n">custom_filter</span>
+    <span class="p">)</span>
+    <span class="n">dst_handler</span><span class="o">.</span><span class="n">close_file</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">save</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="n">save_edge_results</span><span class="p">(</span><span class="n">exp_name</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">results</span><span class="p">))</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<span class="c1"># =====================================================================================</span>
+<span class="c1"># OPTIONAL: PLOTTING / VISUALIZATION (GUI or Debug only)</span>
+<span class="c1"># =====================================================================================</span>
+
+
+<div class="viewcode-block" id="band_filter">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.band_filter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">band_filter</span><span class="p">(</span>
+    <span class="n">frame</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">low</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">high</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Clip intensity values between low and high threshold.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        frame (np.ndarray): Input image.</span>
+<span class="sd">        low (float): Lower clipping limit.</span>
+<span class="sd">        high (float): Upper clipping limit.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: Filtered image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">low</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">low</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">high</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">high</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">frame</span><span class="p">[</span><span class="n">frame</span> <span class="o">&gt;</span> <span class="n">high</span><span class="p">]</span> <span class="o">=</span> <span class="n">high</span>
+    <span class="n">frame</span><span class="p">[</span><span class="n">frame</span> <span class="o">&lt;</span> <span class="n">low</span><span class="p">]</span> <span class="o">=</span> <span class="n">low</span>
+    <span class="k">return</span> <span class="n">frame</span></div>
+
+
+
+<div class="viewcode-block" id="plot_edge">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.plot_edge">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_edge</span><span class="p">(</span>
+    <span class="n">frame</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">find_edge_point</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">right_most_peak</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot detected edge for each line in the frame.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        frame (np.ndarray): 2D thermal frame.</span>
+<span class="sd">        find_edge_point (Callable): Edge detection function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;hot&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="nb">slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="nb">slice</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">peak</span> <span class="o">=</span> <span class="n">find_edge_point</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="nb">slice</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;purple&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="show_flame_spread">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.show_flame_spread">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">show_flame_spread</span><span class="p">(</span>
+    <span class="n">edge_results</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">y_coord</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Figure</span><span class="p">,</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot flame front x-coordinate over time at a given y-line.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        edge_results (np.ndarray): Edge matrix.</span>
+<span class="sd">        y_coord (int): Line index from bottom.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        fig, ax: Matplotlib figure and axis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y_coord</span> <span class="o">=</span> <span class="o">-</span><span class="n">y_coord</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">edge_results</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">y_coord</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Flame spread at y = </span><span class="si">{</span><span class="n">y_coord</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Frame&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;X coordinate&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span></div>
+
+
+
+<div class="viewcode-block" id="show_flame_contour">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.show_flame_contour">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">show_flame_contour</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">edge_results</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Figure</span><span class="p">,</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Overlay detected edge on thermal image for a given frame.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (np.ndarray): 3D image data.</span>
+<span class="sd">        edge_results (np.ndarray): Edge matrix.</span>
+<span class="sd">        frame (int): Frame index.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        fig, ax: Matplotlib figure and axis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">frame</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;hot&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">edge_results</span><span class="p">[</span><span class="n">frame</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">edge_results</span><span class="p">[</span><span class="n">frame</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Flame contour at frame </span><span class="si">{</span><span class="n">frame</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">invert_yaxis</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span></div>
+
+
+
+<div class="viewcode-block" id="show_flame_spread_velocity">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.flamespread.show_flame_spread_velocity">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">show_flame_spread_velocity</span><span class="p">(</span>
+    <span class="n">edge_results</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">y_coord</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rolling_window</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Figure</span><span class="p">,</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot local velocity of flame front at a fixed y-line.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        edge_results (np.ndarray): Edge data.</span>
+<span class="sd">        y_coord (int): Line index.</span>
+<span class="sd">        rolling_window (int): Smoothing window size.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        fig, ax: Matplotlib figure and axis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">edge_results</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">y_coord</span><span class="p">]</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">medfilt</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">rolling_window</span><span class="p">)),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">rolling_window</span><span class="p">)</span> <span class="o">/</span> <span class="n">rolling_window</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;same&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Flame spread velocity at y = </span><span class="si">{</span><span class="n">y_coord</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Frame&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Velocity [px/frame]&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Minh Tam Würzburger, Marc Fehr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

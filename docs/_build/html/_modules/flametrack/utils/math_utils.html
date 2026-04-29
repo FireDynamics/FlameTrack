@@ -1,0 +1,179 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>flametrack.utils.math_utils &mdash; FlameTrack 1.0.1b2.post5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=228cd8fb"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            FlameTrack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/index.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer_guide/index.html">Developer Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">FlameTrack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">flametrack.utils.math_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for flametrack.utils.math_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<div class="viewcode-block" id="compute_target_ratio">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.utils.math_utils.compute_target_ratio">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_target_ratio</span><span class="p">(</span><span class="n">width</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">height</span> <span class="o">/</span> <span class="n">width</span> <span class="k">if</span> <span class="n">width</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">1.0</span></div>
+
+
+
+<div class="viewcode-block" id="estimate_resolution_from_points">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.utils.math_utils.estimate_resolution_from_points">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_resolution_from_points</span><span class="p">(</span>
+    <span class="n">p0</span><span class="p">,</span>
+    <span class="n">p1</span><span class="p">,</span>
+    <span class="n">p3</span><span class="p">,</span>
+    <span class="n">plate_width_mm</span><span class="p">,</span>
+    <span class="n">plate_height_mm</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">assumed_error_px</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate spatial resolution and absolute measurement uncertainty based on manually marked rectangle.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p0 : array-like</span>
+<span class="sd">        Top-left point of rectangle in pixels.</span>
+<span class="sd">    p1 : array-like</span>
+<span class="sd">        Top-right point of rectangle in pixels.</span>
+<span class="sd">    p3 : array-like</span>
+<span class="sd">        Bottom-left point of rectangle in pixels.</span>
+<span class="sd">    plate_width_mm : float</span>
+<span class="sd">        Real-world width of the physical plate in millimeters.</span>
+<span class="sd">    plate_height_mm : float</span>
+<span class="sd">        Real-world height of the physical plate in millimeters.</span>
+<span class="sd">    assumed_error_px : float, optional</span>
+<span class="sd">        Pixel accuracy assumed for manual point selection (default is ±0.5 px).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary with estimated resolution and error terms (all float):</span>
+<span class="sd">        - mm_per_px_width</span>
+<span class="sd">        - mm_per_px_height</span>
+<span class="sd">        - error_mm_width</span>
+<span class="sd">        - error_mm_height</span>
+<span class="sd">        - assumed_pixel_error</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">p0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">p0</span><span class="p">)</span>
+    <span class="n">p1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span>
+    <span class="n">p3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">p3</span><span class="p">)</span>
+
+    <span class="n">width_px</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">p1</span> <span class="o">-</span> <span class="n">p0</span><span class="p">)</span>
+    <span class="n">height_px</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">p3</span> <span class="o">-</span> <span class="n">p0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">width_px</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">height_px</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Degenerate rectangle: width or height is zero.&quot;</span><span class="p">)</span>
+
+    <span class="n">mm_per_px_w</span> <span class="o">=</span> <span class="n">plate_width_mm</span> <span class="o">/</span> <span class="n">width_px</span>
+    <span class="n">mm_per_px_h</span> <span class="o">=</span> <span class="n">plate_height_mm</span> <span class="o">/</span> <span class="n">height_px</span>
+
+    <span class="n">error_mm_w</span> <span class="o">=</span> <span class="n">mm_per_px_w</span> <span class="o">*</span> <span class="n">assumed_error_px</span>
+    <span class="n">error_mm_h</span> <span class="o">=</span> <span class="n">mm_per_px_h</span> <span class="o">*</span> <span class="n">assumed_error_px</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;mm_per_px_width&quot;</span><span class="p">:</span> <span class="n">mm_per_px_w</span><span class="p">,</span>
+        <span class="s2">&quot;mm_per_px_height&quot;</span><span class="p">:</span> <span class="n">mm_per_px_h</span><span class="p">,</span>
+        <span class="s2">&quot;error_mm_width&quot;</span><span class="p">:</span> <span class="n">error_mm_w</span><span class="p">,</span>
+        <span class="s2">&quot;error_mm_height&quot;</span><span class="p">:</span> <span class="n">error_mm_h</span><span class="p">,</span>
+        <span class="s2">&quot;assumed_pixel_error&quot;</span><span class="p">:</span> <span class="n">assumed_error_px</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Minh Tam Würzburger, Marc Fehr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

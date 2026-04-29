@@ -1,0 +1,211 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>flametrack.gui.plotting_utils &mdash; FlameTrack 1.0.1b2.post5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=228cd8fb"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            FlameTrack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/index.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer_guide/index.html">Developer Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">FlameTrack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">flametrack.gui.plotting_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for flametrack.gui.plotting_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<div class="viewcode-block" id="sort_corner_points">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.plotting_utils.sort_corner_points">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sort_corner_points</span><span class="p">(</span>
+    <span class="n">points</span><span class="p">,</span> <span class="n">experiment_type</span><span class="o">=</span><span class="s2">&quot;Room Corner&quot;</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s2">&quot;clockwise&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sort corner points depending on experiment type.</span>
+<span class="sd">    - For &#39;room_corner&#39; (6 points): Sort using angle-based method with defined start point</span>
+<span class="sd">    - For &#39;lateral_flame_spread&#39; (4 points): Sort using center angle</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Room Corner&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Room corner expects exactly 6 points.&quot;</span><span class="p">)</span>
+
+        <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">pts</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">pts</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">sort_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;clockwise&quot;</span><span class="p">:</span>
+            <span class="n">sort_order</span> <span class="o">=</span> <span class="n">sort_order</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">sorted_pts</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[</span><span class="n">sort_order</span><span class="p">]</span>
+
+        <span class="c1"># Beginne mit dem Punkt ganz links oben</span>
+        <span class="n">top_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lexsort</span><span class="p">((</span><span class="n">sorted_pts</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">sorted_pts</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">sorted_pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">sorted_pts</span><span class="p">,</span> <span class="o">-</span><span class="n">top_idx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span> <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">sorted_pts</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">experiment_type</span> <span class="o">==</span> <span class="s2">&quot;Lateral Flame Spread&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Lateral flame spread expects exactly 4 points.&quot;</span><span class="p">)</span>
+
+        <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="c1"># Robust ordering that works for any tilt and aspect ratio:</span>
+        <span class="c1"># Split along the dominant axis (wider → left/right pairs;</span>
+        <span class="c1"># taller → top/bottom pairs), then sort each pair along the</span>
+        <span class="c1"># cross-axis to assign TL/BL (or TL/TR).</span>
+        <span class="c1">#</span>
+        <span class="c1"># Angle-based methods fail for highly elongated plates where the</span>
+        <span class="c1"># two &quot;top&quot; corners are nearly collinear with the two &quot;bottom&quot;</span>
+        <span class="c1"># corners relative to the centroid.  Sum/diff methods fail for</span>
+        <span class="c1"># plates tilted close to 45°.  This split-on-dominant-axis</span>
+        <span class="c1"># approach is robust for both.</span>
+        <span class="n">x_span</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">pts</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">y_span</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">pts</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">x_span</span> <span class="o">&gt;=</span> <span class="n">y_span</span><span class="p">:</span>
+            <span class="c1"># Wider (or square) plate: split into left pair and right pair</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">pts</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">left</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[</span><span class="n">order</span><span class="p">[:</span><span class="mi">2</span><span class="p">]]</span>
+            <span class="n">right</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[</span><span class="n">order</span><span class="p">[</span><span class="mi">2</span><span class="p">:]]</span>
+            <span class="n">tl</span> <span class="o">=</span> <span class="n">left</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">left</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])]</span>
+            <span class="n">bl</span> <span class="o">=</span> <span class="n">left</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">left</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])]</span>
+            <span class="n">tr</span> <span class="o">=</span> <span class="n">right</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">right</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])]</span>
+            <span class="n">br</span> <span class="o">=</span> <span class="n">right</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">right</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Taller plate: split into top pair and bottom pair</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">pts</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">top</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[</span><span class="n">order</span><span class="p">[:</span><span class="mi">2</span><span class="p">]]</span>
+            <span class="n">bot</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[</span><span class="n">order</span><span class="p">[</span><span class="mi">2</span><span class="p">:]]</span>
+            <span class="n">tl</span> <span class="o">=</span> <span class="n">top</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">top</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])]</span>
+            <span class="n">tr</span> <span class="o">=</span> <span class="n">top</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">top</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])]</span>
+            <span class="n">bl</span> <span class="o">=</span> <span class="n">bot</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">bot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])]</span>
+            <span class="n">br</span> <span class="o">=</span> <span class="n">bot</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">bot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])]</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">tl</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">tr</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">br</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">bl</span><span class="p">)]</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown experiment type: </span><span class="si">{</span><span class="n">experiment_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="rotate_points">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.gui.plotting_utils.rotate_points">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rotate_points</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">image_shape</span><span class="p">,</span> <span class="n">rotation_index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts points from a np.rot90-rotated display frame back to unrotated image coordinates.</span>
+
+<span class="sd">    :param points: Liste von (x, y)-Punkten im rotierten Bild</span>
+<span class="sd">    :param image_shape: Form des UNROTIERTEN Bildes als (Höhe, Breite)</span>
+<span class="sd">    :param rotation_index: 0 = 0°, 1 = 90° CCW, 2 = 180°, 3 = 270° CCW</span>
+<span class="sd">    :return: Punkte im unrotierten Bildkoordinatensystem als Liste von (x, y)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">rotation_index</span> <span class="o">%</span> <span class="mi">4</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">points</span>
+
+    <span class="n">img_h</span><span class="p">,</span> <span class="n">img_w</span> <span class="o">=</span> <span class="n">image_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">image_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">rx</span><span class="p">,</span> <span class="n">ry</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">pts</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># 90° CCW: inverse is x = W-1-ry, y = rx</span>
+        <span class="n">x_out</span><span class="p">,</span> <span class="n">y_out</span> <span class="o">=</span> <span class="n">img_w</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">ry</span><span class="p">,</span> <span class="n">rx</span>
+    <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># 180°: inverse is x = W-1-rx, y = H-1-ry</span>
+        <span class="n">x_out</span><span class="p">,</span> <span class="n">y_out</span> <span class="o">=</span> <span class="n">img_w</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">rx</span><span class="p">,</span> <span class="n">img_h</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">ry</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># 270° CCW (= 90° CW): inverse is x = ry, y = H-1-rx</span>
+        <span class="n">x_out</span><span class="p">,</span> <span class="n">y_out</span> <span class="o">=</span> <span class="n">ry</span><span class="p">,</span> <span class="n">img_h</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">rx</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">x_out</span><span class="p">,</span> <span class="n">y_out</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Minh Tam Würzburger, Marc Fehr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

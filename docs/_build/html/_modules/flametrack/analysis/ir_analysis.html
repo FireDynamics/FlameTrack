@@ -1,0 +1,285 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>flametrack.analysis.ir_analysis &mdash; FlameTrack 1.0.1b2.post5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=228cd8fb"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            FlameTrack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/index.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer_guide/index.html">Developer Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">FlameTrack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">flametrack.analysis.ir_analysis</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for flametrack.analysis.ir_analysis</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">cv2</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
+
+
+<div class="viewcode-block" id="compute_remap_from_homography">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.ir_analysis.compute_remap_from_homography">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_remap_from_homography</span><span class="p">(</span>
+    <span class="n">homography</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">]</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+    <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute pixelwise remap grids from a homography.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        homography (numpy.ndarray): 3×3 homography mapping output → input coordinates.</span>
+<span class="sd">        width (int): Target image width in pixels.</span>
+<span class="sd">        height (int): Target image height in pixels.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple[numpy.ndarray, numpy.ndarray]: Two arrays ``(src_x, src_y)`` with shape</span>
+<span class="sd">        ``(height, width)``, dtype ``float32`` suitable for ``cv2.remap``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Pixelzentren (x+0.5, y+0.5)</span>
+    <span class="n">map_x_f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span>
+    <span class="n">map_y_f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span>
+    <span class="n">map_x</span><span class="p">,</span> <span class="n">map_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">map_x_f</span><span class="p">,</span> <span class="n">map_y_f</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s2">&quot;xy&quot;</span><span class="p">)</span>
+
+    <span class="n">ones</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">map_x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">target_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">map_x</span><span class="p">,</span> <span class="n">map_y</span><span class="p">,</span> <span class="n">ones</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># (3, N)</span>
+
+    <span class="n">homography_f</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">homography</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">source_coords</span> <span class="o">=</span> <span class="n">homography_f</span> <span class="o">@</span> <span class="n">target_coords</span>
+    <span class="n">source_coords</span> <span class="o">/=</span> <span class="n">source_coords</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>  <span class="c1"># normalize</span>
+
+    <span class="n">src_x</span> <span class="o">=</span> <span class="n">source_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">src_y</span> <span class="o">=</span> <span class="n">source_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">src_x</span><span class="p">,</span> <span class="n">src_y</span></div>
+
+
+
+<div class="viewcode-block" id="read_ir_data">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.ir_analysis.read_ir_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_ir_data</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read raw IR data from a CSV-like ASCII export.</span>
+
+<span class="sd">    The file is scanned until a line ``[Data]`` is found; subsequent lines are</span>
+<span class="sd">    parsed using ``;`` as delimiter and a comma-to-dot decimal replacement.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filename (str): Path to the IR data file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        numpy.ndarray: 2D array of IR values (dtype ``float64``).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If no ``[Data]`` section is found in the file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="k">while</span> <span class="n">line</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;[Data]&quot;</span><span class="p">):</span>
+                <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()),</span>
+                    <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;;&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No data found in file, check file format!&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_dewarp_parameters">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.analysis.ir_analysis.get_dewarp_parameters">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_dewarp_parameters</span><span class="p">(</span>
+    <span class="n">corners</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+    <span class="n">target_pixels_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_pixels_height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">plate_width_m</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">plate_height_m</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">pixels_per_millimeter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate homography and target geometry for dewarping.</span>
+
+<span class="sd">    You can either pass physical plate dimensions (``plate_width_m``,</span>
+<span class="sd">    ``plate_height_m``) plus a pixel density, or infer target geometry</span>
+<span class="sd">    from the selected corners and a desired aspect ratio.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        corners (numpy.ndarray | Sequence[tuple[float, float]]): Four corner points</span>
+<span class="sd">            in pixel coordinates, ordered clockwise starting at top-left.</span>
+<span class="sd">        target_pixels_width (int, optional): Target width in pixels. If omitted,</span>
+<span class="sd">            it will be derived from ``target_ratio`` and the measured corner distances.</span>
+<span class="sd">        target_pixels_height (int, optional): Target height in pixels. If omitted,</span>
+<span class="sd">            it will be derived from ``target_ratio`` and the measured corner distances.</span>
+<span class="sd">        target_ratio (float, optional): Desired aspect ratio ``height / width``.</span>
+<span class="sd">            Required if target size is not specified and no physical plate size is provided.</span>
+<span class="sd">        plate_width_m (float, optional): Physical plate width in meters. Used with</span>
+<span class="sd">            ``pixels_per_millimeter`` to derive target size if provided with ``plate_height_m``.</span>
+<span class="sd">        plate_height_m (float, optional): Physical plate height in meters. Used with</span>
+<span class="sd">            ``pixels_per_millimeter`` to derive target size if provided with ``plate_width_m``.</span>
+<span class="sd">        pixels_per_millimeter (int, optional): Pixel density (px/mm) used when physical</span>
+<span class="sd">            dimensions are given. Default is 1.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict[str, Any]: Dictionary with:</span>
+<span class="sd">            - ``transformation_matrix`` (numpy.ndarray): 3×3 homography (float32).</span>
+<span class="sd">            - ``target_pixels_width`` (int): Target width in pixels.</span>
+<span class="sd">            - ``target_pixels_height`` (int): Target height in pixels.</span>
+<span class="sd">            - ``target_ratio`` (float): ``height / width`` of the target.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If neither physical dimensions nor a target ratio are provided.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        Current conversion multiplies meter values by ``pixels_per_millimeter``.</span>
+<span class="sd">        For strict unit consistency, consider using millimeters or ``pixels_per_meter``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">buffer</span> <span class="o">=</span> <span class="mf">1.1</span>
+    <span class="n">source_corners</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">corners</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c1"># Falls echte Plattenmaße gegeben sind, direkt daraus Pixel ableiten</span>
+    <span class="k">if</span> <span class="n">plate_width_m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">plate_height_m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">target_pixels_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">plate_width_m</span> <span class="o">*</span> <span class="n">pixels_per_millimeter</span><span class="p">)</span>
+        <span class="n">target_pixels_height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">plate_height_m</span> <span class="o">*</span> <span class="n">pixels_per_millimeter</span><span class="p">)</span>
+
+    <span class="c1"># Sonst versucht: aus Ecken + Ratio ab zuleiten</span>
+    <span class="k">if</span> <span class="n">target_pixels_width</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">target_pixels_height</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">target_ratio</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either plate dimensions or target ratio must be provided&quot;</span><span class="p">)</span>
+
+        <span class="c1"># grobe Abschätzung Breite/Höhe in Pixeln aus den Ecken</span>
+        <span class="n">max_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">source_corners</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">source_corners</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">source_corners</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">source_corners</span><span class="p">[</span><span class="mi">3</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span>
+        <span class="p">)</span>
+        <span class="n">max_height</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">source_corners</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">source_corners</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">source_corners</span><span class="p">[</span><span class="mi">3</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">source_corners</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="p">)</span>
+        <span class="n">target_pixels_height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="nb">max</span><span class="p">(</span><span class="n">max_height</span><span class="p">,</span> <span class="n">max_width</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">target_ratio</span><span class="p">))</span> <span class="o">*</span> <span class="n">buffer</span>
+        <span class="p">)</span>
+        <span class="n">target_pixels_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">target_pixels_height</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">target_ratio</span><span class="p">))</span>
+
+    <span class="n">tpw</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">target_pixels_width</span><span class="p">)</span>  <span class="c1"># mypy-safe ints</span>
+    <span class="n">tph</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">target_pixels_height</span><span class="p">)</span>
+
+    <span class="n">target_corners</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+            <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">tpw</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">],</span>
+            <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">tpw</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">tph</span><span class="p">)],</span>
+            <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">tph</span><span class="p">)],</span>
+        <span class="p">],</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">transformation_matrix</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">getPerspectiveTransform</span><span class="p">(</span><span class="n">source_corners</span><span class="p">,</span> <span class="n">target_corners</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;transformation_matrix&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">transformation_matrix</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+        <span class="s2">&quot;target_pixels_width&quot;</span><span class="p">:</span> <span class="n">tpw</span><span class="p">,</span>
+        <span class="s2">&quot;target_pixels_height&quot;</span><span class="p">:</span> <span class="n">tph</span><span class="p">,</span>
+        <span class="c1"># Beibehaltung deines bisherigen Verhältnisses (height/width):</span>
+        <span class="s2">&quot;target_ratio&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">tph</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">tpw</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Minh Tam Würzburger, Marc Fehr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,528 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>flametrack.processing.dewarping &mdash; FlameTrack 1.0.1b2.post5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=228cd8fb"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            FlameTrack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/index.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer_guide/index.html">Developer Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">FlameTrack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">flametrack.processing.dewarping</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for flametrack.processing.dewarping</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">cv2</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">flametrack.analysis.dataset_handler</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">assert_h5_schema</span><span class="p">,</span>
+    <span class="n">create_h5_file</span><span class="p">,</span>
+    <span class="n">init_h5_for_experiment</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flametrack.analysis.ir_analysis</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">compute_remap_from_homography</span><span class="p">,</span>
+    <span class="n">get_dewarp_parameters</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flametrack.gui.plotting_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">rotate_points</span><span class="p">,</span> <span class="n">sort_corner_points</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flametrack.utils.math_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">estimate_resolution_from_points</span>
+
+
+<div class="viewcode-block" id="DewarpConfig">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.processing.dewarping.DewarpConfig">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DewarpConfig</span><span class="p">:</span>
+    <span class="n">target_ratio</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">target_pixels_width</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">target_pixels_height</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">plate_width_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">plate_height_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">rotation_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">frequency</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">testing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># optional override output path</span>
+    <span class="n">datatype</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;IR&quot;</span>  <span class="c1"># data source: &quot;IR&quot;, &quot;video&quot;, &quot;picture&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="CornerSets">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.processing.dewarping.CornerSets">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CornerSets</span><span class="p">:</span>
+    <span class="n">left</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">]</span>
+    <span class="n">right</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">]</span>  <span class="c1"># für Room Corner; bei LFS nur &quot;left&quot; nutzen</span></div>
+
+
+
+<span class="n">DATATYPE</span> <span class="o">=</span> <span class="s2">&quot;IR&quot;</span>
+
+<span class="c1"># dewarping.py – Hilfsfunktionen einfügen</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_output_path</span><span class="p">(</span><span class="n">experiment</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Erstellt Standardpfad, falls kein filename gesetzt ist.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">processed_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">experiment</span><span class="o">.</span><span class="n">folder_path</span><span class="p">,</span> <span class="s2">&quot;processed_data&quot;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">processed_folder</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">processed_folder</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">experiment</span><span class="o">.</span><span class="n">exp_name</span><span class="si">}</span><span class="s2">_results_RCE.h5&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">filename</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_init_room_corner_schema</span><span class="p">(</span><span class="n">h5f</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">init_h5_for_experiment</span><span class="p">(</span><span class="n">h5f</span><span class="p">,</span> <span class="s2">&quot;Room Corner&quot;</span><span class="p">)</span>
+    <span class="n">assert_h5_schema</span><span class="p">(</span><span class="n">h5f</span><span class="p">,</span> <span class="s2">&quot;Room Corner&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_init_lfs_schema</span><span class="p">(</span><span class="n">h5f</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">init_h5_for_experiment</span><span class="p">(</span><span class="n">h5f</span><span class="p">,</span> <span class="s2">&quot;Lateral Flame Spread&quot;</span><span class="p">)</span>
+    <span class="n">assert_h5_schema</span><span class="p">(</span><span class="n">h5f</span><span class="p">,</span> <span class="s2">&quot;Lateral Flame Spread&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_write_root_plate_attrs</span><span class="p">(</span>
+    <span class="n">h5f</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">,</span> <span class="n">w_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">h_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">room_corner</span><span class="p">:</span> <span class="nb">bool</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">room_corner</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">w_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">h5f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;plate_width_mm_left&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">w_mm</span><span class="p">)</span>
+            <span class="n">h5f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;plate_width_mm_right&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">w_mm</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">h_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">h5f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;plate_height_mm_left&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">h_mm</span><span class="p">)</span>
+            <span class="n">h5f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;plate_height_mm_right&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">h_mm</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">w_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">h5f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;plate_width_mm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">w_mm</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">h_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">h5f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;plate_height_mm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">h_mm</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_dataset</span><span class="p">(</span><span class="n">group</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Group</span><span class="p">,</span> <span class="n">shape_hw</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Legt &#39;data&#39; neu an (float32, chunked, grow‑only in t‑Richtung).&quot;&quot;&quot;</span>
+    <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">shape_hw</span>
+    <span class="k">if</span> <span class="s2">&quot;data&quot;</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">group</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span>
+        <span class="s2">&quot;data&quot;</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="n">maxshape</span><span class="o">=</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="n">chunks</span><span class="o">=</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_remap_maps</span><span class="p">(</span>
+    <span class="n">homography</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">]]:</span>
+    <span class="n">homography_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">homography</span><span class="p">)</span>
+    <span class="n">src_x</span><span class="p">,</span> <span class="n">src_y</span> <span class="o">=</span> <span class="n">compute_remap_from_homography</span><span class="p">(</span><span class="n">homography_inv</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">src_x</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">src_y</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_store_remap</span><span class="p">(</span>
+    <span class="n">group</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Group</span><span class="p">,</span> <span class="n">src_x</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span> <span class="n">src_y</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;src_x&quot;</span><span class="p">,</span> <span class="s2">&quot;src_y&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">group</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;src_x&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">src_x</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;src_y&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">src_y</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="dewarp_room_corner_remap">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.processing.dewarping.dewarp_room_corner_remap">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dewarp_room_corner_remap</span><span class="p">(</span>
+    <span class="n">experiment</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">points</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+    <span class="n">config</span><span class="p">:</span> <span class="n">DewarpConfig</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dewarp für Room Corner anhand vorberechneter Remap‑Grids.&quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[DEWARP] Room Corner (remap) – start&quot;</span><span class="p">)</span>
+
+    <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">6</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expected exactly 6 points for room corner dewarping.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">target_pixels_width</span> <span class="o">&lt;=</span> <span class="mi">10</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">target_pixels_height</span> <span class="o">&lt;=</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Target image size too small for meaningful dewarping.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># linke/rechte 4er‑Ecken aufteilen + optional rotieren</span>
+    <span class="n">frame_shape</span> <span class="o">=</span> <span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span><span class="o">.</span><span class="n">get_frame</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">pts_left</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]]</span>
+    <span class="n">pts_right</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]]</span>
+    <span class="n">sel_left</span> <span class="o">=</span> <span class="n">rotate_points</span><span class="p">(</span><span class="n">pts_left</span><span class="p">,</span> <span class="n">frame_shape</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">rotation_index</span><span class="p">)</span>
+    <span class="n">sel_right</span> <span class="o">=</span> <span class="n">rotate_points</span><span class="p">(</span><span class="n">pts_right</span><span class="p">,</span> <span class="n">frame_shape</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">rotation_index</span><span class="p">)</span>
+
+    <span class="n">params_left</span> <span class="o">=</span> <span class="n">get_dewarp_parameters</span><span class="p">(</span>
+        <span class="n">sel_left</span><span class="p">,</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">target_pixels_width</span><span class="p">,</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">target_pixels_height</span><span class="p">,</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">target_ratio</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">params_right</span> <span class="o">=</span> <span class="n">get_dewarp_parameters</span><span class="p">(</span>
+        <span class="n">sel_right</span><span class="p">,</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">target_pixels_width</span><span class="p">,</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">target_pixels_height</span><span class="p">,</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">target_ratio</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">out_path</span> <span class="o">=</span> <span class="n">_ensure_output_path</span><span class="p">(</span><span class="n">experiment</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+
+    <span class="c1"># Nur blockieren, wenn die Datei bereits sinnvolle Dewarping-Daten enthält.</span>
+    <span class="c1"># Eine leere oder unvollständige Datei vom letzten Lauf wird stillschweigend überschrieben.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5f</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;dewarped_data_left&quot;</span> <span class="ow">in</span> <span class="n">h5f</span> <span class="ow">or</span> <span class="s2">&quot;dewarped_data_right&quot;</span> <span class="ow">in</span> <span class="n">h5f</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span><span class="n">out_path</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">if</span> <span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">with</span> <span class="n">create_h5_file</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">out_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5f</span><span class="p">:</span>
+        <span class="n">_write_root_plate_attrs</span><span class="p">(</span>
+            <span class="n">h5f</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">plate_width_mm</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">plate_height_mm</span><span class="p">,</span> <span class="n">room_corner</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="n">_init_room_corner_schema</span><span class="p">(</span><span class="n">h5f</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">side</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">sel</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="p">(</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">params_left</span><span class="p">,</span> <span class="n">sel_left</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;right&quot;</span><span class="p">,</span> <span class="n">params_right</span><span class="p">,</span> <span class="n">sel_right</span><span class="p">),</span>
+        <span class="p">):</span>
+            <span class="n">grp</span> <span class="o">=</span> <span class="n">h5f</span><span class="o">.</span><span class="n">require_group</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dewarped_data_</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">grp</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;transformation_matrix&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;transformation_matrix&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;target_pixels_width&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;target_pixels_width&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;target_pixels_height&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;target_pixels_height&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;target_ratio&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;target_ratio&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;selected_points&quot;</span><span class="p">:</span> <span class="n">sel</span><span class="p">,</span>
+                    <span class="s2">&quot;frame_range&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="mi">0</span><span class="p">,</span>
+                        <span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span><span class="o">.</span><span class="n">get_frame_count</span><span class="p">(),</span>
+                    <span class="p">],</span>
+                    <span class="s2">&quot;points_selection_date&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
+                        <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;error_unit&quot;</span><span class="p">:</span> <span class="s2">&quot;pixels&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;plate_width_mm&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">plate_width_mm</span><span class="p">,</span>
+                    <span class="s2">&quot;plate_height_mm&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">plate_height_mm</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+            <span class="c1"># „Best effort“: Auflösung schätzen</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p3</span> <span class="o">=</span> <span class="n">sel</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sel</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sel</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">estimate_resolution_from_points</span><span class="p">(</span>
+                    <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p3</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">plate_width_mm</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">plate_height_mm</span>
+                <span class="p">)</span>
+                <span class="n">grp</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;[DEWARP] Resolution estimation failed for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">side</span><span class="p">,</span>
+                    <span class="n">err</span><span class="p">,</span>
+                    <span class="n">exc_info</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="n">h_out</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;target_pixels_height&quot;</span><span class="p">])</span>
+            <span class="n">w_out</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;target_pixels_width&quot;</span><span class="p">])</span>
+            <span class="n">data_dset</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span> <span class="o">=</span> <span class="n">_ensure_dataset</span><span class="p">(</span><span class="n">grp</span><span class="p">,</span> <span class="p">(</span><span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span><span class="p">))</span>
+
+            <span class="c1"># Remap vorbereiten</span>
+            <span class="n">src_x</span><span class="p">,</span> <span class="n">src_y</span> <span class="o">=</span> <span class="n">_compute_remap_maps</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;transformation_matrix&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+                <span class="n">w_out</span><span class="p">,</span>
+                <span class="n">h_out</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">_store_remap</span><span class="p">(</span><span class="n">grp</span><span class="p">,</span> <span class="n">src_x</span><span class="p">,</span> <span class="n">src_y</span><span class="p">)</span>
+
+        <span class="c1"># Frames schleifen</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span>
+        <span class="n">frames</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">data_numbers</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">testing</span>
+            <span class="k">else</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">))</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">frames</span><span class="p">[</span><span class="n">start</span> <span class="p">:</span> <span class="n">end</span> <span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">frequency</span><span class="p">]):</span>
+            <span class="n">raw</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get_raw_frame</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="s2">&quot;right&quot;</span><span class="p">):</span>
+                <span class="n">grp</span> <span class="o">=</span> <span class="n">h5f</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;dewarped_data_</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+
+                <span class="n">data_dset</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">grp</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_dset</span><span class="p">,</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected HDF5 dataset at &#39;data&#39;&quot;</span><span class="p">)</span>
+
+                <span class="n">src_x_dset</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span> <span class="o">=</span> <span class="n">grp</span><span class="p">[</span><span class="s2">&quot;src_x&quot;</span><span class="p">]</span>
+                <span class="n">src_y_dset</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span> <span class="o">=</span> <span class="n">grp</span><span class="p">[</span><span class="s2">&quot;src_y&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src_x_dset</span><span class="p">,</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">src_y_dset</span><span class="p">,</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span>
+                <span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected HDF5 datasets &#39;src_x&#39; and &#39;src_y&#39;&quot;</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src_x_dset</span><span class="p">,</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src_y_dset</span><span class="p">,</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span>
+
+                <span class="n">src_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">src_x_dset</span><span class="p">[()],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                <span class="n">src_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">src_y_dset</span><span class="p">[()],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+                <span class="c1"># Clip x and y maps separately before remapping.</span>
+                <span class="c1"># NOTE: do NOT use cv2.convertMaps here — it produces a 2-channel</span>
+                <span class="c1"># CV_16SC2 map, and np.clip on that array would clip BOTH the x and</span>
+                <span class="c1"># y channels to the same bound, incorrectly clamping y-coordinates</span>
+                <span class="c1"># when the raw frame is non-square (e.g. after camera rotation).</span>
+                <span class="n">h_in</span><span class="p">,</span> <span class="n">w_in</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+                <span class="n">remapped</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">remap</span><span class="p">(</span>
+                    <span class="n">raw</span><span class="p">,</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">src_x</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">w_in</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">src_y</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">h_in</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+                    <span class="n">interpolation</span><span class="o">=</span><span class="n">cv2</span><span class="o">.</span><span class="n">INTER_LINEAR</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="n">data_dset</span><span class="o">.</span><span class="n">resize</span><span class="p">((</span><span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="n">data_dset</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">remapped</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="k">yield</span> <span class="n">i</span>
+
+    <span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="s2">&quot;r+&quot;</span><span class="p">)</span>
+    <span class="n">experiment</span><span class="o">.</span><span class="n">h5_path</span> <span class="o">=</span> <span class="n">out_path</span></div>
+
+
+
+<span class="c1"># pylint: disable=too-many-locals</span>
+<div class="viewcode-block" id="dewarp_lateral_flame_spread">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.processing.dewarping.dewarp_lateral_flame_spread">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dewarp_lateral_flame_spread</span><span class="p">(</span>
+    <span class="n">experiment</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">points</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+    <span class="n">config</span><span class="p">:</span> <span class="n">DewarpConfig</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dewarp für Lateral Flame Spread (warpPerspective).&quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[DEWARP] LFS – start&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">target_pixels_width</span> <span class="o">&lt;=</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;target_pixels_width must be greater than 10&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">target_pixels_height</span> <span class="o">&lt;=</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;target_pixels_height must be greater than 10&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Exactly 4 corner points are required for LFS dewarping.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># &quot;anticlockwise&quot; → argsort(angles) ascending → [TL, TR, BR, BL] in image</span>
+    <span class="c1"># coordinates (y-down), which is what get_dewarp_parameters expects.</span>
+    <span class="c1"># The name is confusing because math angles increase CCW, but in image</span>
+    <span class="c1"># coords (y-down) ascending angles traverse CW: TL→TR→BR→BL.</span>
+    <span class="n">sorted_pts</span> <span class="o">=</span> <span class="n">sort_corner_points</span><span class="p">(</span>
+        <span class="n">points</span><span class="p">,</span> <span class="n">experiment_type</span><span class="o">=</span><span class="s2">&quot;Lateral Flame Spread&quot;</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s2">&quot;anticlockwise&quot;</span>
+    <span class="p">)</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">get_dewarp_parameters</span><span class="p">(</span>
+        <span class="n">sorted_pts</span><span class="p">,</span>
+        <span class="n">target_pixels_width</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">target_pixels_width</span><span class="p">,</span>
+        <span class="n">target_pixels_height</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">target_pixels_height</span><span class="p">,</span>
+        <span class="n">target_ratio</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">target_ratio</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">out_path</span> <span class="o">=</span> <span class="n">_ensure_output_path</span><span class="p">(</span><span class="n">experiment</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+
+    <span class="c1"># Datei nur blockieren, wenn schon sinnvolle Inhalte drin sind</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5f</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;dewarped_data&quot;</span> <span class="ow">in</span> <span class="n">h5f</span> <span class="ow">or</span> <span class="s2">&quot;dewarped_data_left&quot;</span> <span class="ow">in</span> <span class="n">h5f</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span><span class="n">out_path</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span><span class="p">:</span>
+        <span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">with</span> <span class="n">create_h5_file</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">out_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5f</span><span class="p">:</span>
+        <span class="n">_init_lfs_schema</span><span class="p">(</span><span class="n">h5f</span><span class="p">)</span>
+        <span class="n">_write_root_plate_attrs</span><span class="p">(</span>
+            <span class="n">h5f</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">plate_width_mm</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">plate_height_mm</span><span class="p">,</span> <span class="n">room_corner</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+
+        <span class="n">grp</span> <span class="o">=</span> <span class="n">h5f</span><span class="o">.</span><span class="n">require_group</span><span class="p">(</span><span class="s2">&quot;dewarped_data&quot;</span><span class="p">)</span>
+
+        <span class="n">grp</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;transformation_matrix&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;transformation_matrix&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;target_pixels_width&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;target_pixels_width&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;target_pixels_height&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;target_pixels_height&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;target_ratio&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;target_ratio&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;selected_points&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sorted_pts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+                <span class="s2">&quot;frame_range&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="mi">0</span><span class="p">,</span>
+                    <span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span><span class="o">.</span><span class="n">get_frame_count</span><span class="p">(),</span>
+                <span class="p">],</span>
+                <span class="s2">&quot;points_selection_date&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;plate_width_mm&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">plate_width_mm</span><span class="p">,</span>
+                <span class="s2">&quot;plate_height_mm&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">plate_height_mm</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+        <span class="c1"># „Best effort“: Auflösung schätzen</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p3</span> <span class="o">=</span> <span class="n">sorted_pts</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sorted_pts</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sorted_pts</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">estimate_resolution_from_points</span><span class="p">(</span>
+                <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p3</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">plate_width_mm</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">plate_height_mm</span>
+            <span class="p">)</span>
+            <span class="n">grp</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;[DEWARP] Resolution estimation failed: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+
+        <span class="n">h_out</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;target_pixels_height&quot;</span><span class="p">])</span>
+        <span class="n">w_out</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;target_pixels_width&quot;</span><span class="p">])</span>
+        <span class="n">dset</span> <span class="o">=</span> <span class="n">_ensure_dataset</span><span class="p">(</span><span class="n">grp</span><span class="p">,</span> <span class="p">(</span><span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span><span class="p">))</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">experiment</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span>
+        <span class="n">frames</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">data_numbers</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">testing</span>
+            <span class="k">else</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">))</span>
+        <span class="p">)</span>
+
+        <span class="n">homography_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;transformation_matrix&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">frames</span><span class="p">[</span><span class="n">start</span> <span class="p">:</span> <span class="n">end</span> <span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">frequency</span><span class="p">]):</span>
+            <span class="n">frame</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get_frame</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">rotation_index</span><span class="p">)</span>
+            <span class="n">dewarped</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">warpPerspective</span><span class="p">(</span>
+                <span class="n">frame</span><span class="p">,</span> <span class="n">homography_matrix</span><span class="p">,</span> <span class="p">(</span><span class="n">w_out</span><span class="p">,</span> <span class="n">h_out</span><span class="p">),</span> <span class="n">flags</span><span class="o">=</span><span class="n">cv2</span><span class="o">.</span><span class="n">INTER_LINEAR</span>
+            <span class="p">)</span>
+            <span class="n">dset</span><span class="o">.</span><span class="n">resize</span><span class="p">((</span><span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">dset</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dewarped</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="n">i</span>
+
+    <span class="n">experiment</span><span class="o">.</span><span class="n">h5_file</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="s2">&quot;r+&quot;</span><span class="p">)</span>
+    <span class="n">experiment</span><span class="o">.</span><span class="n">h5_path</span> <span class="o">=</span> <span class="n">out_path</span></div>
+
+
+
+<div class="viewcode-block" id="rotate_image_and_points">
+<a class="viewcode-back" href="../../../developer_guide/modules.html#flametrack.processing.dewarping.rotate_image_and_points">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rotate_image_and_points</span><span class="p">(</span>
+    <span class="n">image</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">]</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">],</span>
+    <span class="n">points</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span>
+    <span class="n">angle_degrees</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rotate both image and corresponding points.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        image: Input image.</span>
+<span class="sd">        points: Nx2 array of (x, y) points.</span>
+<span class="sd">        angle_degrees: Rotation angle in degrees.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A tuple (rotated_image, rotated_points)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">h_img</span><span class="p">,</span> <span class="n">w_img</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="n">w_img</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">h_img</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">rotation_matrix</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">getRotationMatrix2D</span><span class="p">(</span><span class="n">center</span><span class="p">,</span> <span class="n">angle_degrees</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="n">rotated_img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">warpAffine</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">rotation_matrix</span><span class="p">,</span> <span class="p">(</span><span class="n">w_img</span><span class="p">,</span> <span class="n">h_img</span><span class="p">))</span>
+    <span class="n">points_h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">points</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">points</span><span class="o">.</span><span class="n">dtype</span><span class="p">)])</span>
+    <span class="n">rotated_pts</span> <span class="o">=</span> <span class="p">(</span><span class="n">rotation_matrix</span> <span class="o">@</span> <span class="n">points_h</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rotated_img</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">rotated_pts</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Minh Tam Würzburger, Marc Fehr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>
