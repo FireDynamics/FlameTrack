@@ -106,6 +106,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')   # nur bei Tag-Push
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           body: |
