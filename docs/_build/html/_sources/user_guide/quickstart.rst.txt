@@ -27,14 +27,7 @@ Use the **Experiment type** dropdown:
 - **Lateral Flame Spread (LFS)** — single panel, 4 calibration points
 - **Room Corner** — two perpendicular panels, 6 calibration points
 
-3. Set Camera Rotation
------------------------
-
-If the camera was mounted sideways, choose the matching angle from the
-**Rotation** dropdown *before* placing calibration points. The image rotates
-immediately so you can work in the correct orientation.
-
-4. Load Data
+3. Load Data
 ------------
 
 Click **Open Folder** and select your experiment. FlameTrack loads the first
@@ -43,6 +36,13 @@ frame and displays it.
 .. note:: **TODO screenshot** — docs/source/_static/screenshots/02_frame_loaded.png
    After opening a folder: a thermal IR frame fills the image area. The
    frame slider at the bottom is active. No calibration points placed yet.
+
+4. Set Camera Rotation
+-----------------------
+
+Look at the loaded image. If the plate appears rotated, choose the matching
+angle from the **Rotation** dropdown — the image rotates immediately. Set
+this *before* placing calibration points.
 
 5. Place Calibration Points
 ----------------------------

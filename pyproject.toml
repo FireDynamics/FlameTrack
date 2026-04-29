@@ -48,7 +48,7 @@ dev = [
     "scikit-image",
     "coverage[toml]",
     "sphinx",
-    "sphinx-rtd-theme",
+    "furo",
     "tomli; python_version<'3.11'",
     "pre-commit",
     "setuptools-scm"
