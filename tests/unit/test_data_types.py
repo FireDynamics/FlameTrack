@@ -95,6 +95,8 @@ def test_rce_experiment_get_data_variants(tmp_path):
     for folder in ["exported_data", "video", "images", "processed_data"]:
         (tmp_path / folder).mkdir()
 
+    (tmp_path / "exported_data" / "frame_0000.csv").write_text("dummy")
+    (tmp_path / "images" / "frame_0000.JPG").write_bytes(b"dummy")
     video_file = tmp_path / "video" / "vid1.mp4"
     video_file.write_bytes(b"dummy")
 
