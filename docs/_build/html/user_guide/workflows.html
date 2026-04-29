@@ -280,17 +280,19 @@
 of the experiment directory.</p>
 <p><strong>Lateral Flame Spread</strong></p>
 <p>File: <code class="docutils literal notranslate"><span class="pre">&lt;experiment_name&gt;_results_RCE.h5</span></code></p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&lt;experiment_name&gt;_results_RCE.h5          (root attributes below)
-│  flametrack_version                      e.g. &quot;1.0.0&quot;
-│  flametrack_commit                       e.g. &quot;a3f9c12&quot;
-│  plate_width_mm
-│  plate_height_mm
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&lt;experiment_name&gt;_results_RCE.h5
+│  flametrack_version          str   e.g. &quot;1.0.1&quot;
+│  flametrack_commit           str   e.g. &quot;a3f9c12&quot;
+│  plate_width_mm              float
+│  plate_height_mm             float
 ├── dewarped_data/
-│   ├── data                               float32 array  (frames, H, W)
-│   └── attrs: transformation_matrix, plate_width_mm, plate_height_mm, …
+│   ├── data                   float32  (H, W, frames)   temperature per pixel per frame
+│   ├── src_x                  float32  (H, W)           remap grid x
+│   ├── src_y                  float32  (H, W)           remap grid y
+│   └── attrs: transformation_matrix, plate_width_mm, plate_height_mm
 └── edge_results/
-    └── data                               int array  (frames, H)
-                                           edge x-position per row per frame
+    ├── data                   int32    (frames, H)      edge x-position per frame per row
+    └── attrs: flame_direction (&quot;left_to_right&quot; or &quot;right_to_left&quot;)
 </pre></div>
 </div>
 <p><strong>Room Corner</strong></p>
@@ -300,15 +302,23 @@ of the experiment directory.</p>
 │  plate_width_mm_left  /  plate_height_mm_left
 │  plate_width_mm_right /  plate_height_mm_right
 ├── dewarped_data_left/
-│   ├── data                               float32 array  (frames, H, W)
-│   └── attrs: transformation_matrix, …
+│   ├── data                   float32  (H, W, frames)
+│   ├── src_x / src_y          float32  (H, W)
+│   └── attrs: transformation_matrix, plate_width_mm, plate_height_mm
 ├── dewarped_data_right/
-│   └── …
+│   └── … (same structure)
 ├── edge_results_left/
-│   └── data                               int array  (frames, H)
+│   └── data                   int32    (frames, H)
 └── edge_results_right/
-    └── data                               int array  (frames, H)
+    └── data                   int32    (frames, H)
 </pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">edge_results/data[t,</span> <span class="pre">y]</span></code> is the x-position of the flame edge at row <code class="docutils literal notranslate"><span class="pre">y</span></code>
+in frame <code class="docutils literal notranslate"><span class="pre">t</span></code>, in pixels relative to the dewarped plate.
+A value of <code class="docutils literal notranslate"><span class="pre">0</span></code> (L→R methods) or <code class="docutils literal notranslate"><span class="pre">W</span></code> (R→L methods) means no edge was
+detected for that row.</p>
 </div>
 <figure class="align-default" id="id1">
 <a class="reference internal image-reference" href="../_images/readme_pipeline.png"><img alt="Room Corner pipeline — calibration, dewarped panels and detected edges" src="../_images/readme_pipeline.png" style="width: 100%;" />
@@ -333,12 +343,13 @@ Left panel (red) and right panel (blue, mirrored) with confidence band.</span><a
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s2">&quot;my_experiment_results_RCE.h5&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;flametrack_version&quot;</span><span class="p">])</span>   <span class="c1"># version used for analysis</span>
-    <span class="n">edge</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;edge_results&quot;</span><span class="p">][</span><span class="s2">&quot;data&quot;</span><span class="p">][:]</span>    <span class="c1"># shape: (frames, rows)</span>
-    <span class="n">dewarped</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;dewarped_data&quot;</span><span class="p">][</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>  <span class="c1"># lazy HDF5 dataset</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;flametrack_version&quot;</span><span class="p">])</span>        <span class="c1"># e.g. &quot;1.0.1&quot;</span>
 
-<span class="c1"># edge[t, y] = x-position of the flame edge at row y in frame t</span>
-<span class="c1"># -1 indicates no edge detected for that row/frame</span>
+    <span class="n">edge</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;edge_results&quot;</span><span class="p">][</span><span class="s2">&quot;data&quot;</span><span class="p">][:]</span>         <span class="c1"># shape: (frames, H)</span>
+    <span class="n">dewarped</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;dewarped_data&quot;</span><span class="p">][</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>       <span class="c1"># shape: (H, W, frames) — lazy</span>
+
+<span class="c1"># edge[t, y]  →  x-position of the flame edge at row y in frame t (pixels)</span>
+<span class="c1"># edge[t, y] == 0 or W  →  no edge detected for that row/frame</span>
 </pre></div>
 </div>
 </section>

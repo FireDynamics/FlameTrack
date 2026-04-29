@@ -49,6 +49,7 @@ dev = [
     "coverage[toml]",
     "sphinx",
     "furo",
+    "sphinxcontrib-mermaid",
     "tomli; python_version<'3.11'",
     "pre-commit",
     "setuptools-scm"

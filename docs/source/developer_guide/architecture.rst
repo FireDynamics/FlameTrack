@@ -75,19 +75,22 @@ Module Overview
 Data Flow
 ---------
 
-.. code-block:: text
+.. mermaid::
 
-    User clicks "Dewarp"
-        → main_window reads points + DewarpConfig
-        → dewarping.dewarp_room_corner_remap()
-            → ir_analysis.get_dewarp_parameters()   # homography
-            → cv2.remap() per frame
-            → HDF5 write (dewarped_data_left / right)
+   flowchart TD
+       A([User clicks Dewarp]) --> B[main_window\nreads points + DewarpConfig]
+       B --> C[dewarping.dewarp_room_corner_remap]
+       C --> D[ir_analysis.get_dewarp_parameters\ncompute homography]
+       D --> E[cv2.remap per frame]
+       E --> F[(HDF5\ndewarped_data_left/right)]
 
-    User clicks "Find Edge"
-        → main_window creates EdgeDetectionWorker (QThread)
-        → worker.run()
-            → flamespread.calculate_edge_data()
-                → EdgeFn row-by-row (optionally Otsu-masked)
-        → main_window.handle_edge_result()
-            → HDF5 write (edge_results_left / right)
+       G([User clicks Find Edge]) --> H[main_window\ncreates EdgeDetectionWorker]
+       H --> I[worker.run — QThread]
+       I --> J[flamespread.calculate_edge_data]
+       J --> K{Otsu masking\nenabled?}
+       K -- yes --> L[restrict search window\nper row]
+       K -- no --> M[full row]
+       L --> N[EdgeFn row-by-row]
+       M --> N
+       N --> O[main_window.handle_edge_result]
+       O --> P[(HDF5\nedge_results_left/right)]
