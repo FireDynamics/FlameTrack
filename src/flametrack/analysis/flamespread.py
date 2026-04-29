@@ -25,19 +25,7 @@ class EdgeFn(Protocol):
 
 @dataclass
 class EdgeMethodSpec:
-    """Descriptor for a named edge-detection method variant.
-
-    Attributes:
-        short_id: Machine-readable key (used as dict key in EDGE_METHOD_CATALOG).
-        display_name: Human-readable name shown in dropdowns / notebooks.
-        description: One-sentence explanation.
-        make_fn: Factory that accepts a threshold float and returns a ready EdgeFn.
-        default_threshold_ir: Recommended threshold for IR (°C) data.
-        default_threshold_image: Recommended threshold for image / video (0-255) data.
-        use_otsu_masking: If True, calculate_edge_data applies Otsu to narrow the
-            per-row search region before calling the EdgeFn.  Set False to scan the
-            full row with the raw intensity threshold.
-    """
+    """Descriptor for a named edge-detection method variant."""
 
     short_id: str
     display_name: str

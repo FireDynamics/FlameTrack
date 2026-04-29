@@ -1,5 +1,3 @@
-# pylint: disable=invalid-name
-
 import os
 import sys
 from importlib.metadata import PackageNotFoundError
@@ -46,5 +44,5 @@ exclude_patterns = [""]
 html_static_path = ["_static"]
 
 # -- Napoleon config ---------------------------------------------------------
-napoleon_google_docstring = False
+napoleon_google_docstring = True
 napoleon_numpy_docstring = True
