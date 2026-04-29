@@ -756,110 +756,11 @@ parsed using <code class="docutils literal notranslate"><span class="pre">;</spa
 </dd></dl>
 
 </section>
-<section id="module-flametrack.gui.main_window">
-<span id="gui"></span><h2>GUI<a class="headerlink" href="#module-flametrack.gui.main_window" title="Link to this heading">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flametrack.gui.main_window.</span></span><span class="sig-name descname"><span class="pre">MainWindow</span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QMainWindow</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.calculate_edge_results">
-<span class="sig-name descname"><span class="pre">calculate_edge_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.calculate_edge_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.calculate_edge_results" title="Link to this definition">¶</a></dt>
-<dd><p>Calculate edge detection results and write to HDF5 datasets.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.enable_analysis_controls">
-<span class="sig-name descname"><span class="pre">enable_analysis_controls</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.enable_analysis_controls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.enable_analysis_controls" title="Link to this definition">¶</a></dt>
-<dd><p>Enable UI controls after edge detection is complete.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.handle_edge_result">
-<span class="sig-name descname"><span class="pre">handle_edge_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result_array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">side</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.handle_edge_result"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.handle_edge_result" title="Link to this definition">¶</a></dt>
-<dd><p>Buffer edge result and update UI; write to HDF5 only when all workers are done.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.load_file">
-<span class="sig-name descname"><span class="pre">load_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.load_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.load_file" title="Link to this definition">¶</a></dt>
-<dd><p>Open directory dialog, load experiment data, set UI elements.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.on_dewarp_clicked">
-<span class="sig-name descname"><span class="pre">on_dewarp_clicked</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.on_dewarp_clicked"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.on_dewarp_clicked" title="Link to this definition">¶</a></dt>
-<dd><p>Trigger dewarping based on user-set points and experiment type.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.set_experiment_type">
-<span class="sig-name descname"><span class="pre">set_experiment_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.set_experiment_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.set_experiment_type" title="Link to this definition">¶</a></dt>
-<dd><p>Set experiment type and adjust UI visibility and required points.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.set_rotation_index">
-<span class="sig-name descname"><span class="pre">set_rotation_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.set_rotation_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.set_rotation_index" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.start_edge_detection">
-<span class="sig-name descname"><span class="pre">start_edge_detection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.start_edge_detection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.start_edge_detection" title="Link to this definition">¶</a></dt>
-<dd><p>Start edge detection with multi-threading support.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.staticMetaObject">
-<span class="sig-name descname"><span class="pre">staticMetaObject</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">PySide6.QtCore.QMetaObject(&quot;MainWindow&quot;</span> <span class="pre">inherits</span> <span class="pre">&quot;QMainWindow&quot;:</span> <span class="pre">Methods:</span>&#160;&#160; <span class="pre">#39</span> <span class="pre">type=Signal,</span> <span class="pre">signature=_edge_result_ready(PyObject,QString),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">QString</span> <span class="pre">)</span></em><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.staticMetaObject" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_analysis_plot">
-<span class="sig-name descname"><span class="pre">update_analysis_plot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_analysis_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_analysis_plot" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_edge_preview">
-<span class="sig-name descname"><span class="pre">update_edge_preview</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_edge_preview"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_edge_preview" title="Link to this definition">¶</a></dt>
-<dd><p>Update edge preview plot for current experiment and settings.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_edge_progress_left">
-<span class="sig-name descname"><span class="pre">update_edge_progress_left</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_edge_progress_left"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_edge_progress_left" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_edge_progress_lfs">
-<span class="sig-name descname"><span class="pre">update_edge_progress_lfs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_edge_progress_lfs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_edge_progress_lfs" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_edge_progress_right">
-<span class="sig-name descname"><span class="pre">update_edge_progress_right</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_edge_progress_right"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_edge_progress_right" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_flame_direction_visibility">
-<span class="sig-name descname"><span class="pre">update_flame_direction_visibility</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_flame_direction_visibility"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_flame_direction_visibility" title="Link to this definition">¶</a></dt>
-<dd><p>Show or hide flame direction controls based on experiment type.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_plot">
-<span class="sig-name descname"><span class="pre">update_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">framenr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_plot" title="Link to this definition">¶</a></dt>
-<dd><p>Update image plot according to frame, rotation and color scaling.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flametrack.gui.main_window.MainWindow.update_target_ratio">
-<span class="sig-name descname"><span class="pre">update_target_ratio</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/flametrack/gui/main_window.html#MainWindow.update_target_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.main_window.MainWindow.update_target_ratio" title="Link to this definition">¶</a></dt>
-<dd><p>Compute and update target pixel size and ratio based on plate dimensions.</p>
-</dd></dl>
-
-</dd></dl>
-
+<section id="gui">
+<h2>GUI<a class="headerlink" href="#gui" title="Link to this heading">¶</a></h2>
+<p>The GUI layer (<code class="docutils literal notranslate"><span class="pre">flametrack.gui</span></code>) is based on PySide6 and is excluded from
+the API reference — Qt widget subclasses are best understood by reading the
+source directly. The architecture overview is in <a class="reference internal" href="architecture.html"><span class="doc">Architecture Overview</span></a>.</p>
 <dl class="py function" id="module-flametrack.gui.plotting_utils">
 <dt class="sig sig-object py" id="flametrack.gui.plotting_utils.rotate_points">
 <span class="sig-prename descclassname"><span class="pre">flametrack.gui.plotting_utils.</span></span><span class="sig-name descname"><span class="pre">rotate_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flametrack/gui/plotting_utils.html#rotate_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flametrack.gui.plotting_utils.rotate_points" title="Link to this definition">¶</a></dt>
@@ -1130,27 +1031,7 @@ parsed using <code class="docutils literal notranslate"><span class="pre">;</spa
 <li><a class="reference internal" href="#flametrack.analysis.ir_analysis.read_ir_data"><code class="docutils literal notranslate"><span class="pre">read_ir_data()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-flametrack.gui.main_window">GUI</a><ul>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow"><code class="docutils literal notranslate"><span class="pre">MainWindow</span></code></a><ul>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.calculate_edge_results"><code class="docutils literal notranslate"><span class="pre">MainWindow.calculate_edge_results()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.enable_analysis_controls"><code class="docutils literal notranslate"><span class="pre">MainWindow.enable_analysis_controls()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.handle_edge_result"><code class="docutils literal notranslate"><span class="pre">MainWindow.handle_edge_result()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.load_file"><code class="docutils literal notranslate"><span class="pre">MainWindow.load_file()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.on_dewarp_clicked"><code class="docutils literal notranslate"><span class="pre">MainWindow.on_dewarp_clicked()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.set_experiment_type"><code class="docutils literal notranslate"><span class="pre">MainWindow.set_experiment_type()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.set_rotation_index"><code class="docutils literal notranslate"><span class="pre">MainWindow.set_rotation_index()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.start_edge_detection"><code class="docutils literal notranslate"><span class="pre">MainWindow.start_edge_detection()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.staticMetaObject"><code class="docutils literal notranslate"><span class="pre">MainWindow.staticMetaObject</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.update_analysis_plot"><code class="docutils literal notranslate"><span class="pre">MainWindow.update_analysis_plot()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.update_edge_preview"><code class="docutils literal notranslate"><span class="pre">MainWindow.update_edge_preview()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.update_edge_progress_left"><code class="docutils literal notranslate"><span class="pre">MainWindow.update_edge_progress_left()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.update_edge_progress_lfs"><code class="docutils literal notranslate"><span class="pre">MainWindow.update_edge_progress_lfs()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.update_edge_progress_right"><code class="docutils literal notranslate"><span class="pre">MainWindow.update_edge_progress_right()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.update_flame_direction_visibility"><code class="docutils literal notranslate"><span class="pre">MainWindow.update_flame_direction_visibility()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.update_plot"><code class="docutils literal notranslate"><span class="pre">MainWindow.update_plot()</span></code></a></li>
-<li><a class="reference internal" href="#flametrack.gui.main_window.MainWindow.update_target_ratio"><code class="docutils literal notranslate"><span class="pre">MainWindow.update_target_ratio()</span></code></a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#gui">GUI</a><ul>
 <li><a class="reference internal" href="#flametrack.gui.plotting_utils.rotate_points"><code class="docutils literal notranslate"><span class="pre">rotate_points()</span></code></a></li>
 <li><a class="reference internal" href="#flametrack.gui.plotting_utils.sort_corner_points"><code class="docutils literal notranslate"><span class="pre">sort_corner_points()</span></code></a></li>
 </ul>

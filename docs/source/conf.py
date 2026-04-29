@@ -46,3 +46,8 @@ html_static_path = ["_static"]
 # -- Napoleon config ---------------------------------------------------------
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
+
+# -- Autodoc mock imports ----------------------------------------------------
+# PySide6 and pyqtgraph require a running display to import; mock them so the
+# docs build works in headless CI without any Qt system packages.
+autodoc_mock_imports = ["PySide6", "pyqtgraph"]
