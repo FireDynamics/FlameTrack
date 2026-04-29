@@ -70,11 +70,19 @@ File: ``<experiment_name>_results_RCE.h5``
     └── edge_results_right/
         └── data                               int array  (frames, H)
 
-.. note:: **TODO screenshot** — docs/source/_static/screenshots/07_roomcorner_both_panels.png
-   Room Corner experiment after edge detection: both the left and right panel
-   dewarped frames shown side by side (or switchable via a tab/button), each
-   with the detected edge overlaid. Demonstrates that both panels were
-   processed in parallel.
+.. figure:: ../_static/screenshots/readme_pipeline.png
+   :alt: Room Corner pipeline — calibration, dewarped panels and detected edges
+   :width: 100%
+
+   Room Corner experiment: calibration points on the raw IR frame (left),
+   dewarped panels with detected edges for left and right wall (right).
+
+.. figure:: ../_static/screenshots/readme_spread.png
+   :alt: Flame spread curve for a Room Corner experiment
+   :width: 100%
+
+   Analysis view for the same experiment: flame edge position over time.
+   Left panel (red) and right panel (blue, mirrored) with confidence band.
 
 Reading results in Python
 --------------------------

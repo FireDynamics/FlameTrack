@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use FlameTrack in your work, please cite it using the metadata below."
+type: software
+title: "FlameTrack — Flame Spread Analysis Tool"
+authors:
+  - family-names: Würzburger
+    given-names: Minh Tam
+  - family-names: Fehr
+    given-names: Marc
+    email: mfehr@uni-wuppertal.de
+repository-code: "https://github.com/FireDynamics/FlameTrack"
+url: "https://flametrack.readthedocs.io"
+license: Apache-2.0
+doi: 10.5281/zenodo.14633209
+keywords:
+  - fire dynamics
+  - flame tracking
+  - image analysis
+  - computer vision
+  - infrared thermography

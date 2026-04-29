@@ -14,11 +14,6 @@ structure — see :doc:`configuration`.
 
     flametrack
 
-.. note:: **TODO screenshot** — docs/source/_static/screenshots/01_main_window_empty.png
-   The application on first launch: empty image area on the left, control
-   panel on the right with the Experiment type dropdown, Rotation dropdown,
-   plate dimension inputs, and the Dewarp / Find Edge buttons.
-
 2. Select Experiment Type
 --------------------------
 
@@ -33,9 +28,12 @@ Use the **Experiment type** dropdown:
 Click **Open Folder** and select your experiment. FlameTrack loads the first
 frame and displays it.
 
-.. note:: **TODO screenshot** — docs/source/_static/screenshots/02_frame_loaded.png
-   After opening a folder: a thermal IR frame fills the image area. The
-   frame slider at the bottom is active. No calibration points placed yet.
+.. figure:: ../_static/screenshots/quickstart_loaded.png
+   :alt: FlameTrack after opening a folder — first IR frame displayed
+   :width: 90%
+
+   After opening a folder: the first thermal IR frame fills the image area.
+   No calibration points placed yet.
 
 4. Set Camera Rotation
 -----------------------
@@ -65,11 +63,6 @@ Click the four corners of the plate:
     TL = top-left   TR = top-right
     BL = bottom-left  BR = bottom-right
 
-.. note:: **TODO screenshot** — docs/source/_static/screenshots/03_calibration_points_lfs.png
-   Four coloured draggable markers placed on the four corners of the specimen
-   plate. The plate edges should visually connect the four points. Use a
-   Lateral Flame Spread experiment for this screenshot.
-
 **Room Corner — 6 points**
 
 Click the three corners of the left panel and the three corners of the right
@@ -85,10 +78,12 @@ panel (the inner vertical edge is shared):
     Place one point at each marked corner (6 total).
     The two panels share the inner vertical edge.
 
-.. note:: **TODO screenshot** — docs/source/_static/screenshots/04_calibration_points_roomcorner.png
-   Six markers placed on a Room Corner frame: three on the left panel
-   (top-left, bottom-left, bottom-right of left panel) and three on the right
-   panel, meeting at the inner vertical edge where the two walls join.
+.. figure:: ../_static/screenshots/quickstart_calibration_roomcorner.png
+   :alt: Six calibration points placed on a Room Corner experiment
+   :width: 90%
+
+   Six calibration points placed on a Room Corner frame. The lines connect
+   the three corners of each panel, meeting at the shared inner edge.
 
 **Keyboard shortcuts while placing points**
 
@@ -111,11 +106,6 @@ and saves the result to::
 
 A progress bar shows how many frames have been processed.
 
-.. note:: **TODO screenshot** — docs/source/_static/screenshots/05_dewarped_result.png
-   The image area now shows the dewarped frame: the specimen plate fills the
-   entire image, perspective distortion is corrected, and the plate appears
-   as a straight rectangle.
-
 8. Run Edge Detection
 ----------------------
 
@@ -125,17 +115,26 @@ Select the flame direction (**left → right** or **right → left**) from the
 For a Room Corner experiment both panels are processed simultaneously in
 separate threads.
 
+.. figure:: ../_static/screenshots/quickstart_edge_result.png
+   :alt: Dewarped frame with detected flame edge overlaid
+   :width: 90%
+
+   Edge recognition result: the dewarped plate fills the image, and the
+   detected flame edge is overlaid as a cyan line.
+
 9. Inspect Results
 -------------------
 
 Use the **Analysis Y** slider to select a horizontal row. The lower plot shows
 the detected flame-edge position at that height over time.
 
-.. note:: **TODO screenshot** — docs/source/_static/screenshots/06_edge_result.png
-   Final state: dewarped frame with the detected flame edge overlaid as a
-   line or marker column. The lower analysis plot shows edge x-position vs.
-   time for the selected row (Analysis Y slider). The edge curve should show
-   a clear progression indicating flame spread.
+.. figure:: ../_static/screenshots/readme_spread.png
+   :alt: Flame spread curve — edge position over time for left and right panel
+   :width: 90%
+
+   Analysis view: flame edge position over time at the selected height.
+   For a Room Corner experiment both panels (left = red, right = blue mirrored)
+   are shown with a confidence band across all rows.
 
 The full result array is stored in the HDF5 file under ``edge_results``
 (LFS) or ``edge_results_left`` / ``edge_results_right`` (Room Corner).

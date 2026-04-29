@@ -47,6 +47,9 @@ html_static_path = ["_static"]
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 
+# -- Suppress warnings for missing screenshots (added before images exist) ---
+suppress_warnings = ["image.not_readable"]
+
 # -- Autodoc mock imports ----------------------------------------------------
 # PySide6 and pyqtgraph require a running display to import; mock them so the
 # docs build works in headless CI without any Qt system packages.

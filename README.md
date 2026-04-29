@@ -8,11 +8,10 @@
 
 FlameTrack is a desktop application for analysing fire spread from infrared and visible-light recordings. It corrects perspective distortion, detects the flame edge frame-by-frame, and stores all results in a documented HDF5 file.
 
-<!-- screenshot placeholder — replace the line below once the image is ready -->
-> **📸 TODO:** Add screenshot — `docs/source/_static/screenshots/readme_overview.png`
-> Full app window: thermal IR frame loaded, calibration points on the plate corners,
-> detected flame edge overlaid as a line, analysis plot (edge position vs. time) visible
-> at the bottom. Suggested size: 1200 × 700 px.
+<p align="center">
+  <img src="docs/source/_static/screenshots/readme_pipeline.png" width="49%" alt="FlameTrack pipeline — calibration and dewarping"/>
+  <img src="docs/source/_static/screenshots/readme_spread.png"   width="49%" alt="FlameTrack analysis — flame spread curve"/>
+</p>
 
 ---
 
@@ -69,6 +68,32 @@ pip install -e ".[dev]"
 pre-commit install
 pytest tests/unit/
 ```
+
+---
+
+## Citation
+
+If you use FlameTrack in your work, please cite:
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14633209.svg)](https://doi.org/10.5281/zenodo.14633209)
+
+For the latest release (v1.0.1) the BibTeX entry is:
+
+```bibtex
+@software{wurzburger_2025_flametrack,
+  author       = {Würzburger, Minh Tam and
+                  Fehr, Marc},
+  title        = {FlameTrack — Flame Spread Analysis Tool},
+  month        = may,
+  year         = 2025,
+  publisher    = {Zenodo},
+  version      = {v1.0.1},
+  doi          = {10.5281/zenodo.14633209},
+  url          = {https://doi.org/10.5281/zenodo.14633209},
+}
+```
+
+If you used a different version, please use [Zenodo](https://doi.org/10.5281/zenodo.14633209) to get the correct citation information.
 
 ---
 

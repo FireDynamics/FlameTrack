@@ -310,14 +310,22 @@ of the experiment directory.</p>
     └── data                               int array  (frames, H)
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>TODO screenshot</strong> — docs/source/_static/screenshots/07_roomcorner_both_panels.png
-Room Corner experiment after edge detection: both the left and right panel
-dewarped frames shown side by side (or switchable via a tab/button), each
-with the detected edge overlaid. Demonstrates that both panels were
-processed in parallel.</p>
-</div>
+<figure class="align-default" id="id1">
+<a class="reference internal image-reference" href="../_images/readme_pipeline.png"><img alt="Room Corner pipeline — calibration, dewarped panels and detected edges" src="../_images/readme_pipeline.png" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Room Corner experiment: calibration points on the raw IR frame (left),
+dewarped panels with detected edges for left and right wall (right).</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id2">
+<a class="reference internal image-reference" href="../_images/readme_spread.png"><img alt="Flame spread curve for a Room Corner experiment" src="../_images/readme_spread.png" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Analysis view for the same experiment: flame edge position over time.
+Left panel (red) and right panel (blue, mirrored) with confidence band.</span><a class="headerlink" href="#id2" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
 </section>
 <section id="reading-results-in-python">
 <h2>Reading results in Python<a class="headerlink" href="#reading-results-in-python" title="Link to this heading">¶</a></h2>
