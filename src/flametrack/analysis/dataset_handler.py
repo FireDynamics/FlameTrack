@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from importlib.metadata import version as _pkg_version
 from typing import Literal
 
 import h5py
@@ -33,6 +34,20 @@ def create_h5_file(
 
     f = h5py.File(filename, "w")
     f.attrs["file_version"] = "1.0"
+    try:
+        f.attrs["flametrack_version"] = _pkg_version("FlameTrack")
+    except Exception:  # noqa: BLE001
+        f.attrs["flametrack_version"] = "unknown"
+    try:
+        import subprocess  # noqa: PLC0415
+
+        f.attrs["flametrack_commit"] = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+    except Exception:  # noqa: BLE001
+        f.attrs["flametrack_commit"] = "unknown"
 
     HDF_FILE = f
     LOADED_FILE_PATH = filename
