@@ -43,10 +43,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "pytest-qt",
-    "pylint",
-    "pylint-venv",
-    "black",
-    "isort",
+    "ruff",
     "mypy",
     "scikit-image",
     "coverage[toml]",
@@ -100,15 +97,32 @@ markers = [
     "rotation: mark test as related to rotation processing"
 ]
 
-[tool.black]
+[tool.ruff]
 line-length = 88
-target-version = ["py310"]
+target-version = "py310"
+exclude = ["src/flametrack/gui/ui_form.py"]
 
-[tool.isort]
-profile = "black"
-known_first_party = ["flametrack"]
-known_third_party = ["tomli"]
-line_length = 88
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "PL"]
+ignore = [
+    "E501",     # line too long — handled by ruff format
+    "PLR0913",  # too-many-arguments
+    "PLR0914",  # too-many-locals
+    "PLR0915",  # too-many-statements
+    "PLR0917",  # too-many-positional-arguments
+    "PLR2004",  # magic-value-comparison
+    "PLW0603",  # global-statement
+    "E731",     # lambda-assignment (used intentionally)
+    "BLE001",   # blind-except (used intentionally)
+    "B905",     # zip without strict= (not needed here)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["F401", "PLR2004"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [tool.mypy]
 python_version = "3.10"
@@ -137,60 +151,6 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true
 
-[tool.pylint.MAIN]
-# Keep disables minimal; once venv is wired up, import-error should go away
-disable = [
-  "missing-docstring",
-  "too-few-public-methods",
-  "redefined-builtin",
-  "unused-argument",
-  "unused-import",
-]
-ignore = ["docs", "tests"]
-ignore-patterns = ["ui_form\\.py$"]
-extension-pkg-allow-list = [
-  "cv2",
-  "numpy",
-  "PySide6.QtCore",
-  "PySide6.QtGui",
-  "PySide6.QtWidgets"
-]
-generated-members = [
-  "cv2.*",
-  "numpy.*",
-  "PySide6.QtCore.*",
-  "PySide6.QtGui.*",
-  "PySide6.QtWidgets.*"
-]
-
-[tool.pylint.BASIC]
-good-names = ["i", "j", "x", "y", "k", "ex", "df"]
-
-[tool.pylint.FORMAT]
-max-line-length = 120
-
-[tool.pylint.DESIGN]
-max-args = 7
-max-locals = 25
-max-branches = 15
-max-statements = 60
-max-attributes = 25
-ignore = ["tests"]
-
-[tool.pylint.TYPECHECK]
-ignored-modules = [
-  "PySide6",
-  "PySide6.QtCore",
-  "PySide6.QtGui",
-  "PySide6.QtWidgets",
-]
-
-[tool.pylint.SIMILARITIES]
-# Duplikaterkennung entschärfen (betrifft vor allem Tests/Helper)
-min-similarity-lines = 30
-ignore-comments = true
-ignore-docstrings = true
-ignore-imports = true
 
 [project.urls]
 Repository = "https://github.com/FireDynamics/FlameTrack"

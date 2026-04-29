@@ -1,12 +1,11 @@
 import glob
 import logging
 import os
-from typing import Optional
 
 import h5py
 import numpy as np
 import progressbar
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import QThread, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -22,10 +21,6 @@ from flametrack.analysis.flamespread import (
     EdgeMethodSpec,
     calculate_edge_data,
     calculate_edge_results_for_exp_name,
-    left_edge_of_rightmost_cluster,
-    left_most_point_over_threshold,
-    right_edge_of_leftmost_cluster,
-    right_most_point_over_threshold,
 )
 from flametrack.processing.dewarping import (
     DewarpConfig,
@@ -52,36 +47,36 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.experiment: Optional[RceExperiment] = None
+        self.experiment: RceExperiment | None = None
         self.datatype: str = "IR"
         self.experiment_type: str = "Lateral Flame Spread"
         self.required_points: int = 4
         self.rotation_index: int = 0
-        self.target_ratio: Optional[float] = None
-        self.target_pixels_width: Optional[int] = None
-        self.target_pixels_height: Optional[int] = None
+        self.target_ratio: float | None = None
+        self.target_pixels_width: int | None = None
+        self.target_pixels_height: int | None = None
         self.edge_workers_done: int = 0
         self._pending_edge_results: dict = {}
         # Active edge method key (short_id from EDGE_METHOD_CATALOG).
         # Currently the "correct" key for the flame direction is chosen automatically
         # in _edge_spec_for(); this attribute exists so a future UI combo box can
         # override it without changing any other code.
-        self.edge_method_key: Optional[str] = None  # None → auto-select per direction
+        self.edge_method_key: str | None = None  # None → auto-select per direction
 
         # Initialize values
-        self.plate_width_m: Optional[float] = None
-        self.plate_height_m: Optional[float] = None
-        self.console_bar: Optional[progressbar.ProgressBar] = None
+        self.plate_width_m: float | None = None
+        self.plate_height_m: float | None = None
+        self.console_bar: progressbar.ProgressBar | None = None
         self.console_bar_started: bool = False
-        self.console_bar_left: Optional[progressbar.ProgressBar] = None
-        self.console_bar_right: Optional[progressbar.ProgressBar] = None
+        self.console_bar_left: progressbar.ProgressBar | None = None
+        self.console_bar_right: progressbar.ProgressBar | None = None
         self.console_bar_right_started: bool = False
-        self.thread: Optional[QThread] = None
-        self.worker: Optional[EdgeDetectionWorker] = None
-        self.thread_left: Optional[QThread] = None
-        self.worker_left: Optional[EdgeDetectionWorker] = None
-        self.thread_right: Optional[QThread] = None
-        self.worker_right: Optional[EdgeDetectionWorker] = None
+        self.thread: QThread | None = None
+        self.worker: EdgeDetectionWorker | None = None
+        self.thread_left: QThread | None = None
+        self.worker_left: EdgeDetectionWorker | None = None
+        self.thread_right: QThread | None = None
+        self.worker_right: EdgeDetectionWorker | None = None
 
         self._setup_ui()
         self._setup_connections()
@@ -153,7 +148,7 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _read_plate_mm_from_h5_root_first(
         h5,
-    ) -> tuple[Optional[float], Optional[float]]:
+    ) -> tuple[float | None, float | None]:
         """
         Liefert (width_mm, height_mm).
         Reihenfolge:
@@ -164,7 +159,7 @@ class MainWindow(QMainWindow):
         Nimmt für die GUI (ein Paar Spinboxes) bevorzugt 'left', fällt sonst auf 'right' zurück.
         """
 
-        def _f(x) -> Optional[float]:
+        def _f(x) -> float | None:
             try:
                 return float(x)
             except (TypeError, ValueError):
@@ -221,10 +216,10 @@ class MainWindow(QMainWindow):
         else:
             logging.debug("No dewarped data found in HDF5 - type unchanged.")
 
-    def _read_plate_mm(self, h5) -> tuple[Optional[float], Optional[float]]:
+    def _read_plate_mm(self, h5) -> tuple[float | None, float | None]:
         """Liest Plattenmaße (mm) – Root bevorzugt, dann Gruppen (Room Corner/LFS)."""
 
-        def _f(x) -> Optional[float]:
+        def _f(x) -> float | None:
             try:
                 return float(x)
             except (TypeError, ValueError):
@@ -266,7 +261,7 @@ class MainWindow(QMainWindow):
         return None, None
 
     def _apply_plate_mm_to_spinboxes(
-        self, w_mm: Optional[float], h_mm: Optional[float]
+        self, w_mm: float | None, h_mm: float | None
     ) -> None:
         """Schreibt (falls vorhanden) die Plattenmaße in die SpinBoxes und aktualisiert Ratio."""
         wrote_any = False
@@ -447,10 +442,10 @@ class MainWindow(QMainWindow):
 
     def update_plot(
         self,
-        framenr: Optional[int] = None,
-        rotation_factor: Optional[int] = None,
-        cmin: Optional[float] = None,
-        cmax: Optional[float] = None,
+        framenr: int | None = None,
+        rotation_factor: int | None = None,
+        cmin: float | None = None,
+        cmax: float | None = None,
     ) -> None:
         """Update image plot according to frame, rotation and color scaling."""
         if not self.experiment:

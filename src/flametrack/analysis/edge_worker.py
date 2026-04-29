@@ -1,7 +1,4 @@
-# pylint: disable=too-many-arguments,too-many-positional-arguments
-
 import logging
-from typing import Optional
 
 import h5py
 import numpy as np
@@ -29,7 +26,7 @@ class EdgeDetectionWorker(QObject):
         result_key: str,
         threshold: int,
         method: EdgeFn,
-        flame_direction: Optional[str] = None,
+        flame_direction: str | None = None,
         use_otsu_masking: bool = True,
     ):
         """

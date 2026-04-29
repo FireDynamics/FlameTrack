@@ -1,12 +1,10 @@
-# pylint: disable=unused-private-member
-
 from __future__ import annotations
 
 import glob
 import os
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from typing import Any, List, Optional, Tuple, TypeAlias, cast
+from typing import Any, TypeAlias, cast
 
 import cv2
 import h5py
@@ -43,7 +41,7 @@ class DataClass(ABC):
     def get_frame_count(self) -> int:
         """Return the total number of frames available."""
 
-    def get_frame_size(self) -> Tuple[int, int]:
+    def get_frame_size(self) -> tuple[int, int]:
         """
         Returns shape (height, width) of a single frame.
         """
@@ -202,10 +200,10 @@ class RceExperiment:
     def __init__(self, folder_path: str) -> None:
         self.folder_path = folder_path
         self.exp_name = os.path.basename(folder_path)
-        self.ir_data: Optional[IrData] = None
-        self.video_data: Optional[VideoData] = None
-        self.picture_data: Optional[ImageData] = None
-        self._h5_file: Optional[h5py.File] = None
+        self.ir_data: IrData | None = None
+        self.video_data: VideoData | None = None
+        self.picture_data: ImageData | None = None
+        self._h5_file: h5py.File | None = None
 
     @property
     def h5_file(self) -> h5py.File:

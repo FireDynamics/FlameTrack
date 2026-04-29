@@ -1,5 +1,4 @@
 import logging
-from typing import List, Optional, Tuple
 
 import pyqtgraph as pg
 from PySide6.QtCore import Qt
@@ -16,15 +15,13 @@ class SelectableImshowCanvas(ImshowCanvas):
     und Anzeige von Linien zwischen ausgewählten Punkten.
     """
 
-    def __init__(self, parent: Optional[pg.GraphicsObject] = None):
+    def __init__(self, parent: pg.GraphicsObject | None = None):
         super().__init__(parent)
 
-        self.draggable_points: List[DraggablePoint] = (
-            []
-        )  # Liste der interaktiven Punkte
-        self.lines: Optional[pg.PlotDataItem] = (
-            None  # Linienverbindung zwischen Punkten
-        )
+        self.draggable_points: list[
+            DraggablePoint
+        ] = []  # Liste der interaktiven Punkte
+        self.lines: pg.PlotDataItem | None = None  # Linienverbindung zwischen Punkten
 
         # MouseClick-Signal für die Interaktion abonnieren
         self.plot_widget.scene().sigMouseClicked.connect(self.on_click)
@@ -72,7 +69,6 @@ class SelectableImshowCanvas(ImshowCanvas):
 
             self.update_lines()
 
-    # pylint: disable=invalid-name
     def keyPressEvent(self, event) -> None:
         """
         Behandelt Tastendruck-Events.
@@ -119,7 +115,7 @@ class SelectableImshowCanvas(ImshowCanvas):
                 self.lines.setData([], [])
             return
 
-        points: List[Tuple[float, float]] = [
+        points: list[tuple[float, float]] = [
             (point.scatter_points[0].x(), point.scatter_points[0].y())
             for point in self.draggable_points
         ]

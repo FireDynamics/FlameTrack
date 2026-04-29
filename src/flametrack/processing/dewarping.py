@@ -1,8 +1,9 @@
 import logging
 import os
+from collections.abc import Generator, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Generator, Optional, Sequence, Tuple, cast
+from typing import Any, cast
 
 import cv2
 import h5py
@@ -27,12 +28,12 @@ class DewarpConfig:
     target_ratio: float
     target_pixels_width: int
     target_pixels_height: int
-    plate_width_mm: Optional[float] = None
-    plate_height_mm: Optional[float] = None
+    plate_width_mm: float | None = None
+    plate_height_mm: float | None = None
     rotation_index: int = 0
     frequency: int = 1
     testing: bool = False
-    filename: Optional[str] = None  # optional override output path
+    filename: str | None = None  # optional override output path
     datatype: str = "IR"  # data source: "IR", "video", "picture"
 
 
@@ -47,7 +48,7 @@ DATATYPE = "IR"
 # dewarping.py – Hilfsfunktionen einfügen
 
 
-def _ensure_output_path(experiment: Any, filename: Optional[str]) -> str:
+def _ensure_output_path(experiment: Any, filename: str | None) -> str:
     """Erstellt Standardpfad, falls kein filename gesetzt ist."""
     if filename is None:
         processed_folder = os.path.join(experiment.folder_path, "processed_data")
@@ -67,7 +68,7 @@ def _init_lfs_schema(h5f: h5py.File) -> None:
 
 
 def _write_root_plate_attrs(
-    h5f: h5py.File, w_mm: Optional[float], h_mm: Optional[float], room_corner: bool
+    h5f: h5py.File, w_mm: float | None, h_mm: float | None, room_corner: bool
 ) -> None:
     if room_corner:
         if w_mm is not None:
@@ -115,10 +116,9 @@ def _store_remap(
     group.create_dataset("src_y", data=src_y)
 
 
-# pylint: disable=too-many-locals,too-many-statements
 def dewarp_room_corner_remap(
     experiment: Any,
-    points: NDArray[np.float32] | Sequence[Tuple[float, float]],
+    points: NDArray[np.float32] | Sequence[tuple[float, float]],
     config: DewarpConfig,
 ) -> Generator[int, None, None]:
     """Dewarp für Room Corner anhand vorberechneter Remap‑Grids."""
@@ -264,8 +264,7 @@ def dewarp_room_corner_remap(
                     interpolation=cv2.INTER_LINEAR,
                 )
 
-                # pylint: disable=no-member
-                data_dset.resize((h_out, w_out, i + 1))  # pylint: disable=no-member
+                data_dset.resize((h_out, w_out, i + 1))
                 data_dset[:, :, i] = remapped.astype(np.float32, copy=False)
 
             yield i
@@ -277,7 +276,7 @@ def dewarp_room_corner_remap(
 # pylint: disable=too-many-locals
 def dewarp_lateral_flame_spread(
     experiment: Any,
-    points: Sequence[Tuple[float, float]],
+    points: Sequence[tuple[float, float]],
     config: DewarpConfig,
 ) -> Generator[int, None, None]:
     """Dewarp für Lateral Flame Spread (warpPerspective)."""
@@ -387,7 +386,7 @@ def rotate_image_and_points(
     image: NDArray[np.float32] | NDArray[np.uint8],
     points: NDArray[np.float32],
     angle_degrees: float,
-) -> Tuple[NDArray[np.float32], NDArray[np.float32]]:
+) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
     """
     Rotate both image and corresponding points.
 

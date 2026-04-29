@@ -1,6 +1,3 @@
-# pylint: disable=invalid-name
-# pylint: disable=too-many-arguments
-
 import numpy as np
 import pyqtgraph as pg
 from PySide6.QtCore import QPointF

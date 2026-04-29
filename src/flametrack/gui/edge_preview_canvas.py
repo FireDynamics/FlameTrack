@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import pyqtgraph as pg
 
@@ -11,7 +9,7 @@ class EdgePreviewCanvas(ImshowCanvas):
     Erweiterung von ImshowCanvas, um Flammenkanten in einem Plot darzustellen.
     """
 
-    def __init__(self, parent: Optional[object] = None):
+    def __init__(self, parent: object | None = None):
         """
         Initialisiert den EdgePreviewCanvas.
 

@@ -1,60 +1,13 @@
 repos:
-  # Black: Code-Formatierung
-  - repo: https://github.com/psf/black
-    rev: 25.1.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
     hooks:
-      - id: black
-        args: ["--check", "--diff"]
+      - id: ruff
+        args: ["--fix"]
+        stages: [pre-commit, manual]
+      - id: ruff-format
         stages: [pre-commit, manual]
 
-  # isort: Import-Sortierung
-  - repo: https://github.com/PyCQA/isort
-    rev: 6.0.1
-    hooks:
-      - id: isort
-        args: ["--check-only", "--diff"]
-        stages: [pre-commit, manual]
-
-  # Pylint: Codequalität
-
-  # Pylint via local hook using your venv
-  - repo: local
-    hooks:
-      - id: pylint
-        name: pylint
-        entry: pylint
-        language: system
-        types: [python]
-        args:
-          - "--rcfile=pyproject.toml"
-          - -j
-          - "0"
-        require_serial: true
-        files: ^src/
-        stages: [pre-commit]
-
-  - repo: https://github.com/PyCQA/pylint
-    rev: v3.3.7
-    hooks:
-      - id: pylint
-        name: pylint (CI)
-        args:
-          - "--rcfile=pyproject.toml"
-          - -j
-          - "0"
-        files: ^src/
-        additional_dependencies:
-          - numpy
-          - h5py
-          - opencv-python-headless
-          - PySide6<=6.9.0
-          - pyqtgraph
-          - progressbar2
-          - matplotlib
-          - scipy
-        stages: [manual]
-
-  # MyPy: Typprüfung
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.17.1
     hooks:
@@ -64,7 +17,6 @@ repos:
         args: []
         stages: [pre-commit, manual]
 
-  # Standard-Hooks für sauberen Code
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -75,6 +27,6 @@ repos:
       - id: check-yaml
         stages: [pre-commit, manual]
       - id: check-added-large-files
-        args: ["--maxkb=6000"]          # ~6 MB
-        exclude: "^tests/fixtures/.*$"  # erlaubt große Dateien nur in tests/fixtures
+        args: ["--maxkb=6000"]
+        exclude: "^tests/fixtures/.*$"
         stages: [pre-commit, manual]

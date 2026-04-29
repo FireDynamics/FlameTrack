@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 import cv2
 import numpy as np
@@ -11,7 +12,7 @@ def compute_remap_from_homography(
     homography: NDArray[np.float32] | NDArray[np.float64],
     width: int,
     height: int,
-) -> Tuple[NDArray[np.float32], NDArray[np.float32]]:
+) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
     """
     Compute pixelwise remap grids from a homography.
 
@@ -58,7 +59,7 @@ def read_ir_data(filename: str) -> NDArray[np.float64]:
     Raises:
         ValueError: If no ``[Data]`` section is found in the file.
     """
-    with open(filename, "r", encoding="latin-1") as f:
+    with open(filename, encoding="latin-1") as f:
         line = f.readline()
         while line:
             if line.startswith("[Data]"):
@@ -72,9 +73,8 @@ def read_ir_data(filename: str) -> NDArray[np.float64]:
     raise ValueError("No data found in file, check file format!")
 
 
-# pylint: disable=too-many-arguments
 def get_dewarp_parameters(
-    corners: NDArray[np.float32] | Sequence[Tuple[float, float]],
+    corners: NDArray[np.float32] | Sequence[tuple[float, float]],
     target_pixels_width: int | None = None,
     target_pixels_height: int | None = None,
     target_ratio: float | None = None,

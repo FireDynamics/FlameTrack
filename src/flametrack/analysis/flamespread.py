@@ -1,16 +1,13 @@
-# pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
-# pylint: disable=unnecessary-lambda-assignment
-
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, Tuple
+from typing import Any, Protocol
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import progressbar
 from scipy.signal import find_peaks, medfilt
 from scipy.stats import skewnorm
 
@@ -23,7 +20,7 @@ from .dataset_handler import get_dewarped_data, save_edge_results
 
 
 class EdgeFn(Protocol):
-    def __call__(self, y: np.ndarray, params: Optional[Dict] = ...) -> int: ...
+    def __call__(self, y: np.ndarray, params: dict | None = ...) -> int: ...
 
 
 @dataclass
@@ -81,7 +78,7 @@ def find_peaks_in_gradient(
 
 
 def left_edge_of_rightmost_cluster(
-    y: np.ndarray, threshold: float = 128, params: Optional[Dict] = None
+    y: np.ndarray, threshold: float = 128, params: dict | None = None
 ) -> int:
     """
     Find the leftmost pixel of the rightmost contiguous cluster above threshold.
@@ -109,7 +106,7 @@ def left_edge_of_rightmost_cluster(
 
 
 def right_edge_of_leftmost_cluster(
-    y: np.ndarray, threshold: float = 128, params: Optional[Dict] = None
+    y: np.ndarray, threshold: float = 128, params: dict | None = None
 ) -> int:
     """
     Find the rightmost pixel of the leftmost contiguous cluster above threshold.
@@ -129,7 +126,7 @@ def right_edge_of_leftmost_cluster(
 
 
 def right_most_point_over_threshold(
-    y: np.ndarray, threshold: float = 0, params: Optional[Dict] = None
+    y: np.ndarray, threshold: float = 0, params: dict | None = None
 ) -> int:
     """
     Find the last point in the signal above the given threshold.
@@ -147,7 +144,7 @@ def right_most_point_over_threshold(
 
 
 def left_most_point_over_threshold(
-    y: np.ndarray, threshold: float = 0, params: Optional[dict] = None
+    y: np.ndarray, threshold: float = 0, params: dict | None = None
 ) -> int:
     """
     Find the first point in the signal above the given threshold.
@@ -200,7 +197,7 @@ def highest_peak_to_lowest_value(
     high_val: float = 0,
     low_val: float = 1e10,
     direction_weighting: float = 0.0,
-    previous_peak: Optional[int] = None,
+    previous_peak: int | None = None,
     previous_velocity: float = 0,
 ) -> int:
     """
@@ -282,7 +279,7 @@ def calculate_edge_data(
         frame = filtered_frame - custom_filter(background_frame)
 
         # --- Otsu masking (optional) ---
-        thresh: Optional[np.ndarray] = None
+        thresh: np.ndarray | None = None
         if use_otsu_masking:
             minv = float(filtered_frame.min())
             maxv = float(filtered_frame.max())
@@ -331,7 +328,7 @@ def calculate_edge_data(
 # Keys are short_id strings; values are EdgeMethodSpec instances.
 # In the future the UI can expose a method-selection combo box populated from here.
 
-EDGE_METHOD_CATALOG: Dict[str, EdgeMethodSpec] = {
+EDGE_METHOD_CATALOG: dict[str, EdgeMethodSpec] = {
     # ── Otsu-masked variants (recommended, use calculate_edge_data with masking) ──
     "leftmost_threshold": EdgeMethodSpec(
         short_id="leftmost_threshold",
@@ -429,9 +426,9 @@ EDGE_METHOD_CATALOG: Dict[str, EdgeMethodSpec] = {
 def calculate_edge_results_for_exp_name(
     exp_name: str,
     left: bool = False,
-    dewarped_data: Optional[np.ndarray] = None,
+    dewarped_data: np.ndarray | None = None,
     save: bool = True,
-) -> Optional[np.ndarray]:
+) -> np.ndarray | None:
     """
     Run full edge detection pipeline for a given experiment name.
 
@@ -485,7 +482,7 @@ def calculate_edge_results_for_exp_name(
 
 
 def band_filter(
-    frame: np.ndarray, low: Optional[float] = None, high: Optional[float] = None
+    frame: np.ndarray, low: float | None = None, high: float | None = None
 ) -> np.ndarray:
     """
     Clip intensity values between low and high threshold.

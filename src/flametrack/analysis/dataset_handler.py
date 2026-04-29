@@ -1,9 +1,7 @@
-# pylint: disable=global-statement
-
 from __future__ import annotations
 
 import os
-from typing import Any, Literal, Optional
+from typing import Literal
 
 import h5py
 import numpy as np
@@ -11,12 +9,12 @@ from numpy.typing import NDArray
 
 from flametrack.analysis import user_config
 
-HDF_FILE: Optional[h5py.File] = None
-LOADED_FILE_PATH: Optional[str] = None
+HDF_FILE: h5py.File | None = None
+LOADED_FILE_PATH: str | None = None
 
 
 def create_h5_file(
-    exp_name: Optional[str] = None, filename: Optional[str] = None
+    exp_name: str | None = None, filename: str | None = None
 ) -> h5py.File:
     """
     Create a new HDF5 file.

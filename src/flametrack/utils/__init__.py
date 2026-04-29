@@ -1,1 +1,1 @@
-from .math_utils import compute_target_ratio
+from .math_utils import compute_target_ratio as compute_target_ratio
