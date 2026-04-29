@@ -70,7 +70,6 @@ def test_mouseMoveEvent_moves_point_when_dragging(monkeypatch):
     dp = DraggablePoint(0, 0, size=10)
     dp.dragging = True
     dp.dragged_index = 0
-    new_pos = QPointF(20, 20)
     event = DummyEvent(20, 20)
 
     called_updateLines = False
@@ -98,12 +97,12 @@ def test_mouseMoveEvent_does_nothing_when_not_dragging(monkeypatch):
     event = DummyEvent(20, 20)
 
     called_updateGraph = False
-    monkeypatch.setattr(dp, "update_graph", lambda: nonlocal_set())
 
     def nonlocal_set():
         nonlocal called_updateGraph
         called_updateGraph = True
 
+    monkeypatch.setattr(dp, "update_graph", nonlocal_set)
     dp.mouseMoveEvent(event)
     # update_graph should NOT have been called
     assert called_updateGraph is False
@@ -126,12 +125,12 @@ def test_deletePoint_deletes_point_when_dragging(monkeypatch):
     dp.dragged_index = 1
 
     called_updateGraph = False
-    monkeypatch.setattr(dp, "update_graph", lambda: nonlocal_set())
 
     def nonlocal_set():
         nonlocal called_updateGraph
         called_updateGraph = True
 
+    monkeypatch.setattr(dp, "update_graph", nonlocal_set)
     dp.delete_point()
     assert len(dp.scatter_points) == 1
     assert dp.dragging is False
@@ -145,12 +144,12 @@ def test_deletePoint_does_nothing_when_not_dragging(monkeypatch):
     dp.dragged_index = 0
 
     called_updateGraph = False
-    monkeypatch.setattr(dp, "update_graph", lambda: nonlocal_set())
 
     def nonlocal_set():
         nonlocal called_updateGraph
         called_updateGraph = True
 
+    monkeypatch.setattr(dp, "update_graph", nonlocal_set)
     dp.delete_point()
     # Point count should remain unchanged
     assert len(dp.scatter_points) == 1

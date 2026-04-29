@@ -51,8 +51,8 @@ def test_dewarp_room_corner_with_real_image(mainwindow, tmp_path):
     assert h5_path.exists(), "HDF5 file was not created"
 
     with h5py.File(h5_path, "r") as f:
-        left_data = f["dewarped_data_left"]["data"][:, :, 0]
-        right_data = f["dewarped_data_right"]["data"][:]
+        _ = f["dewarped_data_left"]["data"][:, :, 0]
+        _ = f["dewarped_data_right"]["data"][:]
 
     with h5py.File(h5_path, "r") as h5f:
         assert "dewarped_data_left" in h5f

@@ -118,7 +118,7 @@ def get_corner_points(size: int = QUAD_SIZE):
     """
     s = size / 300
     lx0 = int(50 * s)
-    lx1 = int(140 * s)
+    _lx1 = int(140 * s)
     rx0 = int(160 * s)
     rx1 = int(250 * s)
     ly0 = int(70 * s)
@@ -191,7 +191,7 @@ def main() -> None:
         (3, (Q, Q), "270°CW(rotation_index=3)  → bottom-right quadrant"),
     ]
 
-    for cw_steps, (row_off, col_off), desc in configs:
+    for cw_steps, (row_off, col_off), _desc in configs:
         # np.rot90 with k rotates CCW; CW by n steps = CCW by (4-n) steps
         rotated = np.rot90(scene, k=(4 - cw_steps) % 4)
         rh, rw = rotated.shape

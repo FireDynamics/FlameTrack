@@ -42,7 +42,7 @@ def test_imagedata_get_frame_count(tmp_path):
     with patch("cv2.imread", return_value=np.ones((100, 100, 3), dtype=np.uint8)):
         data = ImageData(str(tmp_path))
         assert data.get_frame_count() == 1
-        frame = data.get_frame(0, 0)
+        data.get_frame(0, 0)
 
 
 def test_imagedata_get_frame_raises_index_error(tmp_path):
@@ -107,7 +107,6 @@ def test_rce_experiment_get_data_variants(tmp_path):
         patch("flametrack.analysis.data_types.VideoData") as mock_vid,
         patch("flametrack.analysis.data_types.ImageData") as mock_img,
     ):
-
         mock_ir.return_value = IrData(str(tmp_path / "exported_data"))
         mock_vid.return_value = VideoData(str(video_file))
         mock_img.return_value = ImageData(str(tmp_path / "images"))

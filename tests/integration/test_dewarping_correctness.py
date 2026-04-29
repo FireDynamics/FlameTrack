@@ -293,9 +293,9 @@ def test_lfs_dewarping_rotation(tmp_path, rotation_index):
         dewarped = np.asarray(f["dewarped_data"]["data"][:, :, 0], dtype=np.float32)
 
     rmse = _rmse(clean, dewarped)
-    assert (
-        rmse < RMSE_THRESHOLD
-    ), f"LFS rotation_index={rotation_index}: RMSE={rmse:.4f} >= {RMSE_THRESHOLD}"
+    assert rmse < RMSE_THRESHOLD, (
+        f"LFS rotation_index={rotation_index}: RMSE={rmse:.4f} >= {RMSE_THRESHOLD}"
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -369,9 +369,9 @@ def test_rce_dewarping_rotation(tmp_path, rotation_index):
     rmse_l = _rmse(clean_left, dewarped_left)
     rmse_r = _rmse(clean_right, dewarped_right)
 
-    assert (
-        rmse_l < RMSE_THRESHOLD
-    ), f"RCE left  rotation_index={rotation_index}: RMSE={rmse_l:.4f} >= {RMSE_THRESHOLD}"
-    assert (
-        rmse_r < RMSE_THRESHOLD
-    ), f"RCE right rotation_index={rotation_index}: RMSE={rmse_r:.4f} >= {RMSE_THRESHOLD}"
+    assert rmse_l < RMSE_THRESHOLD, (
+        f"RCE left  rotation_index={rotation_index}: RMSE={rmse_l:.4f} >= {RMSE_THRESHOLD}"
+    )
+    assert rmse_r < RMSE_THRESHOLD, (
+        f"RCE right rotation_index={rotation_index}: RMSE={rmse_r:.4f} >= {RMSE_THRESHOLD}"
+    )

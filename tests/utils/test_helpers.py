@@ -24,9 +24,9 @@ def assert_image_similarity(
 
     # SSIM
     score = ssim(img_a, img_b, data_range=data_range)
-    assert (
-        score >= ssim_thresh
-    ), f"SSIM für {name} zu gering: {score:.4f} < {ssim_thresh}"
+    assert score >= ssim_thresh, (
+        f"SSIM für {name} zu gering: {score:.4f} < {ssim_thresh}"
+    )
 
     # MAE
     mae = np.mean(np.abs(img_a - img_b))

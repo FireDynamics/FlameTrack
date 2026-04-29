@@ -29,9 +29,9 @@ import sys
 from pathlib import Path
 
 import cv2
-import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import patches
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 

@@ -180,7 +180,6 @@ def main():
     )
 
     for col, (k, label) in enumerate(zip(range(4), LABELS)):
-
         # ── Simulate camera mounted at k*90° CW ─────────────────────────
         # Raw frame appears rotated (4-k)*90° CCW = k*90° CW from user view
         camera_raw = np.rot90(raw_frame, k=(4 - k) % 4)

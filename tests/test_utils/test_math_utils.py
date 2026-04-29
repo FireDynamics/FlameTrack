@@ -1,6 +1,10 @@
+import numpy as np
 import pytest
 
-from flametrack.utils.math_utils import compute_target_ratio
+from flametrack.utils.math_utils import (
+    compute_target_ratio,
+    estimate_resolution_from_points,
+)
 
 
 def test_compute_target_ratio_normal():
@@ -11,12 +15,6 @@ def test_compute_target_ratio_normal():
 def test_compute_target_ratio_zero_width():
     # width = 0.0 → Fallback auf 1.0
     assert compute_target_ratio(0.0, 3.0) == 1.0
-
-
-import numpy as np
-import pytest
-
-from flametrack.utils.math_utils import estimate_resolution_from_points
 
 
 def test_estimate_resolution_from_points_typical_case():
