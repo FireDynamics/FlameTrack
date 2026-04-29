@@ -119,6 +119,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["F401", "PLR2004"]
+"*.ipynb" = ["E702", "W293", "B007"]
 
 [tool.ruff.format]
 quote-style = "double"
