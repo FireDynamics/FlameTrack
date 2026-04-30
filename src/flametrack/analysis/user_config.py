@@ -11,8 +11,8 @@ _CONFIG_PATH_DEFAULT = os.path.join(_CONFIG_DIR_DEFAULT, "config.ini")
 # Override per Umgebungsvariable möglich (z. B. im CI oder in Tests)
 CONFIG_PATH = os.getenv("FLAMETRACK_CONFIG", _CONFIG_PATH_DEFAULT)
 
-# Aktiver Konfigurationsmodus
-config_mode: str = "TESTING"
+# Aktiver Konfigurationsmodus — reads from [DEFAULT] section of config.ini
+config_mode: str = "DEFAULT"
 
 
 def __get_default_values() -> dict[str, str]:

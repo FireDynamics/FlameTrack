@@ -1,14 +1,12 @@
-import os
-
 import numpy as np
 import pytest
 
 from flametrack.gui.imshow_canvas import ImshowCanvas
 
-pytestmark = pytest.mark.skipif(
-    os.environ.get("QT_QPA_PLATFORM") == "offscreen",
-    reason="PyQtGraph widget tests crash in headless mode on macOS",
-)
+# PyQtGraph uses OpenGL internally, which segfaults on macOS in offscreen/headless
+# mode even with QT_QPA_PLATFORM=offscreen.  Pure PySide6 widgets (no pyqtgraph)
+# work fine headlessly — see test_draggable_point.py / test_edgeresult_canvas.py.
+pytestmark = pytest.mark.skip(reason="PyQtGraph OpenGL segfaults headless on macOS")
 
 
 def test_initialization(qtbot):

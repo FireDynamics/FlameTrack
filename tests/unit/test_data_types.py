@@ -154,3 +154,152 @@ def test_rce_experiment_get_data_file_not_found(tmp_path):
         rce.get_data("picture")
     with pytest.raises(FileNotFoundError):
         rce.get_data("processed")
+
+
+# ---------------------------------------------------------------------------
+# VideoData – load_to_memory=True (lines 74–82)
+# ---------------------------------------------------------------------------
+
+
+def test_videodata_load_to_memory():
+    """VideoData loads all frames into self.data when load_to_memory=True."""
+    frames = [np.zeros((10, 10, 3), dtype=np.uint8) for _ in range(5)]
+    mock_cap = DummyCapture(frames)
+
+    with patch("cv2.VideoCapture", return_value=mock_cap):
+        data = VideoData("fake.mp4", load_to_memory=True)
+
+    assert len(data.data) == 5
+    assert data.get_frame_count() == 5
+
+
+def test_videodata_get_frame_from_memory():
+    """get_frame reads from self.data when loaded to memory."""
+    frame_arr = np.ones((10, 10, 3), dtype=np.uint8) * 128
+    mock_cap = DummyCapture([frame_arr])
+
+    with patch("cv2.VideoCapture", return_value=mock_cap):
+        data = VideoData("fake.mp4", load_to_memory=True)
+
+    with patch("cv2.cvtColor", return_value=np.ones((10, 10), dtype=np.uint8)):
+        f = data.get_frame(0, 0)
+    assert f is not None
+
+
+def test_videodata_get_frame_on_demand_read_failure():
+    """get_frame raises IndexError when cap.read() fails."""
+
+    # cap that returns False on read
+    class FailCap:
+        def isOpened(self):
+            return True
+
+        def read(self):
+            return False, None
+
+        def release(self):
+            pass
+
+        def set(self, *a):
+            pass
+
+        def get(self, prop):
+            return 3
+
+    with patch("cv2.VideoCapture") as mock_cv:
+        mock_cv.return_value = FailCap()
+        data = VideoData("fake.mp4", load_to_memory=False)
+
+    with patch("cv2.VideoCapture", return_value=FailCap()):
+        with pytest.raises(IndexError):
+            data.get_frame(0, 0)
+
+
+# ---------------------------------------------------------------------------
+# ImageData – custom extension (lines 125–126)
+# ---------------------------------------------------------------------------
+
+
+def test_imagedata_custom_extension(tmp_path):
+    """ImageData with explicit image_extension builds correct glob pattern."""
+    tif_file = tmp_path / "frame_001.tif"
+    tif_file.write_bytes(b"fake tif content")
+
+    with patch("cv2.imread", return_value=np.ones((100, 100, 3), dtype=np.uint8)):
+        data = ImageData(str(tmp_path), image_extension="tif")
+
+    assert data.get_frame_count() == 1
+
+
+def test_imagedata_get_org_frame(tmp_path):
+    """get_org_frame returns BGR array from disk."""
+    fake_file = tmp_path / "img1.JPG"
+    fake_file.write_bytes(b"fake")
+
+    bgr = np.ones((50, 50, 3), dtype=np.uint8)
+    with patch("cv2.imread", return_value=bgr):
+        data = ImageData(str(tmp_path))
+        result = data.get_org_frame(0)
+
+    assert result.shape == (50, 50, 3)
+
+
+def test_imagedata_get_org_frame_missing_raises(tmp_path):
+    """get_org_frame raises FileNotFoundError when cv2.imread returns None."""
+    fake_file = tmp_path / "img1.JPG"
+    fake_file.write_bytes(b"fake")
+
+    with patch("cv2.imread", return_value=np.ones((10, 10, 3), dtype=np.uint8)):
+        data = ImageData(str(tmp_path))
+
+    with patch("cv2.imread", return_value=None):
+        with pytest.raises(FileNotFoundError):
+            data.get_org_frame(0)
+
+
+def test_imagedata_get_frame_missing_raises(tmp_path):
+    """get_frame raises FileNotFoundError when cv2.imread returns None."""
+    fake_file = tmp_path / "img1.JPG"
+    fake_file.write_bytes(b"fake")
+
+    with patch("cv2.imread", return_value=np.ones((10, 10, 3), dtype=np.uint8)):
+        data = ImageData(str(tmp_path))
+
+    with patch("cv2.imread", return_value=None):
+        with pytest.raises(FileNotFoundError):
+            data.get_frame(0, 0)
+
+
+# ---------------------------------------------------------------------------
+# DataClass.get_frame_size / get_raw_frame (lines 48–57)
+# ---------------------------------------------------------------------------
+
+
+def test_dataclass_get_frame_size(tmp_path):
+    """get_frame_size returns (height, width) tuple."""
+    fake_file = tmp_path / "img1.JPG"
+    fake_file.write_bytes(b"fake")
+
+    with patch("cv2.imread", return_value=np.ones((30, 40, 3), dtype=np.uint8)):
+        data = ImageData(str(tmp_path))
+
+    with patch("cv2.imread", return_value=np.ones((30, 40, 3), dtype=np.uint8)):
+        with patch("cv2.cvtColor", return_value=np.ones((30, 40), dtype=np.uint8)):
+            h, w = data.get_frame_size()
+    assert h == 30
+    assert w == 40
+
+
+def test_dataclass_get_raw_frame_delegates_to_get_frame(tmp_path):
+    """Default get_raw_frame calls get_frame(..., rotation_index=0)."""
+    fake_file = tmp_path / "img1.JPG"
+    fake_file.write_bytes(b"fake")
+
+    gray = np.ones((20, 20), dtype=np.uint8)
+    with patch("cv2.imread", return_value=np.ones((20, 20, 3), dtype=np.uint8)):
+        data = ImageData(str(tmp_path))
+
+    with patch("cv2.imread", return_value=np.ones((20, 20, 3), dtype=np.uint8)):
+        with patch("cv2.cvtColor", return_value=gray):
+            raw = data.get_raw_frame(0)
+    assert raw.shape == (20, 20)

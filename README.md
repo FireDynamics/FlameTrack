@@ -75,21 +75,21 @@ pytest tests/unit/
 
 If you use FlameTrack in your work, please cite:
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14633209.svg)](https://doi.org/10.5281/zenodo.14633209)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19891130.svg)](https://doi.org/10.5281/zenodo.19891130)
 
 For the latest release (v1.0.1) the BibTeX entry is:
 
 ```bibtex
-@software{wurzburger_2025_flametrack,
+@software{wurzburger_2026_flametrack,
   author       = {Würzburger, Minh Tam and
                   Fehr, Marc},
   title        = {FlameTrack — Flame Spread Analysis Tool},
-  month        = may,
-  year         = 2025,
+  month        = apr,
+  year         = 2026,
   publisher    = {Zenodo},
   version      = {v1.0.1},
-  doi          = {10.5281/zenodo.14633209},
-  url          = {https://doi.org/10.5281/zenodo.14633209},
+  doi          = {10.5281/zenodo.19891130},
+  url          = {https://doi.org/10.5281/zenodo.19891130},
 }
 ```
 
