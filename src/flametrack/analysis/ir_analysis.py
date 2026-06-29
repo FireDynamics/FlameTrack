@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+import logging
+import re
+import warnings
 from collections.abc import Sequence
+from datetime import datetime
 from typing import Any
 
 import cv2
 import numpy as np
 from numpy.typing import NDArray
+
+_PAT_DATE = re.compile(r"RecDate=(\d+\.\d+\.\d+)")
+_PAT_TIME = re.compile(r"RecTime=(\d+:\d+:\d+)")
+_PAT_MS = re.compile(r"ms=([\d.]+)")
 
 
 def compute_remap_from_homography(
@@ -43,6 +51,25 @@ def compute_remap_from_homography(
     return src_x, src_y
 
 
+def read_csv_timestamp(path: str) -> datetime | None:
+    """Return the recording datetime from a CSV header, or None if absent.
+
+    Uses only ``RecDate`` and ``RecTime`` (second-level resolution).  The
+    ``ms=`` field is intentionally ignored here because it is a cumulative
+    elapsed-milliseconds counter that resets at every IRB container boundary
+    and therefore cannot be used for sub-second refinement without knowing
+    the full preceding ms history.  Elapsed-time construction (including
+    sub-second precision and container-reset stitching) is handled separately
+    by :meth:`IrData.get_timestamps`.
+    """
+    with open(path, encoding="latin-1", errors="replace") as f:
+        header = f.read(512)
+    d, t = _PAT_DATE.search(header), _PAT_TIME.search(header)
+    if not (d and t):
+        return None
+    return datetime.strptime(f"{d.group(1)} {t.group(1)}", "%d.%m.%Y %H:%M:%S")
+
+
 def read_ir_data(filename: str) -> NDArray[np.float64]:
     """
     Read raw IR data from a CSV-like ASCII export.
@@ -63,10 +90,16 @@ def read_ir_data(filename: str) -> NDArray[np.float64]:
         line = f.readline()
         while line:
             if line.startswith("[Data]"):
-                arr = np.genfromtxt(
-                    (line.replace(",", ".")[:-2] for line in f.readlines()),
-                    delimiter=";",
-                )
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter("always")
+                    arr = np.genfromtxt(
+                        (line.replace(",", ".")[:-2] for line in f.readlines()),
+                        delimiter=";",
+                        invalid_raise=False,
+                    )
+                if caught:
+                    details = "; ".join(str(w.message) for w in caught)
+                    logging.warning("Malformed lines in %s: %s", filename, details)
                 return np.asarray(arr, dtype=np.float64)
             line = f.readline()
 

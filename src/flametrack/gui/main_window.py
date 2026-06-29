@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QMainWindow,
     QMessageBox,
+    QProgressBar,
     QSlider,
 )
 
@@ -284,7 +285,7 @@ class MainWindow(QMainWindow):
         self.ui.slider_scale_max.setDisabled(False)
         frame_count = self.experiment.get_data(self.datatype).get_frame_count()
         self.ui.slider_frame.setMinimum(0)
-        self.ui.slider_frame.setMaximum(frame_count)
+        self.ui.slider_frame.setMaximum(max(0, frame_count - 1))
 
     @staticmethod
     def _detect_datatype(folder: str) -> str:
@@ -599,6 +600,7 @@ class MainWindow(QMainWindow):
                 QApplication.processEvents()
 
             self.ui.progress_dewarping.setValue(frame_count)
+            self._set_progress_done(self.ui.progress_dewarping)
             console_bar.finish()
             self.ui.button_dewarp.setDisabled(False)
 
@@ -652,6 +654,7 @@ class MainWindow(QMainWindow):
 
             self.ui.progress_edge_finding_plate1.setRange(0, 100)
             self.ui.progress_edge_finding_plate1.setValue(0)
+            self._set_progress_reset(self.ui.progress_edge_finding_plate1)
 
             self.thread = QThread()
             flame_dir = self.ui.comboBox_flame_direction.currentText()
@@ -690,8 +693,10 @@ class MainWindow(QMainWindow):
 
         self.ui.progress_edge_finding_plate1.setRange(0, 100)
         self.ui.progress_edge_finding_plate1.setValue(0)
+        self._set_progress_reset(self.ui.progress_edge_finding_plate1)
         self.ui.progress_edge_finding_plate2.setRange(0, 100)
         self.ui.progress_edge_finding_plate2.setValue(0)
+        self._set_progress_reset(self.ui.progress_edge_finding_plate2)
 
         # Left worker/thread
         # RCE: left plate flame spreads right→left (away from corner on right side)
@@ -737,6 +742,21 @@ class MainWindow(QMainWindow):
         self.ui.slider_analysis_y.setEnabled(False)
         self.ui.comboBox_flame_direction.setEnabled(False)
 
+    # ------------------------------------------------------------------ helpers
+    _PROGRESS_DONE_STYLE = (
+        "QProgressBar::chunk { background-color: #4CAF50; border-radius: 3px; }"
+    )
+
+    @staticmethod
+    def _set_progress_done(bar: QProgressBar) -> None:
+        """Colour a progress bar green to signal completion."""
+        bar.setStyleSheet(MainWindow._PROGRESS_DONE_STYLE)
+
+    @staticmethod
+    def _set_progress_reset(bar: QProgressBar) -> None:
+        """Remove the completion colour so the bar looks normal again."""
+        bar.setStyleSheet("")
+
     def _create_progress_bar(
         self, label: str, max_value: int
     ) -> progressbar.ProgressBar:
@@ -773,16 +793,19 @@ class MainWindow(QMainWindow):
                 self.console_bar = None
                 self.console_bar_started = False
             self.ui.progress_edge_finding_plate1.setValue(100)
+            self._set_progress_done(self.ui.progress_edge_finding_plate1)
         elif side == "left":
             if self.console_bar_left:
                 self.console_bar_left.finish()
                 self.console_bar_left = None
             self.ui.progress_edge_finding_plate1.setValue(100)
+            self._set_progress_done(self.ui.progress_edge_finding_plate1)
         elif side == "right":
             if self.console_bar_right:
                 self.console_bar_right.finish()
                 self.console_bar_right = None
             self.ui.progress_edge_finding_plate2.setValue(100)
+            self._set_progress_done(self.ui.progress_edge_finding_plate2)
 
         # Buffer result – do NOT write to h5 yet (other workers may still be reading)
         self._pending_edge_results[side] = result_array

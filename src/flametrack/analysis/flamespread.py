@@ -235,6 +235,9 @@ def highest_peak_to_lowest_value(
     return int(peaks[np.argmax(peak_values / (ambient_values**ambient_weighting))])
 
 
+_OTSU_MIN_WINDOW_PX = 20
+
+
 def calculate_edge_data(
     data: np.ndarray,
     find_edge_point: EdgeFn,
@@ -248,11 +251,15 @@ def calculate_edge_data(
         data (np.ndarray): 3D array of shape (H, W, T).
         find_edge_point (Callable): Method to find edge in 1D data.
         custom_filter (Callable): Optional filter to apply to each frame.
-        use_otsu_masking (bool): If True (default), apply Otsu thresholding and
-            morphological dilation to restrict the per-row search window.  Set
-            False to scan the full row without any masking (useful when a fixed
-            intensity threshold alone is sufficient and Otsu would over-shrink the
-            window, e.g. with a deliberately low threshold such as 117).
+        use_otsu_masking (bool): If True (default), apply Otsu thresholding on
+            the temporal-difference frame and use morphological dilation to
+            restrict the per-row search window to the active flame front.
+            The window is only applied when it spans at least
+            ``_OTSU_MIN_WINDOW_PX`` pixels; otherwise the full row is scanned.
+            Set False to scan the full row without any masking (useful when a
+            fixed intensity threshold alone is sufficient and Otsu would
+            over-shrink the window, e.g. with a deliberately low threshold
+            such as 117).
 
     Returns:
         list[list[int]]: Edge coordinates per frame.
@@ -264,19 +271,16 @@ def calculate_edge_data(
         background_frame = data[:, :, max(n - 1, 0)].astype(np.float32)
 
         filtered_frame = custom_filter(frame.copy())
-        frame = filtered_frame - custom_filter(background_frame)
+        diff_frame = filtered_frame - custom_filter(background_frame)
 
-        # --- Otsu masking (optional) ---
+        # --- Otsu masking on temporal diff (optional) ---
+        # Using the diff rather than the raw frame keeps the mask focused on
+        # the actively moving flame front instead of all hot material.
         thresh: np.ndarray | None = None
         if use_otsu_masking:
-            minv = float(filtered_frame.min())
-            maxv = float(filtered_frame.max())
-            if maxv > minv:
-                normed = (filtered_frame - minv) / (maxv - minv)
-            else:
-                normed = np.zeros_like(filtered_frame, dtype=np.float32)
-
-            mask_u8 = (normed * 255.0).astype(np.uint8)
+            mask_u8 = cv2.normalize(
+                diff_frame, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U
+            )
             _, thresh = cv2.threshold(
                 mask_u8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
             )
@@ -286,9 +290,9 @@ def calculate_edge_data(
         frame_result: list[int] = []
         for i in range(frame.shape[0]):
             start, end = 0, -1
-            if use_otsu_masking and thresh is not None and n < 150:
+            if use_otsu_masking and thresh is not None:
                 idx = np.where(thresh[i, :] > 0)[0]
-                if idx.size:
+                if idx.size and (int(idx[-1]) - int(idx[0])) >= _OTSU_MIN_WINDOW_PX:
                     start, end = int(idx[0]), int(idx[-1]) + 10
 
             y = filtered_frame[i, start:end]

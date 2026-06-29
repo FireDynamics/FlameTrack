@@ -10,6 +10,7 @@ import h5py
 import numpy as np
 from numpy.typing import NDArray
 
+from flametrack.analysis.data_types import IrData
 from flametrack.analysis.dataset_handler import (
     assert_h5_schema,
     create_h5_file,
@@ -18,6 +19,7 @@ from flametrack.analysis.dataset_handler import (
 from flametrack.analysis.ir_analysis import (
     compute_remap_from_homography,
     get_dewarp_parameters,
+    read_csv_timestamp,
 )
 from flametrack.gui.plotting_utils import rotate_points, sort_corner_points
 from flametrack.utils.math_utils import estimate_resolution_from_points
@@ -82,6 +84,31 @@ def _write_root_plate_attrs(
             h5f.attrs["plate_width_mm"] = float(w_mm)
         if h_mm is not None:
             h5f.attrs["plate_height_mm"] = float(h_mm)
+
+
+def _write_timestamps(h5f: h5py.File, data: Any, indices: list[int]) -> None:
+    """Write a root-level 'timestamps' dataset (seconds from first frame).
+
+    Only written when the data source exposes get_timestamps (IrData).
+    Silently skipped for video/picture sources or when headers lack RecDate/RecTime.
+    """
+    if not isinstance(data, IrData):
+        return
+    ts = data.get_timestamps(indices)
+    if ts is None:
+        return
+    selected = [data.files[i] for i in indices]
+    t0_dt = read_csv_timestamp(selected[0])
+
+    if "timestamps" in h5f:
+        del h5f["timestamps"]
+    dset = h5f.create_dataset("timestamps", data=ts, dtype=np.float64)
+    dset.attrs["unit"] = "seconds"
+    dset.attrs["description"] = (
+        "seconds elapsed since first frame (from CSV RecDate/RecTime)"
+    )
+    if t0_dt is not None:
+        dset.attrs["t0_iso"] = t0_dt.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
 
 def _ensure_dataset(group: h5py.Group, shape_hw: tuple[int, int]) -> h5py.Dataset:
@@ -269,6 +296,8 @@ def dewarp_room_corner_remap(
 
             yield i
 
+        _write_timestamps(h5f, data, list(frames[start : end : config.frequency]))
+
     experiment.h5_file = h5py.File(out_path, "r+")
     experiment.h5_path = out_path
 
@@ -377,6 +406,8 @@ def dewarp_lateral_flame_spread(
             dset.resize((h_out, w_out, i + 1))
             dset[:, :, i] = dewarped.astype(np.float32, copy=False)
             yield i
+
+        _write_timestamps(h5f, data, list(frames[start : end : config.frequency]))
 
     experiment.h5_file = h5py.File(out_path, "r+")
     experiment.h5_path = out_path

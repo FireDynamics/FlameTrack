@@ -233,7 +233,7 @@ def test_band_filter_high_none():
 
 
 # ---------------------------------------------------------------------------
-# calculate_edge_data with Otsu masking (lines 271–294)
+# calculate_edge_data with Otsu masking
 # ---------------------------------------------------------------------------
 
 

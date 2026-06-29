@@ -26,3 +26,9 @@ New here? Start with the :doc:`user_guide/quickstart`.
    :caption: Developer Guide
 
    developer_guide/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Background
+
+   background/index

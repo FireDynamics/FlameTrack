@@ -191,6 +191,64 @@ class IrData(DataClass):
     def get_frame_count(self) -> int:
         return len(self.data_numbers)
 
+    def get_timestamps(
+        self, indices: list[int] | None = None
+    ) -> NDArray[np.float64] | None:
+        """Return seconds-since-first-frame for each selected file index.
+
+        Uses the raw ``ms=`` field from each CSV header and stitches across
+        container boundaries (the camera resets ``ms`` to 0 at the start of
+        each new IRB container).  This avoids any datetime arithmetic and is
+        robust for arbitrarily long measurements.
+
+        Returns None if no ``ms=`` field is found in any of the selected files.
+        """
+        selected = [
+            self.files[i]
+            for i in (indices if indices is not None else self.data_numbers)
+        ]
+
+        ms_values: list[float] = []
+        for path in selected:
+            ms: float | None = None
+            try:
+                with open(path, encoding="latin-1", errors="replace") as fh:
+                    for line in fh:
+                        if line.startswith("[Data]"):
+                            break
+                        if line.startswith("ms="):
+                            try:
+                                ms = float(line.split("=", 1)[1].strip())
+                            except ValueError:
+                                pass
+                            break
+            except OSError:
+                pass
+            ms_values.append(ms if ms is not None else float("nan"))
+
+        if all(np.isnan(v) for v in ms_values):
+            return None
+
+        ms_arr = np.array(ms_values, dtype=np.float64)
+
+        # Stitch: whenever ms decreases (container reset), carry forward an offset
+        stitched = np.empty_like(ms_arr)
+        offset = 0.0
+        stitched[0] = ms_arr[0]
+        for i in range(1, len(ms_arr)):
+            if np.isnan(ms_arr[i]):
+                stitched[i] = float("nan")
+                continue
+            prev = ms_arr[i - 1] if not np.isnan(ms_arr[i - 1]) else ms_arr[i]
+            if ms_arr[i] < prev:
+                offset += prev
+            stitched[i] = ms_arr[i] + offset
+
+        # Elapsed seconds starting at 0
+        t = stitched / 1000.0
+        t -= np.nanmin(t)
+        return t
+
 
 class RceExperiment:
     """
