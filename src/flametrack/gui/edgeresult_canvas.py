@@ -1,4 +1,5 @@
 import logging
+import warnings
 
 import numpy as np
 import pyqtgraph as pg
@@ -164,7 +165,7 @@ class EdgeResultCanvas(QWidget):
         if experiment is None:
             return
 
-        self.plot_widget.clear()
+        self._clear_plot_items()
         legend = self.plot_widget.addLegend()
         legend.setBrush(pg.mkBrush(255, 255, 255, 180))
 
@@ -186,3 +187,21 @@ class EdgeResultCanvas(QWidget):
             # bewusst kein f-string in logging (Pylint W1203)
             # (hier print ist ok, weil GUI-Widget; du kannst auch logging benutzen)
             logging.debug("plot_edge_results KeyError: %s", err)
+
+    ## Potential fix for the bus error
+    def _clear_plot_items(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            for item in list(self.plot_widget.plotItem.items):
+                for sig_name in (
+                    "sigClicked",
+                    "sigTransformChanged",
+                    "sigDeviceTransformChanged",
+                ):
+                    sig = getattr(item, sig_name, None)
+                    if sig is not None:
+                        try:
+                            sig.disconnect()
+                        except (TypeError, RuntimeError):
+                            pass
+        self.plot_widget.clear()

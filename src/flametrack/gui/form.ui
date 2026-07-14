@@ -140,7 +140,7 @@
              </layout>
             </item>
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_5" stretch="6,1">
+             <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,1,5">
               <item>
                <widget class="SelectableImshowCanvas" name="plot_dewarping" native="true">
                 <property name="minimumSize">
@@ -160,6 +160,15 @@
                   </property>
                  </widget>
                 </item>
+
+                <item>
+                 <widget class="QPushButton" name="button_edit_roi">
+                  <property name="text">
+                   <string>ROI</string>
+                  </property>
+                 </widget>
+                </item>
+
                 <item>
                  <widget class="QProgressBar" name="progress_dewarping">
                   <property name="value">

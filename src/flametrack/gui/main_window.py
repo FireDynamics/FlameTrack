@@ -23,6 +23,8 @@ from flametrack.analysis.flamespread import (
     calculate_edge_data,
     calculate_edge_results_for_exp_name,
 )
+from flametrack.gui.region_manager import RegionManager
+from flametrack.gui.roi_dialog import ROIEditorDialog
 from flametrack.processing.dewarping import (
     DewarpConfig,
     dewarp_lateral_flame_spread,
@@ -83,6 +85,9 @@ class MainWindow(QMainWindow):
         self._setup_connections()
         self._initialize_defaults()
 
+        ### Addition
+        self.region_manager = RegionManager()
+
     def _setup_ui(self) -> None:
         """Initial UI setup: titles, visibility, and default states."""
         self.setWindowTitle("Flamespread Analysis Tool")
@@ -93,6 +98,9 @@ class MainWindow(QMainWindow):
         self.ui.slider_analysis_y.setMaximum(100)
         self.ui.slider_analysis_y.setTickPosition(QSlider.TicksBothSides)
         self.ui.slider_analysis_y.setTickInterval(10)
+
+        # Addition
+        self.ui.button_edit_roi.setEnabled(False)
 
     def _setup_connections(self) -> None:
         """Connect UI signals to their corresponding slots."""
@@ -133,6 +141,9 @@ class MainWindow(QMainWindow):
         self.ui.button_find_edge.clicked.connect(self.start_edge_detection)
         self.ui.slider_analysis_y.valueChanged.connect(self.update_analysis_plot)
         self._edge_result_ready.connect(self.handle_edge_result)
+
+        # Addition
+        self.ui.button_edit_roi.clicked.connect(self.open_roi_editor)
 
     def _initialize_defaults(self) -> None:
         """Set initial values for UI elements and internal parameters."""
@@ -576,6 +587,7 @@ class MainWindow(QMainWindow):
                 return
 
             self.ui.button_dewarp.setDisabled(True)
+            self.ui.button_edit_roi.setEnabled(True)
             frame_count = self.experiment.get_data(self.datatype).get_frame_count()
             # Range 0..frame_count so setValue(i+1) reaches 100% for any count ≥ 1
             self.ui.progress_dewarping.setRange(0, frame_count)
@@ -602,7 +614,9 @@ class MainWindow(QMainWindow):
             self.ui.progress_dewarping.setValue(frame_count)
             self._set_progress_done(self.ui.progress_dewarping)
             console_bar.finish()
-            self.ui.button_dewarp.setDisabled(False)
+            self.ui.button_dewarp.setDisabled(
+                False
+            )  ### Will we really need to dewarp later on tho ?????
 
             if hasattr(self.experiment, "h5_file"):
                 self.experiment.h5_path = self.experiment.h5_file.filename
@@ -930,7 +944,9 @@ class MainWindow(QMainWindow):
                 use_otsu_masking=_spec_preview.use_otsu_masking,
             )[0]
 
-            self.ui.plot_edge_preview.plot_with_edge(frame, edge, cmin=0.0, cmax=1.0)
+            self.ui.plot_edge_preview.plot_with_edge(
+                frame, edge, cmin=0.0, cmax=1.0
+            )  ### The function responsible for plotting after EDGE detection (Why tho just a part?????)
             logging.debug(
                 "Showing dataset shape: %s, from: %s",
                 dataset.shape,
@@ -961,3 +977,33 @@ class MainWindow(QMainWindow):
 
         y_cutoff = self.ui.slider_analysis_y.value() / 100
         self.ui.plot_analysis.plot_edge_results(self.experiment, y_cutoff)
+
+    def open_roi_editor(self) -> None:
+        if not self.experiment or not self.experiment.h5_file:
+            return
+
+        h5 = self.experiment.h5_file
+        key = (
+            "dewarped_data_left"
+            if self.experiment_type == "Room Corner"
+            else "dewarped_data"
+        )
+
+        if key not in h5:
+            return
+
+        frame_count = self.experiment.get_data(self.datatype).get_frame_count()
+        dewarped_frame = h5[key]["data"][:, :, frame_count // 2]
+
+        self._roi_dialog = ROIEditorDialog(
+            dewarped_frame,
+            self.region_manager,
+            parent=self,
+        )
+
+        if self._roi_dialog.exec():
+            self.region_manager = self._roi_dialog.result_manager()
+            self.statusBar().showMessage(
+                f"ROIs updated ({len(self.region_manager.all())} regions)",
+                2000,
+            )
