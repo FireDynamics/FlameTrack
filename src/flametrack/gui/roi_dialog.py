@@ -7,12 +7,21 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from .region_manager import RegionManager
+from ..analysis.region_manager import RegionManager
 from .regions_canvas import RegionCanvas
 
 
 class ROIEditorDialog(QDialog):
+    """
+    ROI editor dialog. Displays a RegionCanvas over the given image,
+    seeded from a private copy of the passed-in RegionManager so edits
+    made don't affect the manager unless Done is pressed.
+    """
+
     def __init__(self, image, manager: RegionManager, parent=None):
+        """
+        Building of the dialog, with all necesary controls.
+        """
         super().__init__(parent)
         self.setWindowTitle("Region Of Interest Editor")
         self.resize(1000, 700)
@@ -29,12 +38,10 @@ class ROIEditorDialog(QDialog):
         btn_rect = QPushButton("Add rectangle")
         btn_poly = QPushButton("Add polygon")
         btn_clear = QPushButton("Clear all")
-        # btn_list = QPushButton("Print Regions")
 
-        btn_rect.clicked.connect(self.canvas.add_rectangle())
-        btn_poly.clicked.connect(self.canvas.add_polygon())
+        btn_rect.clicked.connect(self.canvas.add_rectangle)
+        btn_poly.clicked.connect(self.canvas.add_polygon)
         btn_clear.clicked.connect(self.canvas.clear_regions)
-        # btn_list.clicked.connect(self.print_regions)
 
         shape_row = QHBoxLayout()
         for btn in (btn_rect, btn_poly, btn_clear):

@@ -17,13 +17,15 @@ from PySide6.QtWidgets import (
 
 from flametrack.analysis.data_types import RceExperiment
 from flametrack.analysis.edge_worker import EdgeDetectionWorker
+from flametrack.analysis.emissivity_correction import apply_corrections_to_experiment
 from flametrack.analysis.flamespread import (
     EDGE_METHOD_CATALOG,
     EdgeMethodSpec,
     calculate_edge_data,
     calculate_edge_results_for_exp_name,
 )
-from flametrack.gui.region_manager import RegionManager
+from flametrack.analysis.region_manager import RegionManager
+from flametrack.analysis.region_persistence import load_regions, save_regions
 from flametrack.gui.roi_dialog import ROIEditorDialog
 from flametrack.processing.dewarping import (
     DewarpConfig,
@@ -395,6 +397,14 @@ class MainWindow(QMainWindow):
             w_mm, h_mm = self._read_plate_mm(h5)
             self._apply_plate_mm_to_spinboxes(w_mm, h_mm)
 
+            # Addition to fetch old ROIs
+            key = (
+                "dewarped_data_left"
+                if self.experiment_type == "Room Corner"
+                else "dewarped_data"
+            )
+            if key in h5:
+                self.region_manager = load_regions(h5[key], RegionManager)
         except (AttributeError, KeyError, TypeError, ValueError) as exc:
             logging.debug("Error reading experiment type from HDF5: %s", exc)
 
@@ -979,6 +989,17 @@ class MainWindow(QMainWindow):
         self.ui.plot_analysis.plot_edge_results(self.experiment, y_cutoff)
 
     def open_roi_editor(self) -> None:
+        """
+        Open the ROI editor dialog on current experiment's dewarped frame.
+        On confirmation, persists changes to the HDF5 file, and re-applies emissivity corrections to dewarped data.
+        """
+        # For testing:
+        print(
+            "||||| >>>>> region_manager has",
+            len(self.region_manager.all()),
+            "regions before opening.",
+        )
+
         if not self.experiment or not self.experiment.h5_file:
             return
 
@@ -1003,7 +1024,17 @@ class MainWindow(QMainWindow):
 
         if self._roi_dialog.exec():
             self.region_manager = self._roi_dialog.result_manager()
+
+            grp = self.experiment.h5_file[key]
+            save_regions(grp, self.region_manager)
+            apply_corrections_to_experiment(grp, self.region_manager.all())
+            print("corrected_data" in self.experiment.h5_file[key])
+            print(self.experiment.h5_file[key]["corrected_data"][:, :, 0].mean())
+
             self.statusBar().showMessage(
-                f"ROIs updated ({len(self.region_manager.all())} regions)",
+                f"ROIs updated, corrections applied ({len(self.region_manager.all())} regions)",
                 2000,
             )
+
+        self._roi_dialog.deleteLater()
+        self._roi_dialog = None

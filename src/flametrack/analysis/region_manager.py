@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import json
 
 from .region import Region, RegionShape
 
@@ -65,7 +66,7 @@ class RegionManager:
         else:
             "Region not found !!!!! "
 
-    def set_emissivity(self, region_id: str, value: float):
+    def set_emissivity(self, region_id: str, value: float) -> None:
         if region_id in self._regions:
             self._regions[region_id].emissivity = value
         else:
@@ -97,3 +98,10 @@ class RegionManager:
 
     def to_list(self) -> list[dict]:
         return [r.to_dict() for r in self._regions.values()]
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_list())
+
+    @classmethod
+    def from_json(cls, s: str) -> RegionManager:
+        return cls.from_list(json.loads(s))
