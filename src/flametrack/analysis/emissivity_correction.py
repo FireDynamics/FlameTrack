@@ -25,7 +25,7 @@ def region_mask(
     points: list[tuple[float, float]], shape: tuple[int, int]
 ) -> NDArray[np.bool_]:
     """
-    Bitmapsize aa region's polygon/rectangle points into a boolean pixel mask of a given (h, w) shape.
+    Bitmapsize a region's polygon/rectangle points into a boolean pixel mask of a given (h, w) shape.
     Used to selet exactly which pixels of a frame a region's emissivity correction applies to.
     """
     mask = np.zeros(shape, dtype=np.uint8)

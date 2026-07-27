@@ -12,7 +12,10 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QProgressBar,
+    QPushButton,
     QSlider,
+    QVBoxLayout,
+    QWidget,
 )
 
 from flametrack.analysis.data_types import RceExperiment
@@ -26,7 +29,13 @@ from flametrack.analysis.flamespread import (
 )
 from flametrack.analysis.region_manager import RegionManager
 from flametrack.analysis.region_persistence import load_regions, save_regions
+from flametrack.analysis.roi_stats import (
+    export_time_series_csv,
+    extract_time_series,
+    save_time_series,
+)
 from flametrack.gui.roi_dialog import ROIEditorDialog
+from flametrack.gui.roi_stats_canvas import RoiStatsCanvas
 from flametrack.processing.dewarping import (
     DewarpConfig,
     dewarp_lateral_flame_spread,
@@ -104,6 +113,17 @@ class MainWindow(QMainWindow):
         # Addition
         self.ui.button_edit_roi.setEnabled(False)
 
+        # Addition for assignment 3
+        self.roi_stats_canvas = RoiStatsCanvas()
+        stats_tab = QWidget()
+        stats_layout = QVBoxLayout(stats_tab)
+        stats_layout.addWidget(self.roi_stats_canvas)
+        self.ui.tabWidget.addTab(stats_tab, "ROI Stats")
+
+        self.button_export_csv = QPushButton("Export ROI Stats CSV")
+        self.button_export_csv.setEnabled(False)
+        stats_layout.addWidget(self.button_export_csv)
+
     def _setup_connections(self) -> None:
         """Connect UI signals to their corresponding slots."""
         self.ui.button_open_folder.clicked.connect(self.load_file)
@@ -146,6 +166,9 @@ class MainWindow(QMainWindow):
 
         # Addition
         self.ui.button_edit_roi.clicked.connect(self.open_roi_editor)
+
+        # Addition for assignment 3
+        self.button_export_csv.clicked.connect(self.export_roi_stats_csv)
 
     def _initialize_defaults(self) -> None:
         """Set initial values for UI elements and internal parameters."""
@@ -1028,6 +1051,8 @@ class MainWindow(QMainWindow):
             grp = self.experiment.h5_file[key]
             save_regions(grp, self.region_manager)
             apply_corrections_to_experiment(grp, self.region_manager.all())
+            # Addition for Assignment 3
+            self._extract_and_show_roi_stats(key)
             print("corrected_data" in self.experiment.h5_file[key])
             print(self.experiment.h5_file[key]["corrected_data"][:, :, 0].mean())
 
@@ -1038,3 +1063,21 @@ class MainWindow(QMainWindow):
 
         self._roi_dialog.deleteLater()
         self._roi_dialog = None
+
+    def _extract_and_show_roi_stats(self, key: str) -> None:
+        grp = self.experiment.h5_file[key]
+        self._roi_series = extract_time_series(grp, self.region_manager.all())
+        save_time_series(grp, self._roi_series)
+        self.roi_stats_canvas.plot_series(self._roi_series)
+        self.button_export_csv.setEnabled(True)
+
+    def export_roi_stats_csv(self) -> None:
+        if not getattr(self, "_roi_series", None):
+            return
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Export ROI Stats", "", "CSV Files (*.csv)"
+        )
+        if path:
+            export_time_series_csv(self._roi_series, path)
+            self.statusBar().showMessage(f"Exported ROI stats to {path}", 2000)
+        pass
